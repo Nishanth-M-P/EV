@@ -53,9 +53,14 @@ async def lifespan(app):
 # --- REST Handlers ---
 
 async def homepage(request):
-    index_path = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
+    possible_paths = [
+        os.path.join(os.path.dirname(__file__), "..", "static", "index.html"),
+        os.path.join(os.getcwd(), "static", "index.html"),
+        os.path.abspath("static/index.html")
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            return FileResponse(path)
     return HTMLResponse("<h1>GridWise AI Backend Running</h1>")
 
 # EV Fleet APIs
@@ -276,7 +281,9 @@ async def broadcast_websocket_event(event: dict):
 
 
 # Application Routes
-static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
+if not os.path.exists(static_dir):
+    static_dir = os.path.abspath("static")
 
 routes = [
     Route("/", homepage),
