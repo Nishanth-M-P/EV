@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "gridwise-secret-key-2026")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     DEFAULT_TIMESTEP_MINUTES: int = 15
-    HOST: str = os.getenv("HOST", "127.0.0.1")
+    HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", 8000))
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
