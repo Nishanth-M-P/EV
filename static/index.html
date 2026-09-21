@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GridWise AI - Smart EV Energy & V2G Management Platform</title>
+    <title>GridWise AI - AI-Powered Digital Twin & Energy Management Platform</title>
     <!-- Tailwind CSS -->
+    <script>
+        const _origConsoleWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) return;
+            _origConsoleWarn.apply(console, args);
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -45,11 +52,9 @@
         @keyframes pulseGreen { 0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } }
         @keyframes pulseAmber { 0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(217, 119, 6, 0); } }
         
-        /* Smooth horizontal scrolling for mobile navigation */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* SVG Particle animation */
         @keyframes dash {
             to { stroke-dashoffset: -40; }
         }
@@ -61,527 +66,1756 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
 
-    <!-- Top Live Status Banner -->
-    <div class="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-2 flex items-center justify-between text-[11px] font-mono text-slate-300 overflow-x-auto no-scrollbar">
-        <div class="flex items-center gap-3 whitespace-nowrap">
-            <span class="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> REAL-TIME TELEMETRY
-            </span>
-            <span class="text-slate-700">|</span>
-            <span>GRID FREQ: <strong class="text-cyan-400">50.00 Hz</strong></span>
-            <span class="text-slate-700">|</span>
-            <span>STABILITY: <strong class="text-emerald-400">99.99%</strong></span>
-        </div>
-        <div class="flex items-center gap-3 whitespace-nowrap pl-4">
-            <span>LATENCY: <strong id="top-latency" class="text-cyan-400">8 ms</strong></span>
-            <span class="text-slate-700">|</span>
-            <span>MODE: <strong class="text-emerald-400 font-bold">RL AGENT</strong></span>
-        </div>
-    </div>
-
-    <!-- Main Header -->
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-col gap-2 shadow-sm">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-                    <i data-lucide="zap" class="w-5 h-5 sm:w-6 sm:h-6 text-white font-black"></i>
+    <!-- ========================================== -->
+    <!-- VIEW 1: AUTHENTICATION / LOGIN VIEW        -->
+    <!-- ========================================== -->
+    <section id="view-login" class="flex-1 flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 min-h-screen">
+        <div class="max-w-md w-full light-card p-6 sm:p-8 rounded-3xl space-y-6 shadow-2xl border-slate-200">
+            <!-- Brand Header -->
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                    <i data-lucide="zap" class="w-8 h-8 text-white"></i>
                 </div>
-                <div>
-                    <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 flex items-center gap-1.5">
-                        GridWise <span class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">AI REAL-TIME</span>
-                    </h1>
-                    <p class="text-[10px] sm:text-xs text-slate-500 font-medium hidden sm:block">Smart EV Charging & V2G Energy Management</p>
-                </div>
-            </div>
-
-            <!-- Simulated Clock & Run Button (Always Visible on Mobile & Desktop) -->
-            <div class="flex items-center gap-3">
-                <div class="flex flex-col text-right font-mono">
-                    <span class="text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Sim Clock</span>
-                    <span id="header-clock" class="text-sm sm:text-base font-extrabold text-emerald-700">14:00 / 24:00</span>
-                </div>
-                <button onclick="toggleSimulationRun()" id="header-sim-btn" class="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
-                    <i data-lucide="pause" class="w-3.5 h-3.5 fill-current"></i> <span id="header-sim-btn-text">Pause</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Mobile & Desktop Scrollable Navigation Tabs -->
-        <nav class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs font-semibold overflow-x-auto no-scrollbar whitespace-nowrap w-full">
-            <button onclick="switchTab('landing')" id="tab-landing" class="nav-tab px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
-                <i data-lucide="home" class="w-4 h-4"></i> Vision
-            </button>
-            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab px-3.5 py-1.5 sm:py-2 rounded-lg text-emerald-700 bg-white shadow-sm transition flex items-center gap-1.5 border border-slate-200 shrink-0">
-                <i data-lucide="layout-dashboard" class="w-4 h-4 text-emerald-600"></i> Live Dashboard
-            </button>
-            <button onclick="switchTab('fleet')" id="tab-fleet" class="nav-tab px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
-                <i data-lucide="car" class="w-4 h-4"></i> EV Fleet
-            </button>
-            <button onclick="switchTab('ai-control')" id="tab-ai-control" class="nav-tab px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
-                <i data-lucide="cpu" class="w-4 h-4"></i> AI Center
-            </button>
-            <button onclick="switchTab('sim-lab')" id="tab-sim-lab" class="nav-tab px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
-                <i data-lucide="flask-conical" class="w-4 h-4"></i> Sim Lab
-            </button>
-            <button onclick="switchTab('benchmark')" id="tab-benchmark" class="nav-tab px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
-                <i data-lucide="git-compare" class="w-4 h-4"></i> Benchmark
-            </button>
-            <button onclick="switchTab('analytics')" id="tab-analytics" class="nav-tab px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics
-            </button>
-        </nav>
-    </header>
-
-    <!-- MAIN CONTENT CONTAINER -->
-    <main class="flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto space-y-6">
-
-        <!-- ==================== TAB 1: VISION ==================== -->
-        <section id="page-landing" class="tab-page hidden space-y-6 py-2 sm:py-4">
-            <div class="text-center max-w-4xl mx-auto space-y-3 sm:space-y-4">
-                <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 font-semibold text-[11px] sm:text-xs tracking-wide">
-                    NEXT-GENERATION EV ENERGY & GRID STABILIZATION PLATFORM
-                </span>
-                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
-                    Smart EV Charging & <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600">Vehicle-to-Grid (V2G)</span> Management
+                <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+                    GRIDWISE <span class="text-emerald-600">AI</span>
                 </h1>
-                <p class="text-sm sm:text-base text-slate-600 leading-relaxed font-normal px-2">
-                    GridWise AI uses Reinforcement Learning (PPO) to decide when electric vehicles should charge, wait, or return energy to the grid—optimizing electricity costs, renewable solar energy consumption, grid stability, and battery wear.
+                <p class="text-xs text-slate-500 font-medium leading-relaxed">
+                    AI-Powered Digital Twin & Energy Management Platform
                 </p>
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                    <button onclick="switchTab('dashboard')" class="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
-                        Open Real-Time Dashboard <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                    </button>
-                    <button onclick="switchTab('benchmark')" class="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-50 text-slate-800 font-semibold rounded-xl border border-slate-300 shadow-sm transition flex items-center justify-center gap-2">
-                        View AI Benchmark <i data-lucide="git-compare" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ==================== TAB 2: LIVE DASHBOARD ==================== -->
-        <section id="page-dashboard" class="tab-page space-y-6">
-
-            <!-- Real-Time Metric Ticker Cards -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
-                <div class="light-card p-3.5 sm:p-4 rounded-2xl">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Active Fleet</span>
-                    <div class="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 flex items-center gap-1.5">
-                        <i data-lucide="car" class="w-4 h-4 sm:w-5 sm:h-5 text-teal-600"></i> <span id="kpi-active-evs">5 EVs</span>
-                    </div>
-                </div>
-                <div class="light-card p-3.5 sm:p-4 rounded-2xl">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Charging ⚡</span>
-                    <div class="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1 flex items-center gap-1.5">
-                        <i data-lucide="zap" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span id="kpi-charging-evs">2</span>
-                    </div>
-                </div>
-                <div class="light-card p-3.5 sm:p-4 rounded-2xl">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Idle ⏸️</span>
-                    <div class="text-xl sm:text-2xl font-extrabold text-slate-600 mt-1 flex items-center gap-1.5">
-                        <i data-lucide="pause-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span id="kpi-idle-evs">2</span>
-                    </div>
-                </div>
-                <div class="light-card p-3.5 sm:p-4 rounded-2xl">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">V2G Discharge 🔋</span>
-                    <div class="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1 flex items-center gap-1.5">
-                        <i data-lucide="battery-charging" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span id="kpi-v2g-evs">1</span>
-                    </div>
-                </div>
-                <div class="light-card p-3.5 sm:p-4 rounded-2xl">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Grid Load</span>
-                    <div class="text-lg sm:text-xl font-extrabold text-slate-900 mt-1 flex items-center gap-1 font-mono">
-                        <span id="kpi-grid-load">65.0 kW</span>
-                        <span id="kpi-grid-stress" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">LOW</span>
-                    </div>
-                </div>
-                <div class="light-card p-3.5 sm:p-4 rounded-2xl">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Solar Power</span>
-                    <div class="text-lg sm:text-xl font-extrabold text-amber-600 mt-1 flex items-center gap-1 font-mono">
-                        <i data-lucide="sun" class="w-4 h-4 text-amber-500"></i> <span id="kpi-solar-gen">32.4 kW</span>
-                    </div>
-                </div>
-                <div class="light-card p-3.5 sm:p-4 rounded-2xl col-span-2 sm:col-span-1">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Tariff Rate</span>
-                    <div class="text-lg sm:text-xl font-extrabold text-teal-700 mt-1 flex items-center gap-1 font-mono">
-                        <span id="kpi-tariff">₹4.5/kWh</span>
-                    </div>
-                </div>
             </div>
 
-            <!-- OpenAI Strategic LLM Insight Banner -->
-            <div class="light-card p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono">
-                <div class="flex items-start sm:items-center gap-3">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0 mt-0.5 sm:mt-0">
-                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div id="login-error-alert" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                    <span id="login-error-text">Invalid username/email or password.</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1 font-mono">Email / Username</label>
+                    <div class="relative">
+                        <input type="text" id="login-username" required placeholder="admin@gridwise.ai" value="admin@gridwise.ai" class="w-full px-3.5 py-2.5 pl-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-semibold text-slate-700 font-mono">Password</label>
+                        <button type="button" onclick="openForgotPasswordModal()" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Forgot password?</button>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="login-password" required placeholder="••••••••••••" value="GridWise@2026" class="w-full px-3.5 py-2.5 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600">
+                            <i data-lucide="eye" id="login-eye-icon" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer text-slate-600">
+                        <input type="checkbox" id="login-remember" checked class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <span>Remember me</span>
+                    </label>
+                    <span class="text-slate-400 font-mono text-[11px]">Role: Operator / Admin</span>
+                </div>
+
+                <button type="submit" id="login-submit-btn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+                    <span id="login-submit-text">Sign In to Platform</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+
+                <!-- 1-Click Demo Shortcut helper -->
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+                    <span>Demo Credentials Pre-filled</span>
+                    <button type="button" onclick="fillDemoCredentials()" class="text-emerald-600 hover:underline font-bold">Auto-Fill</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- GLOBAL PLATFORM WRAPPER (POST-LOGIN)       -->
+    <!-- ========================================== -->
+    <div id="platform-wrapper" class="hidden min-h-screen flex flex-col">
+
+        <!-- Top Live Real-Time Telemetry & Status Bar -->
+        <div class="bg-slate-900 border-b border-slate-800 px-3 sm:px-6 py-2 flex items-center justify-between text-[11px] font-mono text-slate-300 overflow-x-auto no-scrollbar gap-4">
+            <div class="flex items-center gap-3 whitespace-nowrap">
+                <!-- Data Source Indicator -->
+                <div id="top-source-badge" class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-700/80 font-bold tracking-wide shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="top-source-label">● DIGITAL TWIN — REAL-TIME SIMULATION</span>
+                </div>
+
+                <!-- Operating Mode Switcher -->
+                <div class="flex items-center gap-1.5 bg-slate-800/90 px-2 py-0.5 rounded border border-slate-700 text-[10px]">
+                    <span class="text-slate-400">MODE:</span>
+                    <select id="top-mode-select" onchange="changeOperatingMode(this.value)" class="bg-slate-900 text-emerald-400 font-bold border-0 rounded px-1 py-0.5 focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+                        <option value="digital_twin" selected>Mode A: Digital Twin</option>
+                        <option value="hardware">Mode B: Live Hardware</option>
+                        <option value="hybrid">Mode C: Hybrid System</option>
+                    </select>
+                </div>
+
+                <!-- Multi-Speed Simulation Controls -->
+                <div class="flex items-center gap-1 bg-slate-800/90 p-0.5 rounded border border-slate-700 text-[10px]">
+                    <span class="text-slate-400 px-1">SPEED:</span>
+                    <button onclick="setSimSpeed(1.0)" id="speed-btn-1" class="speed-btn px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold transition">1x (RT)</button>
+                    <button onclick="setSimSpeed(60.0)" id="speed-btn-60" class="speed-btn px-1.5 py-0.5 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">60x (1m/s)</button>
+                    <button onclick="setSimSpeed(900.0)" id="speed-btn-900" class="speed-btn px-1.5 py-0.5 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">900x (15m/s)</button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 whitespace-nowrap pl-2">
+                <!-- Clocks -->
+                <span class="flex items-center gap-1">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>SIM: <strong id="top-sim-clock" class="text-white font-bold">12:00:00</strong></span>
+                </span>
+                <span class="text-slate-700">|</span>
+                <span>WALL: <strong id="top-wall-clock" class="text-slate-400 font-medium">--:--:--</strong></span>
+                <span class="text-slate-700">|</span>
+
+                <!-- High-Precision Electrical Diagnostics -->
+                <span>FREQ: <strong id="top-grid-freq" class="text-cyan-400">50.00 Hz</strong></span>
+                <span class="text-slate-700">|</span>
+                <span>VOLT: <strong id="top-grid-volt" class="text-cyan-400">230.1 V</strong></span>
+                <span class="text-slate-700">|</span>
+                <span>AMB: <strong id="top-ambient-temp" class="text-amber-400">26.5°C</strong></span>
+                <span class="text-slate-700">|</span>
+                <span>IRR: <strong id="top-irradiance" class="text-amber-400">720 W/m²</strong></span>
+                <span class="text-slate-700">|</span>
+
+                <!-- Connection Indicator -->
+                <span id="top-ws-badge" class="flex items-center gap-1.5 text-emerald-400 font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span id="top-ws-status">CONNECTED (<span id="top-latency">8 ms</span>)</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Global Navigation Header -->
+        <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-2.5 flex flex-col gap-2 shadow-sm">
+            <div class="flex items-center justify-between">
+                <!-- Brand & Logo -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="navigatePlatform('platform-home')">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                        <i data-lucide="zap" class="w-5 h-5 sm:w-6 sm:h-6 text-white font-black"></i>
                     </div>
                     <div>
-                        <span class="text-[10px] text-emerald-800 font-bold uppercase tracking-widest flex items-center gap-1">
-                            OpenAI GPT-4o LLM Strategic Energy Advisor
-                        </span>
-                        <p id="openai-insight-text" class="text-xs text-slate-800 font-sans mt-0.5 font-medium leading-normal">
-                            GridWise AI Advisor: High solar availability detected. Prioritizing EV charging during daytime window to minimize peak grid draw.
-                        </p>
+                        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 flex items-center gap-1.5">
+                            GridWise <span class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">PLATFORM</span>
+                        </h1>
+                        <p class="text-[10px] sm:text-xs text-slate-500 font-medium hidden sm:block">AI-Powered Digital Twin & V2G Energy Management</p>
                     </div>
                 </div>
-                <button onclick="fetchOpenAIInsight()" class="w-full sm:w-auto justify-center px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-emerald-700 text-xs font-bold border border-emerald-300 shadow-sm shrink-0 flex items-center gap-1">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh LLM
+
+                <!-- Sim Clock, Quick Actions, and User Profile -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <div class="flex flex-col text-right font-mono mr-1 sm:mr-2">
+                        <span class="text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Sim Clock</span>
+                        <span id="header-clock" class="text-xs sm:text-sm font-extrabold text-emerald-700">14:00 / 24:00</span>
+                    </div>
+
+                    <button onclick="launchSmartDemoApi()" class="hidden md:flex px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition items-center gap-1.5 shadow-md shadow-amber-500/20">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> <span>Peak-Shaving Demo</span>
+                    </button>
+
+                    <button onclick="toggleSimulationRun()" id="header-sim-btn" class="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+                        <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> <span id="header-sim-btn-text">Start</span>
+                    </button>
+
+                    <button onclick="stopSimulationApi()" id="header-stop-btn" class="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-300 transition flex items-center gap-1">
+                        <i data-lucide="square" class="w-3 h-3 fill-current"></i> <span>Stop</span>
+                    </button>
+
+                    <!-- User & Logout -->
+                    <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xs" id="nav-user-avatar" title="Logged in as Admin">
+                            AD
+                        </div>
+                        <button onclick="handleLogout()" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold flex items-center gap-1 transition" title="Sign Out">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> <span class="hidden sm:inline">Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Platform Navigation Menu -->
+            <nav class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs font-semibold overflow-x-auto no-scrollbar whitespace-nowrap w-full">
+                <button onclick="navigatePlatform('platform-home')" id="nav-btn-home" class="plat-nav-btn px-3.5 py-1.5 sm:py-2 rounded-lg text-emerald-700 bg-white shadow-sm transition flex items-center gap-1.5 border border-slate-200 shrink-0">
+                    <i data-lucide="home" class="w-4 h-4 text-emerald-600"></i> Platform Home
+                </button>
+                <button onclick="navigatePlatform('main-software')" id="nav-btn-main" class="plat-nav-btn px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="activity" class="w-4 h-4"></i> Main Software (Monitoring)
+                </button>
+                <button onclick="navigatePlatform('simulator-lab')" id="nav-btn-sim" class="plat-nav-btn px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="flask-conical" class="w-4 h-4"></i> Digital Twin Simulator Lab
+                </button>
+                <button onclick="navigatePlatform('ai-training')" id="nav-btn-training" class="plat-nav-btn px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="brain-circuit" class="w-4 h-4 text-purple-600"></i> AI Training Center
+                </button>
+                <button onclick="navigatePlatform('settings')" id="nav-btn-settings" class="plat-nav-btn px-3.5 py-1.5 sm:py-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="settings" class="w-4 h-4"></i> Settings
+                </button>
+            </nav>
+        </header>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: PLATFORM HOME (APPLICATION LAUNCHER)-->
+        <!-- ========================================== -->
+        <main id="view-platform-home" class="plat-view flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto space-y-6">
+            <div class="text-center max-w-4xl mx-auto space-y-3 py-4">
+                <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 font-semibold text-xs tracking-wide">
+                    GRIDWISE AI UNIFIED PLATFORM
+                </span>
+                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+                    GridWise AI Platform
+                </h1>
+                <p class="text-sm sm:text-base text-slate-600 leading-relaxed font-normal px-2">
+                    An AI-powered digital twin and energy management platform for intelligent EV charging, renewable integration, grid optimization and Vehicle-to-Grid energy management.
+                </p>
+            </div>
+
+            <!-- Three Main Application Launcher Cards -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <!-- Card 1: Main Energy Management -->
+                <div class="light-card p-6 rounded-3xl space-y-5 flex flex-col justify-between border-slate-200 hover:border-emerald-400 transition shadow-lg">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700">
+                            <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-mono text-emerald-700 font-bold uppercase tracking-wider">Operational Fleet Control</span>
+                            <h3 class="text-xl font-bold text-slate-900 mt-0.5">GridWise AI</h3>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">Main Energy Management</p>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Monitor EV fleets, grid conditions, renewable generation, AI decisions, energy flow and V2G operations in real time.
+                        </p>
+                        <div class="flex flex-wrap gap-1.5 pt-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">Live Dashboard</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">EV Fleet</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">Energy Flow</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">Benchmark</span>
+                        </div>
+                    </div>
+                    <button onclick="navigatePlatform('main-software')" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                        <span>Open GridWise AI</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Card 2: Simulator Lab -->
+                <div class="light-card p-6 rounded-3xl space-y-5 flex flex-col justify-between border-slate-200 hover:border-teal-400 transition shadow-lg">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-teal-100 border border-teal-300 flex items-center justify-center text-teal-700">
+                            <i data-lucide="flask-conical" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-mono text-teal-700 font-bold uppercase tracking-wider">Physics Digital Twin Engine</span>
+                            <h3 class="text-xl font-bold text-slate-900 mt-0.5">GridWise Twin</h3>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">Simulator Lab</p>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Create and run realistic EV charging and V2G scenarios using the authoritative Python Digital Twin with thermal derating.
+                        </p>
+                        <div class="flex flex-wrap gap-1.5 pt-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800 text-[11px] font-mono border border-teal-200">Presets</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">Battery Twin</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">4-Hour Forecast</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">CSV Export</span>
+                        </div>
+                    </div>
+                    <button onclick="navigatePlatform('simulator-lab')" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-teal-600/20 transition flex items-center justify-center gap-2">
+                        <span>Open Simulator</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Card 3: AI Training Center -->
+                <div class="light-card p-6 rounded-3xl space-y-5 flex flex-col justify-between border-slate-200 hover:border-purple-400 transition shadow-lg">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-100 border border-purple-300 flex items-center justify-center text-purple-700">
+                            <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-mono text-purple-700 font-bold uppercase tracking-wider">RL Policy Training</span>
+                            <h3 class="text-xl font-bold text-slate-900 mt-0.5">AI Training Center</h3>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">PPO Actor-Critic Neural Policy</p>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Inspect 10-D observation state, train PPO neural networks on Gym environment, and verify reward convergence curves.
+                        </p>
+                        <div class="flex flex-wrap gap-1.5 pt-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-800 text-[11px] font-mono border border-purple-200">10,000 Episodes</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">Actor-Critic</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">Loss Curves</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-mono">XAI Auditing</span>
+                        </div>
+                    </div>
+                    <button onclick="navigatePlatform('ai-training')" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center justify-center gap-2">
+                        <span>Open AI Center</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Real System Health Checks Section -->
+            <div class="max-w-5xl mx-auto light-card p-4 sm:p-6 rounded-3xl space-y-4 border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h4 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600"></i> Platform Health Telemetry (Live Verification)
+                    </h4>
+                    <button onclick="fetchPlatformHealth()" class="text-xs text-teal-700 font-bold hover:underline flex items-center gap-1">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Status
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 font-mono text-xs">
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span class="text-slate-500 text-[10px]">BACKEND</span>
+                        <div class="text-sm font-bold text-emerald-700 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span id="health-backend">HEALTHY</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 block" id="health-backend-info">FastAPI + ASGI</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span class="text-slate-500 text-[10px]">DATABASE</span>
+                        <div class="text-sm font-bold text-emerald-700 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span id="health-database">HEALTHY</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 block" id="health-database-info">SQLite Persistent</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span class="text-slate-500 text-[10px]">DIGITAL TWIN</span>
+                        <div class="text-sm font-bold text-emerald-700 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> <span id="health-twin">ACTIVE</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 block" id="health-twin-info">5 EV Twins Loaded</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span class="text-slate-500 text-[10px]">AI ENGINE</span>
+                        <div class="text-sm font-bold text-emerald-700 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span id="health-ai">READY</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 block" id="health-ai-info">PPO + Safety Layer</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 col-span-2 sm:col-span-1">
+                        <span class="text-slate-500 text-[10px]">WEBSOCKET</span>
+                        <div class="text-sm font-bold text-emerald-700 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span id="health-ws">ONLINE</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 block" id="health-ws-info">/ws/simulation</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: MAIN GRIDWISE SOFTWARE             -->
+        <!-- ========================================== -->
+        <main id="view-main-software" class="plat-view hidden flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto space-y-6">
+            
+            <!-- Secondary Navigation Strip for Main Software -->
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs font-semibold overflow-x-auto no-scrollbar whitespace-nowrap w-full">
+                <button onclick="switchTab('landing')" id="tab-landing" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="eye" class="w-4 h-4"></i> Vision
+                </button>
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab px-3.5 py-1.5 rounded-lg text-emerald-700 bg-white shadow-sm transition flex items-center gap-1.5 border border-slate-200 shrink-0">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-emerald-600"></i> Live Dashboard
+                </button>
+                <button onclick="switchTab('fleet')" id="tab-fleet" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="car" class="w-4 h-4"></i> EV Fleet
+                </button>
+                <button onclick="switchTab('ai-control')" id="tab-ai-control" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="cpu" class="w-4 h-4"></i> AI Center
+                </button>
+                <button onclick="switchTab('benchmark')" id="tab-benchmark" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="git-compare" class="w-4 h-4"></i> Benchmark
+                </button>
+                <button onclick="switchTab('analytics')" id="tab-analytics" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics
                 </button>
             </div>
 
-            <!-- Middle Row: AI Decision Card + Digital Energy Flow Canvas -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Tab 1: Vision -->
+            <section id="page-landing" class="tab-page hidden space-y-6 py-2 sm:py-4">
+                <div class="text-center max-w-4xl mx-auto space-y-3 sm:space-y-4">
+                    <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 font-semibold text-xs tracking-wide">
+                        NEXT-GENERATION EV ENERGY & GRID STABILIZATION PLATFORM
+                    </span>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                        Smart EV Charging & <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600">Vehicle-to-Grid (V2G)</span> Management
+                    </h2>
+                    <p class="text-sm sm:text-base text-slate-600 leading-relaxed font-normal px-2">
+                        GridWise AI uses Reinforcement Learning (PPO) to decide when electric vehicles should charge, wait, or return energy to the grid—optimizing electricity costs, renewable solar energy consumption, grid stability, and battery wear.
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                        <button onclick="switchTab('dashboard')" class="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                            Open Real-Time Dashboard <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="switchTab('benchmark')" class="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-50 text-slate-800 font-semibold rounded-xl border border-slate-300 shadow-sm transition flex items-center justify-center gap-2">
+                            View AI Benchmark <i data-lucide="git-compare" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
 
-                <!-- AI Decision Highlight Card (5 cols) -->
-                <div class="lg:col-span-5 light-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                        <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm sm:text-base">
-                            <i data-lucide="cpu" class="w-5 h-5 text-emerald-600"></i> Real-Time AI Decision Engine
-                        </h3>
-                        <span class="text-[9px] sm:text-[10px] font-mono px-2 py-1 rounded bg-slate-100 border border-slate-300 text-slate-700 font-semibold">PPO + Safety Layer</span>
+            <!-- Tab 2: Live Dashboard -->
+            <section id="page-dashboard" class="tab-page space-y-6">
+                <!-- Real-Time Physical Energy Metric Cards (Instantaneous kW & Accumulated kWh Today) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4 font-mono">
+                    <!-- Card 1: Solar Generation -->
+                    <div class="light-card p-3.5 rounded-2xl border-l-4 border-amber-500 bg-white space-y-1">
+                        <div class="flex items-center justify-between text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <span>Solar Gen</span>
+                            <i data-lucide="sun" class="w-4 h-4 text-amber-500"></i>
+                        </div>
+                        <div class="text-lg sm:text-xl font-extrabold text-amber-600">
+                            <span id="kpi-solar-power-kw">0.0 kW</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1">
+                            <span>Today:</span>
+                            <strong id="kpi-solar-energy-kwh" class="text-slate-800">0.0 kWh</strong>
+                        </div>
                     </div>
 
-                    <div id="ai-decision-card-content" class="space-y-4">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                                <span class="text-[11px] text-slate-500 font-medium">Active Highlighted EV</span>
-                                <h4 id="decision-ev-name" class="text-base sm:text-lg font-bold text-slate-900 font-mono">EV-001 (Tesla Model 3)</h4>
-                            </div>
-                            <div id="decision-action-badge" class="self-start sm:self-auto px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold flex items-center gap-1.5 font-mono pulse-charge">
-                                ⚡ CHARGE (+7.4 kW)
-                            </div>
+                    <!-- Card 2: Grid Import -->
+                    <div class="light-card p-3.5 rounded-2xl border-l-4 border-sky-500 bg-white space-y-1">
+                        <div class="flex items-center justify-between text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <span>Grid Import</span>
+                            <i data-lucide="arrow-down-left" class="w-4 h-4 text-sky-500"></i>
                         </div>
-
-                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span class="text-[10px] sm:text-[11px] font-semibold text-slate-500 flex items-center gap-1">
-                                <i data-lucide="info" class="w-3.5 h-3.5 text-teal-600"></i> Decision Rationale
-                            </span>
-                            <p id="decision-reason-text" class="text-xs text-slate-800 leading-relaxed font-mono">
-                                Low electricity tariff + Solar generation available -> Prioritizing charging
-                            </p>
+                        <div class="text-lg sm:text-xl font-extrabold text-sky-700">
+                            <span id="kpi-grid-import-kw">0.0 kW</span>
                         </div>
+                        <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1">
+                            <span>Today:</span>
+                            <strong id="kpi-grid-import-kwh" class="text-slate-800">0.0 kWh</strong>
+                        </div>
+                    </div>
 
-                        <!-- Mini Score Bars -->
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-xs text-slate-500 font-mono">
-                                <span>Action Q-Scores</span>
-                                <span>Step Reward: <strong id="decision-reward-val" class="text-emerald-700 font-bold">+18.4</strong></span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
-                                <div class="p-2 rounded-xl bg-slate-100 border border-slate-200">
-                                    <span class="text-slate-500 text-[10px]">IDLE</span>
-                                    <div id="score-idle-val" class="font-bold text-slate-800 mt-0.5">1.0</div>
-                                </div>
-                                <div class="p-2 rounded-xl bg-emerald-50 border border-emerald-300">
-                                    <span class="text-emerald-700 font-bold text-[10px]">CHARGE</span>
-                                    <div id="score-charge-val" class="font-bold text-emerald-700 mt-0.5">18.4</div>
-                                </div>
-                                <div class="p-2 rounded-xl bg-slate-100 border border-slate-200">
-                                    <span class="text-amber-600 text-[10px]">DISCHARGE</span>
-                                    <div id="score-discharge-val" class="font-bold text-slate-800 mt-0.5">-5.0</div>
-                                </div>
-                            </div>
+                    <!-- Card 3: Grid Export -->
+                    <div class="light-card p-3.5 rounded-2xl border-l-4 border-teal-500 bg-white space-y-1">
+                        <div class="flex items-center justify-between text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <span>Grid Export</span>
+                            <i data-lucide="arrow-up-right" class="w-4 h-4 text-teal-500"></i>
+                        </div>
+                        <div class="text-lg sm:text-xl font-extrabold text-teal-700">
+                            <span id="kpi-grid-export-kw">0.0 kW</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1">
+                            <span>Today:</span>
+                            <strong id="kpi-grid-export-kwh" class="text-slate-800">0.0 kWh</strong>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: EV Fleet Charging -->
+                    <div class="light-card p-3.5 rounded-2xl border-l-4 border-emerald-500 bg-white space-y-1">
+                        <div class="flex items-center justify-between text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <span>EV Charging</span>
+                            <i data-lucide="zap" class="w-4 h-4 text-emerald-500"></i>
+                        </div>
+                        <div class="text-lg sm:text-xl font-extrabold text-emerald-600">
+                            <span id="kpi-ev-charging-kw">0.0 kW</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1">
+                            <span>Today:</span>
+                            <strong id="kpi-ev-charging-kwh" class="text-slate-800">0.0 kWh</strong>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: V2G Discharge -->
+                    <div class="light-card p-3.5 rounded-2xl border-l-4 border-purple-500 bg-white space-y-1">
+                        <div class="flex items-center justify-between text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <span>V2G Discharge</span>
+                            <i data-lucide="battery-charging" class="w-4 h-4 text-purple-500"></i>
+                        </div>
+                        <div class="text-lg sm:text-xl font-extrabold text-purple-700">
+                            <span id="kpi-v2g-discharge-kw">0.0 kW</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1">
+                            <span>Today:</span>
+                            <strong id="kpi-v2g-discharge-kwh" class="text-slate-800">0.0 kWh</strong>
+                        </div>
+                    </div>
+
+                    <!-- Card 6: Station Aux & Losses -->
+                    <div class="light-card p-3.5 rounded-2xl border-l-4 border-slate-500 bg-white space-y-1">
+                        <div class="flex items-center justify-between text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <span>Aux & Losses</span>
+                            <i data-lucide="server" class="w-4 h-4 text-slate-500"></i>
+                        </div>
+                        <div class="text-lg sm:text-xl font-extrabold text-slate-800">
+                            <span id="kpi-station-aux-kw">6.5 kW</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1">
+                            <span>Today:</span>
+                            <strong id="kpi-station-aux-kwh" class="text-slate-800">0.0 kWh</strong>
+                        </div>
+                    </div>
+
+                    <!-- Card 7: Conservation Balance Verification -->
+                    <div class="light-card p-3.5 rounded-2xl border-l-4 border-emerald-600 bg-slate-900 text-white space-y-1 col-span-2 sm:col-span-1">
+                        <div class="flex items-center justify-between text-slate-400 text-[9px] uppercase font-bold">
+                            <span>Conservation (Pin=Pout)</span>
+                            <span id="kpi-conservation-badge" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">BALANCED</span>
+                        </div>
+                        <div class="text-xs font-bold text-emerald-400 pt-1">
+                            <span id="kpi-pin-val">0.0</span> = <span id="kpi-pout-val">0.0</span> kW
+                        </div>
+                        <div class="text-[9px] text-slate-400 flex items-center justify-between border-t border-slate-800 pt-1">
+                            <span>Err Tol:</span>
+                            <strong id="kpi-perr-val" class="text-cyan-400">&le; 0.05 kW</strong>
                         </div>
                     </div>
                 </div>
 
-                <!-- Digital Energy Flow SVG Canvas (7 cols) -->
-                <div class="lg:col-span-7 light-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                        <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm sm:text-base">
-                            <i data-lucide="activity" class="w-5 h-5 text-teal-600"></i> Digital Energy Flow Visualization
-                        </h3>
-                        <span id="flow-status-text" class="text-xs text-emerald-700 font-mono font-bold">FLOW: Solar ➔ Grid ➔ EV</span>
+                <!-- Operational Real-Time Alerts Ticker & Ledger Drawer Trigger -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-900 text-white border border-slate-800 font-mono text-xs">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[10px] shrink-0 flex items-center gap-1">
+                            <i data-lucide="bell" class="w-3 h-3"></i> LIVE ALERTS
+                        </span>
+                        <div id="alerts-ticker-container" class="truncate text-slate-300 text-xs">
+                            <span id="alerts-ticker-text" class="text-emerald-400 font-sans font-medium">All microgrid feeders nominal. Real-time energy conservation satisfied.</span>
+                        </div>
                     </div>
+                    <button onclick="openLedgerModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-bold text-[11px] shrink-0 flex items-center justify-center gap-1.5 transition">
+                        <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Energy Ledger (SQLite)
+                    </button>
+                </div>
 
-                    <!-- Flow SVG with Animated Moving Particle Dots -->
-                    <div class="relative w-full h-[240px] sm:h-[260px] bg-slate-50 rounded-xl border border-slate-200 p-2 sm:p-4 flex items-center justify-between overflow-hidden">
-                        <!-- Node 1: Solar -->
-                        <div class="flex flex-col items-center gap-1 sm:gap-2 z-10">
-                            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-600 shadow-md shadow-amber-500/10">
-                                <i data-lucide="sun" class="w-6 h-6 sm:w-8 sm:h-8"></i>
-                            </div>
-                            <span class="text-[10px] sm:text-xs font-bold text-amber-800">SOLAR</span>
-                            <span id="flow-solar-kw" class="text-[10px] sm:text-xs font-mono text-slate-600">32.4 kW</span>
+                <!-- OpenAI Strategic LLM Insight Banner -->
+                <div class="light-card p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono">
+                    <div class="flex items-start sm:items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0 mt-0.5 sm:mt-0">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-emerald-800 font-bold uppercase tracking-widest flex items-center gap-1">
+                                OpenAI GPT-4o LLM Strategic Energy Advisor
+                            </span>
+                            <p id="openai-insight-text" class="text-xs text-slate-800 font-sans mt-0.5 font-medium leading-normal">
+                                GridWise AI Advisor: High solar availability detected. Prioritizing EV charging during daytime window to minimize peak grid draw.
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="fetchOpenAIInsight()" class="w-full sm:w-auto justify-center px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-emerald-700 text-xs font-bold border border-emerald-300 shadow-sm shrink-0 flex items-center gap-1">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh LLM
+                    </button>
+                </div>
+
+                <!-- Middle Row: AI Decision Card + Digital Energy Flow Canvas -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- AI Decision Highlight Card (5 cols) -->
+                    <div class="lg:col-span-5 light-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                            <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm sm:text-base">
+                                <i data-lucide="cpu" class="w-5 h-5 text-emerald-600"></i> Real-Time AI Decision Engine
+                            </h3>
+                            <span class="text-[9px] sm:text-[10px] font-mono px-2 py-1 rounded bg-slate-100 border border-slate-300 text-slate-700 font-semibold">PPO + Safety Layer</span>
                         </div>
 
-                        <!-- Connector Lines & Moving Particle Flow -->
-                        <svg class="absolute inset-0 w-full h-full pointer-events-none" id="flow-svg-canvas">
-                            <defs>
-                                <linearGradient id="gradSolarGrid" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#f59e0b" />
-                                    <stop offset="100%" stop-color="#0284c7" />
-                                </linearGradient>
-                                <linearGradient id="gradGridEV" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#0284c7" />
-                                    <stop offset="100%" stop-color="#10b981" />
-                                </linearGradient>
-                            </defs>
-                            <!-- Base Lines -->
-                            <path d="M 60,120 L 220,120" stroke="#cbd5e1" stroke-width="3" class="sm:hidden" />
-                            <path d="M 260,120 L 420,120" stroke="#cbd5e1" stroke-width="3" class="sm:hidden" />
-                            
-                            <path d="M 90,130 L 330,130" stroke="#cbd5e1" stroke-width="3" class="hidden sm:block" />
-                            <path d="M 370,130 L 610,130" stroke="#cbd5e1" stroke-width="3" class="hidden sm:block" />
+                        <div id="ai-decision-card-content" class="space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <span class="text-[11px] text-slate-500 font-medium">Active Highlighted EV</span>
+                                    <h4 id="decision-ev-name" class="text-base sm:text-lg font-bold text-slate-900 font-mono">EV-001 (Tesla Model 3)</h4>
+                                </div>
+                                <div id="decision-action-badge" class="self-start sm:self-auto px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold flex items-center gap-1.5 font-mono pulse-charge">
+                                    ⚡ CHARGE (+7.4 kW)
+                                </div>
+                            </div>
 
-                            <!-- Animated Moving Particle Overlay Lines -->
-                            <path id="path-solar-grid-mobile" d="M 60,120 L 220,120" stroke="url(#gradSolarGrid)" stroke-width="4" class="flow-particle sm:hidden" />
-                            <path id="path-grid-ev-mobile" d="M 260,120 L 420,120" stroke="url(#gradGridEV)" stroke-width="4" class="flow-particle sm:hidden" />
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                <span class="text-[10px] sm:text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                                    <i data-lucide="info" class="w-3.5 h-3.5 text-teal-600"></i> Decision Rationale
+                                </span>
+                                <p id="decision-reason-text" class="text-xs text-slate-800 leading-relaxed font-mono">
+                                    Low electricity tariff + Solar generation available -> Prioritizing charging
+                                </p>
+                            </div>
 
-                            <path id="path-solar-grid" d="M 90,130 L 330,130" stroke="url(#gradSolarGrid)" stroke-width="4" class="flow-particle hidden sm:block" />
-                            <path id="path-grid-ev" d="M 370,130 L 610,130" stroke="url(#gradGridEV)" stroke-width="4" class="flow-particle hidden sm:block" />
-                        </svg>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs text-slate-500 font-mono">
+                                    <span>Action Q-Scores</span>
+                                    <span>Step Reward: <strong id="decision-reward-val" class="text-emerald-700 font-bold">+18.4</strong></span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                                    <div class="p-2 rounded-xl bg-slate-100 border border-slate-200">
+                                        <span class="text-slate-500 text-[10px]">IDLE</span>
+                                        <div id="score-idle-val" class="font-bold text-slate-800 mt-0.5">1.0</div>
+                                    </div>
+                                    <div class="p-2 rounded-xl bg-emerald-50 border border-emerald-300">
+                                        <span class="text-emerald-700 font-bold text-[10px]">CHARGE</span>
+                                        <div id="score-charge-val" class="font-bold text-emerald-700 mt-0.5">18.4</div>
+                                    </div>
+                                    <div class="p-2 rounded-xl bg-slate-100 border border-slate-200">
+                                        <span class="text-amber-600 text-[10px]">DISCHARGE</span>
+                                        <div id="score-discharge-val" class="font-bold text-slate-800 mt-0.5">-5.0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Digital Energy Flow SVG Canvas (7 cols) -->
+                    <div class="lg:col-span-7 light-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                            <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm sm:text-base">
+                                <i data-lucide="activity" class="w-5 h-5 text-teal-600"></i> Microgrid Live Energy Flow Topology
+                            </h3>
+                            <span id="flow-status-text" class="text-xs text-emerald-700 font-mono font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">FLOW: Real-Time Operations</span>
+                        </div>
+
+                        <!-- 5-Node Microgrid Topology Layout -->
+                        <div class="relative w-full h-[280px] bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col justify-between overflow-hidden font-mono select-none">
+                            <!-- Top Row: Primary Utility Grid -->
+                            <div class="flex justify-center z-10">
+                                <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-sky-500/50 flex items-center gap-2 text-sky-400 shadow-lg shadow-sky-900/20">
+                                    <div class="w-7 h-7 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                                        <i data-lucide="utility-pole" class="w-4 h-4 text-sky-400"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="text-[9px] text-slate-400 uppercase font-bold">Utility Grid</div>
+                                        <div class="text-xs font-bold text-sky-300 flex items-center gap-1">
+                                            <span id="topo-grid-dir">⬇ IN:</span> <span id="flow-grid-kw">0.0 kW</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Middle Row: Solar PV (Left) <---> AC Central Bus (Center) <---> EV Fleet & V2G (Right) -->
+                            <div class="flex items-center justify-between z-10 px-2 sm:px-4">
+                                <!-- Node: Solar PV -->
+                                <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-amber-500/50 flex items-center gap-2 text-amber-400 shadow-lg shadow-amber-900/20">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                        <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="text-[9px] text-slate-400 uppercase font-bold">Solar PV</div>
+                                        <div class="text-xs font-bold text-amber-300" id="flow-solar-kw">0.0 kW</div>
+                                    </div>
+                                </div>
+
+                                <!-- Center Hub: Station AC Bus -->
+                                <div class="px-4 py-2 rounded-2xl bg-slate-900/90 border-2 border-emerald-500 text-center shadow-xl shadow-emerald-950/40">
+                                    <div class="text-[9px] font-extrabold text-emerald-400 tracking-wider">STATION AC BUS</div>
+                                    <div class="text-sm font-extrabold text-white" id="flow-bus-kw">0.0 kW</div>
+                                    <div class="text-[8px] text-slate-400">Σ Pin = Σ Pout</div>
+                                </div>
+
+                                <!-- Node: EV Fleet & V2G Storage -->
+                                <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-emerald-500/50 flex items-center gap-2 text-emerald-400 shadow-lg shadow-emerald-900/20">
+                                    <div class="text-right">
+                                        <div class="text-[9px] text-slate-400 uppercase font-bold">EVs & V2G</div>
+                                        <div class="text-xs font-bold text-emerald-300" id="flow-ev-kw">0.0 kW</div>
+                                    </div>
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                                        <i data-lucide="car" class="w-4 h-4 text-emerald-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Row: Station Aux Load & System Losses -->
+                            <div class="flex justify-center z-10">
+                                <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 flex items-center gap-2 text-slate-300 shadow-lg">
+                                    <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center">
+                                        <i data-lucide="server" class="w-4 h-4 text-slate-400"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="text-[9px] text-slate-400 uppercase font-bold">Station Aux & Losses</div>
+                                        <div class="text-xs font-bold text-slate-200" id="flow-aux-kw">6.5 kW</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Flow Vector Canvas Connecting All 5 Nodes -->
+                            <svg class="absolute inset-0 w-full h-full pointer-events-none" id="flow-svg-canvas" viewBox="0 0 1000 280" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="gradSolar" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#f59e0b" />
+                                        <stop offset="100%" stop-color="#10b981" />
+                                    </linearGradient>
+                                    <linearGradient id="gradGridIn" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="#0284c7" />
+                                        <stop offset="100%" stop-color="#10b981" />
+                                    </linearGradient>
+                                    <linearGradient id="gradGridOut" x1="0%" y1="100%" x2="0%" y2="0%">
+                                        <stop offset="0%" stop-color="#10b981" />
+                                        <stop offset="100%" stop-color="#06b6d4" />
+                                    </linearGradient>
+                                    <linearGradient id="gradEVCharge" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#10b981" />
+                                        <stop offset="100%" stop-color="#34d399" />
+                                    </linearGradient>
+                                    <linearGradient id="gradEVDischarge" x1="100%" y1="0%" x2="0%" y2="0%">
+                                        <stop offset="0%" stop-color="#a855f7" />
+                                        <stop offset="100%" stop-color="#f59e0b" />
+                                    </linearGradient>
+                                    <linearGradient id="gradAux" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="#10b981" />
+                                        <stop offset="100%" stop-color="#94a3b8" />
+                                    </linearGradient>
+                                </defs>
+
+                                <!-- Top-to-Bus Path (Grid) -->
+                                <path d="M 500 45 L 500 115" stroke="#334155" stroke-width="2" stroke-dasharray="4,4" />
+                                <path id="path-grid-bus" d="M 500 45 L 500 115" stroke="url(#gradGridIn)" stroke-width="3.5" class="flow-particle" />
+
+                                <!-- Solar-to-Bus Path (Left) -->
+                                <path d="M 120 140 L 420 140" stroke="#334155" stroke-width="2" stroke-dasharray="4,4" />
+                                <path id="path-solar-bus" d="M 120 140 L 420 140" stroke="url(#gradSolar)" stroke-width="3.5" class="flow-particle" />
+
+                                <!-- Bus-to-EV / V2G Path (Right) -->
+                                <path d="M 580 140 L 820 140" stroke="#334155" stroke-width="2" stroke-dasharray="4,4" />
+                                <path id="path-bus-ev" d="M 580 140 L 820 140" stroke="url(#gradEVCharge)" stroke-width="3.5" class="flow-particle" />
+
+                                <!-- Bus-to-Aux Path (Bottom) -->
+                                <path d="M 500 165 L 500 235" stroke="#334155" stroke-width="2" stroke-dasharray="4,4" />
+                                <path id="path-bus-aux" d="M 500 165 L 500 235" stroke="url(#gradAux)" stroke-width="2.5" class="flow-particle" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Synchronized Telemetry Charts (2x2 Grid) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="light-card p-4 sm:p-5 rounded-2xl space-y-3">
+                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between">
+                            <span><i data-lucide="line-chart" class="w-4 h-4 text-teal-600 inline mr-1"></i> Grid Load vs EV Demand (24h)</span>
+                            <span class="text-[10px] text-slate-500 font-normal font-mono">kW Power Profile</span>
+                        </h4>
+                        <div class="h-56 sm:h-60">
+                            <canvas id="chart-grid-load"></canvas>
+                        </div>
+                    </div>
+                    <div class="light-card p-4 sm:p-5 rounded-2xl space-y-3">
+                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between">
+                            <span><i data-lucide="sun" class="w-4 h-4 text-amber-600 inline mr-1"></i> Tariff Rates & Solar Profile</span>
+                            <span class="text-[10px] text-slate-500 font-normal font-mono">Simulated Electricity Price</span>
+                        </h4>
+                        <div class="h-56 sm:h-60">
+                            <canvas id="chart-tariff-solar"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 3: EV Fleet & Controls -->
+            <section id="page-fleet" class="tab-page hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">EV Fleet & Real-Time Controls</h2>
+                        <p class="text-xs text-slate-500">Monitor simulated EVs and issue real-time operator action overrides.</p>
+                    </div>
+                    <button onclick="openAddEvModal()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add New EV
+                    </button>
+                </div>
+
+                <div class="light-card rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto no-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
+                            <thead class="bg-slate-100 text-slate-600 uppercase font-mono border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3 sm:p-4">EV ID / Model</th>
+                                    <th class="p-3 sm:p-4">Current SOC %</th>
+                                    <th class="p-3 sm:p-4">Target SOC %</th>
+                                    <th class="p-3 sm:p-4">Window</th>
+                                    <th class="p-3 sm:p-4">Power Limits</th>
+                                    <th class="p-3 sm:p-4">Status</th>
+                                    <th class="p-3 sm:p-4 text-center">Real-Time Operator Override</th>
+                                    <th class="p-3 sm:p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ev-fleet-table-body" class="divide-y divide-slate-200 font-mono">
+                                <!-- Rows populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 4: AI Center -->
+            <section id="page-ai-control" class="tab-page hidden space-y-6">
+                <div class="light-card p-4 sm:p-6 rounded-2xl space-y-4">
+                    <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="cpu" class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600"></i> Reinforcement Learning Architecture
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-xs font-mono">
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Algorithm</span>
+                            <div class="text-sm font-bold text-slate-900 mt-1">Gymnasium PPO + Multi-Objective Reward</div>
+                        </div>
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Environment</span>
+                            <div class="text-sm font-bold text-slate-900 mt-1">Gymnasium 1.3.0 EVChargingEnv (10-D Box)</div>
+                        </div>
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Safety Layer</span>
+                            <div class="text-sm font-bold text-emerald-700 mt-1">Deterministic ConstraintEngine Active</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 24-Hour AI Predictive Schedule Matrix -->
+                <div class="light-card p-4 sm:p-6 rounded-2xl space-y-4">
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-5 h-5 text-teal-600"></i> 24-Hour AI Predictive Schedule Matrix
+                    </h3>
+                    <div class="overflow-x-auto no-scrollbar">
+                        <div id="ai-schedule-matrix" class="min-w-[850px] space-y-3 font-mono text-xs"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 5: Benchmark -->
+            <section id="page-benchmark" class="tab-page hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">AI vs Traditional Charging Benchmark</h2>
+                        <p class="text-xs text-slate-500">Comparative evaluation proving RL optimization gains against uncontrolled immediate charging.</p>
+                    </div>
+                    <button onclick="runBenchmarkApi()" id="btn-run-benchmark" class="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                        <i data-lucide="play-circle" class="w-5 h-5"></i> Run 24-Hour Benchmark
+                    </button>
+                </div>
+
+                <div class="light-card rounded-2xl overflow-hidden p-4 sm:p-6 space-y-4">
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900">Quantitative Performance Summary</h3>
+                    <div class="overflow-x-auto no-scrollbar">
+                        <table class="w-full text-left text-xs font-mono min-w-[600px]">
+                            <thead class="bg-slate-100 text-slate-600 uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3 sm:p-4">Key Performance Indicator</th>
+                                    <th class="p-3 sm:p-4 text-amber-700">Traditional Immediate Charging</th>
+                                    <th class="p-3 sm:p-4 text-emerald-700">GridWise AI (RL + Safety Layer)</th>
+                                    <th class="p-3 sm:p-4 text-teal-700">Improvement Delta</th>
+                                </tr>
+                            </thead>
+                            <tbody id="benchmark-table-body" class="divide-y divide-slate-200">
+                                <tr>
+                                    <td class="p-3 sm:p-4 font-semibold text-slate-900">Total Grid Energy Cost</td>
+                                    <td class="p-3 sm:p-4 text-amber-700" id="bm-cost-trad">₹1,924.74</td>
+                                    <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-cost-ai">₹0.00 (Solar Shifted)</td>
+                                    <td class="p-3 sm:p-4 text-teal-700 font-bold" id="bm-cost-savings">100.0% Savings</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 sm:p-4 font-semibold text-slate-900">Peak Grid Load (kW)</td>
+                                    <td class="p-3 sm:p-4 text-amber-700" id="bm-peak-trad">98.8 kW</td>
+                                    <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-peak-ai">76.0 kW</td>
+                                    <td class="p-3 sm:p-4 text-teal-700 font-bold" id="bm-peak-red">-23.1% Peak Shaved</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 sm:p-4 font-semibold text-slate-900">Solar Energy Consumed (kWh)</td>
+                                    <td class="p-3 sm:p-4 text-amber-700" id="bm-solar-trad">130.1 kWh</td>
+                                    <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-solar-ai">181.1 kWh</td>
+                                    <td class="p-3 sm:p-4 text-teal-700 font-bold" id="bm-solar-gain">+39.2% Utilization</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 sm:p-4 font-semibold text-slate-900">V2G Energy Supplied (kWh)</td>
+                                    <td class="p-3 sm:p-4 text-slate-500" id="bm-v2g-trad">0.0 kWh</td>
+                                    <td class="p-3 sm:p-4 text-amber-700 font-bold" id="bm-v2g-ai">21.5 kWh</td>
+                                    <td class="p-3 sm:p-4 text-amber-700 font-bold" id="bm-v2g-revenue">Grid Support Active</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 sm:p-4 font-semibold text-slate-900">User Departure Goal Satisfaction</td>
+                                    <td class="p-3 sm:p-4 text-amber-700" id="bm-sat-trad">100.0%</td>
+                                    <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-sat-ai">100.0%</td>
+                                    <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-sat-diff">100% Guaranteed</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="light-card p-4 sm:p-5 rounded-2xl space-y-3">
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider font-mono">24-Hour Grid Load Profile Comparison</h4>
+                    <div class="h-56 sm:h-64">
+                        <canvas id="chart-benchmark-grid"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 6: Analytics & Reports -->
+            <section id="page-analytics" class="tab-page hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Performance Analytics & Audit Reports</h2>
+                        <p class="text-xs text-slate-500">Real-time analytical KPIs, historical database runs, and report generation.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="generateReportModal()" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-600/20 transition flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-4 h-4"></i> Generate Simulation Report
+                        </button>
+                        <button onclick="fetchSimulationHistoryApi()" class="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs uppercase border border-slate-300 shadow-sm transition flex items-center gap-1.5">
+                            <i data-lucide="history" class="w-4 h-4"></i> Refresh History
+                        </button>
+                    </div>
+                </div>
+
+                <div class="light-card p-4 sm:p-6 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Live Aggregated Operational Metrics</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-xs font-mono">
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <span class="text-slate-500 text-[10px] sm:text-xs">Total Charging Cost</span>
+                            <div id="an-charging-cost" class="text-xl sm:text-2xl font-black text-slate-900">₹0.00</div>
+                        </div>
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <span class="text-slate-500 text-[10px] sm:text-xs">V2G Revenue</span>
+                            <div id="an-v2g-revenue" class="text-xl sm:text-2xl font-black text-amber-600">₹0.00</div>
+                        </div>
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <span class="text-slate-500 text-[10px] sm:text-xs">Solar Utilization %</span>
+                            <div id="an-solar-pct" class="text-xl sm:text-2xl font-black text-emerald-700">0.0%</div>
+                        </div>
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <span class="text-slate-500 text-[10px] sm:text-xs">AI Safety Overrides</span>
+                            <div id="an-safety-count" class="text-xl sm:text-2xl font-black text-teal-700">0 Overrides</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historical Simulation Runs Table -->
+                <div class="light-card rounded-2xl p-4 sm:p-6 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="database" class="w-4 h-4 text-teal-600"></i> Persisted Simulation Runs (Database)
+                    </h3>
+                    <div class="overflow-x-auto no-scrollbar">
+                        <table class="w-full text-left text-xs font-mono min-w-[650px]">
+                            <thead class="bg-slate-100 text-slate-600 uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Run ID / Scenario</th>
+                                    <th class="p-3">Created</th>
+                                    <th class="p-3">Fleet Size</th>
+                                    <th class="p-3">Timestep</th>
+                                    <th class="p-3">Charging Cost</th>
+                                    <th class="p-3">Peak Load</th>
+                                    <th class="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-slate-200">
+                                <tr>
+                                    <td colspan="7" class="p-4 text-center text-slate-400">Loading historical simulation records...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: DIGITAL TWIN SIMULATOR LAB         -->
+        <!-- ========================================== -->
+        <main id="view-simulator-lab" class="plat-view hidden flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto space-y-6">
+            <!-- Simulator Lab Header Banner -->
+            <div class="light-card p-6 sm:p-8 rounded-3xl space-y-3 bg-gradient-to-r from-teal-900 via-slate-900 to-slate-900 text-white border-none shadow-xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="space-y-1.5">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 text-teal-300 font-mono text-xs">
+                            <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span> AUTHORITATIVE PYTHON DIGITAL TWIN ENGINE
+                        </span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Digital Twin Simulator</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 font-normal">
+                            Model, simulate and analyze EV charging and vehicle-to-grid energy systems.
+                        </p>
+                    </div>
+                    <!-- Quick Demo Launcher Buttons inside Simulator -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="launch24HourBatchRun()" id="btn-sim-run-24h" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
+                            <i data-lucide="play-circle" class="w-4 h-4"></i> Run 24-Hour AI vs Baseline
+                        </button>
+                        <button onclick="launchSmartDemoApi()" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i> Peak-Shaving Demo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Simulation Controls Toolbar -->
+                <div class="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 font-mono text-xs">
+                        <span class="text-slate-400">Controls:</span>
+                        <button onclick="toggleSimulationRun()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition flex items-center gap-1">
+                            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> <span id="sim-ctrl-start-text">Start</span>
+                        </button>
+                        <button onclick="pauseSimulationApi()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg transition flex items-center gap-1">
+                            <i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause
+                        </button>
+                        <button onclick="simStepApi()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-300 font-semibold rounded-lg transition flex items-center gap-1">
+                            <i data-lucide="step-forward" class="w-3.5 h-3.5"></i> Step
+                        </button>
+                        <button onclick="stopSimulationApi()" class="px-3 py-1.5 bg-slate-800 hover:bg-rose-900/60 text-rose-300 font-semibold rounded-lg transition flex items-center gap-1">
+                            <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i> Stop
+                        </button>
+                        <button onclick="simResetApi()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold rounded-lg transition flex items-center gap-1">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset
+                        </button>
+                        <button onclick="downloadExperimentCsv()" class="px-3 py-1.5 bg-teal-800 hover:bg-teal-700 text-teal-200 font-bold rounded-lg transition flex items-center gap-1 shadow-sm">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-mono text-slate-300">
+                        <span>Time: <strong id="sim-clock-display" class="text-emerald-400">00:00 / 24:00</strong></span>
+                        <span>Timestep: <strong id="sim-timestep-display" class="text-cyan-400">15 min</strong></span>
+                        <span>State: <strong id="sim-status-display" class="text-amber-400">READY</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 1: SCENARIO BUILDER -->
+            <div class="light-card p-6 rounded-3xl space-y-5 border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-5 h-5 text-teal-600"></i> Scenario Builder & Preset Library
+                        </h3>
+                        <p class="text-xs text-slate-500">Configure fleet dimensions, grid capacity, solar curves, dynamic TOU pricing and AI policy.</p>
+                    </div>
+                    <span class="text-xs font-mono px-2.5 py-1 rounded bg-teal-50 border border-teal-200 text-teal-800 font-bold">Python Digital Twin Configurator</span>
+                </div>
+
+                <!-- Scenario Presets Bar -->
+                <div class="p-3.5 bg-teal-50/70 rounded-2xl border border-teal-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="bookmark" class="w-4 h-4 text-teal-700"></i>
+                        <span class="font-bold text-slate-900">Standard Test Scenario Presets:</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="preset-selector" onchange="applyPresetSelection(this.value)" class="px-3 py-1.5 rounded-xl bg-white border border-teal-300 text-slate-800 font-bold text-xs focus:ring-2 focus:ring-teal-500">
+                            <option value="" disabled selected>-- Select Scenario Preset --</option>
+                            <option value="normal_day">☀️ Normal Diurnal Day (5 EVs, 40kW Solar, ₹4.5-₹12/kWh)</option>
+                            <option value="high_solar">⚡ High Solar Day (75kW Solar, 8 EVs, High V2G Potential)</option>
+                            <option value="peak_stress">🔥 Peak Grid Stress Day (70kW Grid, High TOU ₹16/kWh)</option>
+                            <option value="overcast">☁️ Overcast Low-Solar (15kW Solar, 30% Cloud Factor)</option>
+                            <option value="high_ev_fleet">🚗 High EV Fleet Day (10 EVs, Heavy Demand)</option>
+                            <option value="v2g_stress">🔄 V2G Stress Test (High Discharging Incentives)</option>
+                        </select>
+                        <button type="button" onclick="loadSelectedPreset()" class="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition">
+                            Load Preset
+                        </button>
+                    </div>
+                </div>
+
+                <form id="scenario-builder-form" onsubmit="handleScenarioBuilderSubmit(event)" class="space-y-4">
+                    <!-- Scenario General Params -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs font-mono">
+                        <div>
+                            <label class="block text-slate-700 font-bold mb-1">Scenario Name</label>
+                            <input type="text" id="sc-name" value="Smart Grid Peak-Shaving Scenario" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-slate-700 font-bold mb-1">Timestep Interval</label>
+                            <select id="sc-timestep" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-bold">
+                                <option value="1">1 minute</option>
+                                <option value="5">5 minutes</option>
+                                <option value="15" selected>15 minutes (Standard)</option>
+                                <option value="60">1 hour</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-700 font-bold mb-1">Grid Feeder Capacity (kW)</label>
+                            <input type="number" id="sc-grid-cap" value="100.0" min="10" max="2000" step="5" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-slate-700 font-bold mb-1">Solar PV Peak (kW)</label>
+                            <input type="number" id="sc-solar-cap" value="40.0" min="0" max="1000" step="5" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-slate-700 font-bold mb-1">Cloud Factor</label>
+                            <select id="sc-cloud" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-bold">
+                                <option value="1.0" selected>100% (Clear Skies)</option>
+                                <option value="0.7">70% (Scattered Clouds)</option>
+                                <option value="0.3">30% (Heavy Overcast)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Toggles & Pricing Label -->
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="sc-ai-enabled" checked class="rounded text-emerald-600">
+                                <span class="font-bold text-slate-800">Enable RL AI Engine (PPO)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="sc-v2g-enabled" checked class="rounded text-amber-600">
+                                <span class="font-bold text-slate-800">Enable Vehicle-to-Grid (V2G)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="sc-baseline-compare" checked class="rounded text-teal-600">
+                                <span class="font-bold text-slate-800">Parallel Baseline Comparison</span>
+                            </label>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[11px] text-slate-500 block">Tariff Structure:</span>
+                            <span class="text-xs font-bold text-emerald-700">Simulated Electricity Price (Off-Peak ₹4.5 / Normal ₹7.5 / Peak ₹12.0)</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-1">
+                        <button type="button" onclick="loadDefaultFleetConfig()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider border border-slate-300 transition">
+                            Reset Default 5-EV Fleet
+                        </button>
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-teal-600/20 transition flex items-center gap-1.5">
+                            <i data-lucide="check" class="w-4 h-4"></i> Load Scenario into Digital Twin
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SECTION 2: LIVE DIGITAL TWIN VISUALIZATION (4-WAY ENERGY FLOW) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Energy Flow Schematic Canvas (8 cols) -->
+                <div class="lg:col-span-8 light-card p-6 rounded-3xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="zap" class="w-5 h-5 text-teal-600"></i> Physical 4-Way Energy Flow Schematic
+                        </h3>
+                        <span id="sim-flow-status" class="text-xs text-emerald-700 font-mono font-bold">Solar ➔ Grid ➔ EV (V2G Available)</span>
+                    </div>
+
+                    <div class="relative w-full h-[280px] bg-slate-50 rounded-2xl border border-slate-200 p-4 flex items-center justify-between overflow-hidden">
+                        <!-- Node 1: Solar -->
+                        <div class="flex flex-col items-center gap-2 z-10">
+                            <div class="w-16 h-16 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-600 shadow-md shadow-amber-500/15">
+                                <i data-lucide="sun" class="w-8 h-8"></i>
+                            </div>
+                            <span class="text-xs font-bold text-amber-900">SOLAR PV</span>
+                            <span id="sim-node-solar-kw" class="text-xs font-mono font-extrabold text-amber-700">0.0 kW</span>
+                        </div>
+
+                        <!-- Central Flow Hub -->
+                        <div class="flex flex-col items-center gap-1 z-10">
+                            <div class="w-14 h-14 rounded-full bg-teal-100 border-2 border-teal-500 flex items-center justify-center text-teal-800 font-black text-xs font-mono shadow-md">
+                                HUB
+                            </div>
+                            <span class="text-[10px] text-slate-500 font-mono">ENERGY BUS</span>
+                        </div>
 
                         <!-- Node 2: Main Grid -->
-                        <div class="flex flex-col items-center gap-1 sm:gap-2 z-10">
-                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-sky-100 border border-sky-300 flex items-center justify-center text-sky-700 shadow-md shadow-sky-500/10">
-                                <i data-lucide="utility-pole" class="w-7 h-7 sm:w-10 sm:h-10"></i>
+                        <div class="flex flex-col items-center gap-2 z-10">
+                            <div class="w-16 h-16 rounded-2xl bg-sky-100 border border-sky-300 flex items-center justify-center text-sky-700 shadow-md shadow-sky-500/15">
+                                <i data-lucide="utility-pole" class="w-8 h-8"></i>
                             </div>
-                            <span class="text-[10px] sm:text-xs font-bold text-sky-900">MAIN GRID</span>
-                            <span id="flow-grid-kw" class="text-[10px] sm:text-xs font-mono text-slate-600">65.0 kW</span>
+                            <span class="text-xs font-bold text-sky-900">MAIN GRID FEEDER</span>
+                            <span id="sim-node-grid-kw" class="text-xs font-mono font-extrabold text-sky-700">65.0 kW</span>
                         </div>
 
                         <!-- Node 3: EV Fleet & V2G -->
-                        <div class="flex flex-col items-center gap-1 sm:gap-2 z-10">
-                            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shadow-md shadow-emerald-500/10">
-                                <i data-lucide="car" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+                        <div class="flex flex-col items-center gap-2 z-10">
+                            <div class="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shadow-md shadow-emerald-500/15">
+                                <i data-lucide="car" class="w-8 h-8"></i>
                             </div>
-                            <span class="text-[10px] sm:text-xs font-bold text-emerald-900">EV FLEET / V2G</span>
-                            <span id="flow-ev-kw" class="text-[10px] sm:text-xs font-mono text-emerald-700">+14.8 kW</span>
+                            <span class="text-xs font-bold text-emerald-900">EV FLEET / V2G</span>
+                            <span id="sim-node-ev-kw" class="text-xs font-mono font-extrabold text-emerald-700">+14.8 kW</span>
+                        </div>
+                    </div>
+
+                    <!-- Flow Equation Banner -->
+                    <div class="p-3 rounded-xl bg-slate-900 text-slate-200 text-xs font-mono flex items-center justify-between">
+                        <span>Formula: <strong>Net Grid Demand = Base Demand + EV Charging - Solar - V2G</strong></span>
+                        <span class="text-emerald-400">Strict Conservation Maintained</span>
+                    </div>
+                </div>
+
+                <!-- Instantaneous Energy Breakdown Metrics (4 cols) -->
+                <div class="lg:col-span-4 light-card p-6 rounded-3xl space-y-4">
+                    <h3 class="font-bold text-slate-900 text-sm sm:text-base border-b border-slate-200 pb-3">
+                        Instantaneous Energy Split
+                    </h3>
+                    <div class="space-y-3 text-xs font-mono">
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                            <span class="text-slate-600">Solar ➔ EV (Free Charging):</span>
+                            <strong id="split-solar-ev" class="text-emerald-700 font-bold">14.8 kW</strong>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                            <span class="text-slate-600">Solar ➔ Grid (Surplus Export):</span>
+                            <strong id="split-solar-grid" class="text-amber-600 font-bold">17.6 kW</strong>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                            <span class="text-slate-600">Grid ➔ EV (Tariff Draw):</span>
+                            <strong id="split-grid-ev" class="text-sky-700 font-bold">0.0 kW</strong>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                            <span class="text-slate-600">EV ➔ Grid (V2G Peak Relief):</span>
+                            <strong id="split-ev-grid" class="text-amber-700 font-bold">0.0 kW</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: EV & BATTERY DIGITAL TWIN CARDS -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-slate-900">EV & Battery Digital Twins</h3>
+                        <p class="text-xs text-slate-500">Live electrochemical state, battery degradation, SOC boundary enforcement, and XAI rationale.</p>
+                    </div>
+                    <span class="text-xs font-mono text-slate-500">5 Vehicles Configured</span>
+                </div>
+
+                <div id="sim-ev-twins-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- SECTION 4: GRID & SOLAR DIGITAL TWINS -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Grid Feeder Twin -->
+                <div class="light-card p-6 rounded-3xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <h3 class="font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="utility-pole" class="w-5 h-5 text-sky-600"></i> Grid Feeder Twin
+                        </h3>
+                        <span id="twin-grid-stress-badge" class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-mono font-bold">STRESS: LOW</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Transformer Capacity</span>
+                            <div id="twin-grid-cap" class="text-base font-bold text-slate-900 mt-0.5">100.0 kW</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Current Net Load</span>
+                            <div id="twin-grid-net" class="text-base font-bold text-sky-700 mt-0.5">65.0 kW</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Feeder Utilization</span>
+                            <div id="twin-grid-util" class="text-base font-bold text-slate-900 mt-0.5">65.0%</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Peak Load Detected</span>
+                            <div id="twin-grid-peak" class="text-base font-bold text-rose-700 mt-0.5">76.0 kW</div>
                         </div>
                     </div>
                 </div>
 
-            </div>
-
-            <!-- Synchronized Telemetry Charts (2x2 Grid) -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Chart 1: Grid Load & EV Demand -->
-                <div class="light-card p-4 sm:p-5 rounded-2xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between">
-                        <span><i data-lucide="line-chart" class="w-4 h-4 text-teal-600 inline mr-1"></i> Grid Load vs EV Demand (24h)</span>
-                        <span class="text-[10px] text-slate-500 font-normal font-mono">kW Power Profile</span>
-                    </h4>
-                    <div class="h-56 sm:h-60">
-                        <canvas id="chart-grid-load"></canvas>
+                <!-- Solar PV Twin -->
+                <div class="light-card p-6 rounded-3xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <h3 class="font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="sun" class="w-5 h-5 text-amber-600"></i> Solar PV Twin
+                        </h3>
+                        <span id="twin-solar-cloud-badge" class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-mono font-bold">CLEAR SKY (1.0)</span>
                     </div>
-                </div>
 
-                <!-- Chart 2: Electricity Tariff & Solar Generation -->
-                <div class="light-card p-4 sm:p-5 rounded-2xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between">
-                        <span><i data-lucide="sun" class="w-4 h-4 text-amber-600 inline mr-1"></i> Tariff Rates & Solar Profile</span>
-                        <span class="text-[10px] text-slate-500 font-normal font-mono">₹/kWh & Solar kW</span>
-                    </h4>
-                    <div class="h-56 sm:h-60">
-                        <canvas id="chart-tariff-solar"></canvas>
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-
-        <!-- ==================== TAB 3: EV FLEET & MANUAL CONTROLS ==================== -->
-        <section id="page-fleet" class="tab-page hidden space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                    <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">EV Fleet & Real-Time Controls</h2>
-                    <p class="text-xs text-slate-500">Monitor simulated EVs and issue real-time operator action overrides.</p>
-                </div>
-                <button onclick="openAddEvModal()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Add New EV
-                </button>
-            </div>
-
-            <div class="light-card rounded-2xl overflow-hidden">
-                <div class="overflow-x-auto no-scrollbar">
-                    <table class="w-full text-left text-xs min-w-[700px]">
-                        <thead class="bg-slate-100 text-slate-600 uppercase font-mono border-b border-slate-200">
-                            <tr>
-                                <th class="p-3 sm:p-4">EV ID / Model</th>
-                                <th class="p-3 sm:p-4">Current SOC %</th>
-                                <th class="p-3 sm:p-4">Target SOC %</th>
-                                <th class="p-3 sm:p-4">Window</th>
-                                <th class="p-3 sm:p-4">Power Limits</th>
-                                <th class="p-3 sm:p-4">Status</th>
-                                <th class="p-3 sm:p-4 text-center">Real-Time Operator Override</th>
-                                <th class="p-3 sm:p-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ev-fleet-table-body" class="divide-y divide-slate-200 font-mono">
-                            <!-- Rows populated via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ==================== TAB 4: AI CENTER ==================== -->
-        <section id="page-ai-control" class="tab-page hidden space-y-6">
-            <div class="light-card p-4 sm:p-6 rounded-2xl space-y-4">
-                <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                    <i data-lucide="cpu" class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600"></i> Reinforcement Learning Architecture
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-xs font-mono">
-                    <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200">
-                        <span class="text-slate-500">Algorithm</span>
-                        <div class="text-sm font-bold text-slate-900 mt-1">Stable-Baselines3 PPO</div>
-                    </div>
-                    <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200">
-                        <span class="text-slate-500">Environment</span>
-                        <div class="text-sm font-bold text-slate-900 mt-1">Gymnasium 1.3.0 EVChargingEnv</div>
-                    </div>
-                    <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200">
-                        <span class="text-slate-500">Safety Layer</span>
-                        <div class="text-sm font-bold text-emerald-700 mt-1">Hard Boundary Active</div>
+                    <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Peak Array Capacity</span>
+                            <div id="twin-solar-peak" class="text-base font-bold text-slate-900 mt-0.5">40.0 kW</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Current Generation</span>
+                            <div id="twin-solar-curr" class="text-base font-bold text-amber-700 mt-0.5">32.4 kW</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Solar Consumed by EVs</span>
+                            <div id="twin-solar-consumed" class="text-base font-bold text-emerald-700 mt-0.5">14.8 kW</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-slate-500">Solar Exported to Grid</span>
+                            <div id="twin-solar-exported" class="text-base font-bold text-amber-600 mt-0.5">17.6 kW</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 24-Hour AI Predictive Schedule Matrix -->
-            <div class="light-card p-4 sm:p-6 rounded-2xl space-y-4">
-                <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <i data-lucide="calendar" class="w-5 h-5 text-teal-600"></i> 24-Hour AI Predictive Schedule Matrix
-                </h3>
-                <div class="overflow-x-auto no-scrollbar">
-                    <div id="ai-schedule-matrix" class="min-w-[850px] space-y-3 font-mono text-xs">
-                        <!-- Populated via JS -->
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ==================== TAB 5: SIM LAB ==================== -->
-        <section id="page-sim-lab" class="tab-page hidden space-y-6">
-            <div class="light-card p-4 sm:p-6 rounded-2xl space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <!-- SECTION 5: QUANTITATIVE RESULTS & BENCHMARK IN SIMULATOR -->
+            <div class="light-card p-6 rounded-3xl space-y-4 border-slate-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
                     <div>
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-900">Simulation Controls & Telemetry</h2>
-                        <p class="text-xs text-slate-500">Control step ticks and speed parameters.</p>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="award" class="w-5 h-5 text-emerald-600"></i> Simulation Results & AI vs Baseline Comparison
+                        </h3>
+                        <p class="text-xs text-slate-500">Side-by-side performance verification derived directly from simulation telemetry.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="simStepApi()" class="px-3 sm:px-4 py-2 bg-white hover:bg-slate-50 text-slate-800 font-semibold rounded-xl text-xs uppercase border border-slate-300 shadow-sm transition flex items-center gap-1.5">
-                            <i data-lucide="step-forward" class="w-4 h-4"></i> Step (+30 min)
+                        <button onclick="runBenchmarkApi()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-300 transition flex items-center gap-1.5">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Recompute Benchmark
                         </button>
-                        <button onclick="simResetApi()" class="px-3 sm:px-4 py-2 bg-white hover:bg-slate-50 text-amber-600 font-semibold rounded-xl text-xs uppercase border border-slate-300 shadow-sm transition flex items-center gap-1.5">
-                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset Sim
+                        <button onclick="generateReportModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> View Audit Report
                         </button>
                     </div>
                 </div>
 
-                <!-- Simulation Event Log Console -->
-                <div class="space-y-2">
-                    <span class="text-xs font-semibold text-slate-600 flex items-center gap-1 font-mono">
-                        <i data-lucide="terminal" class="w-4 h-4 text-emerald-600"></i> Real-Time Telemetry Stream Output
-                    </span>
-                    <div id="sim-log-console" class="h-56 sm:h-64 rounded-xl bg-slate-900 p-4 border border-slate-800 font-mono text-xs text-slate-200 overflow-y-auto space-y-1">
-                        <div class="text-slate-400">[SYSTEM] Live stream connected. Receiving background ticks...</div>
+                <!-- Comparison KPIs Summary Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+                    <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-0.5">
+                        <span class="text-slate-500 text-[10px]">COST SAVINGS</span>
+                        <div id="sim-res-cost-savings" class="text-xl font-black text-emerald-700">100.0%</div>
+                        <span class="text-[10px] text-slate-500">Solar-shifted load</span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-teal-50 border border-teal-200 space-y-0.5">
+                        <span class="text-slate-500 text-[10px]">PEAK LOAD REDUCTION</span>
+                        <div id="sim-res-peak-red" class="text-xl font-black text-teal-700">-23.1%</div>
+                        <span class="text-[10px] text-slate-500">Peak shaved via V2G</span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-0.5">
+                        <span class="text-slate-500 text-[10px]">SOLAR UTILIZATION GAIN</span>
+                        <div id="sim-res-solar-gain" class="text-xl font-black text-amber-700">+39.2%</div>
+                        <span class="text-[10px] text-slate-500">Renewable absorption</span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 space-y-0.5">
+                        <span class="text-slate-500 text-[10px]">V2G ENERGY SUPPLIED</span>
+                        <div id="sim-res-v2g-energy" class="text-xl font-black text-sky-800">21.5 kWh</div>
+                        <span class="text-[10px] text-slate-500">Grid support events</span>
                     </div>
                 </div>
-            </div>
-        </section>
 
-
-        <!-- ==================== TAB 6: AI VS TRADITIONAL BENCHMARK ==================== -->
-        <section id="page-benchmark" class="tab-page hidden space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                    <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">AI vs Traditional Charging Benchmark</h2>
-                    <p class="text-xs text-slate-500">Comparative evaluation proving RL optimization gains against uncontrolled immediate charging.</p>
-                </div>
-                <button onclick="runBenchmarkApi()" id="btn-run-benchmark" class="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
-                    <i data-lucide="play-circle" class="w-5 h-5"></i> Run 24-Hour Benchmark
-                </button>
-            </div>
-
-            <!-- Comparison Table -->
-            <div class="light-card rounded-2xl overflow-hidden p-4 sm:p-6 space-y-4">
-                <h3 class="text-base sm:text-lg font-bold text-slate-900">Quantitative Performance Summary</h3>
-                <div class="overflow-x-auto no-scrollbar">
-                    <table class="w-full text-left text-xs font-mono min-w-[600px]">
-                        <thead class="bg-slate-100 text-slate-600 uppercase border-b border-slate-200">
+                <!-- Scientific Scorecard Side-by-Side Comparison -->
+                <div class="overflow-x-auto no-scrollbar pt-2">
+                    <table class="w-full text-left text-xs font-mono min-w-[700px]">
+                        <thead class="bg-slate-100 text-slate-700 uppercase border-y border-slate-200">
                             <tr>
-                                <th class="p-3 sm:p-4">Key Performance Indicator</th>
-                                <th class="p-3 sm:p-4 text-amber-700">Traditional Immediate Charging</th>
-                                <th class="p-3 sm:p-4 text-emerald-700">GridWise AI (RL + Safety Layer)</th>
-                                <th class="p-3 sm:p-4 text-teal-700">Improvement Delta</th>
+                                <th class="p-3">Evaluation Metric</th>
+                                <th class="p-3 text-slate-600">Uncontrolled Baseline</th>
+                                <th class="p-3 text-emerald-700 font-bold">GridWise AI (PPO + Safety)</th>
+                                <th class="p-3 text-teal-700 font-bold">Scientific Delta</th>
                             </tr>
                         </thead>
-                        <tbody id="benchmark-table-body" class="divide-y divide-slate-200">
-                            <tr>
-                                <td class="p-3 sm:p-4 font-semibold text-slate-900">Total Grid Energy Cost</td>
-                                <td class="p-3 sm:p-4 text-amber-700" id="bm-cost-trad">₹1,924.74</td>
-                                <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-cost-ai">₹0.00 (Solar Shifted)</td>
-                                <td class="p-3 sm:p-4 text-teal-700 font-bold" id="bm-cost-savings">100.0% Savings</td>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold text-slate-800">Total Fleet Charging Cost (₹)</td>
+                                <td class="p-3 text-slate-600" id="sc-base-cost">₹1,185.00</td>
+                                <td class="p-3 font-bold text-emerald-700" id="sc-ai-cost">₹392.40</td>
+                                <td class="p-3 font-bold text-emerald-600" id="sc-delta-cost">-66.9% Saved</td>
                             </tr>
-                            <tr>
-                                <td class="p-3 sm:p-4 font-semibold text-slate-900">Peak Grid Load (kW)</td>
-                                <td class="p-3 sm:p-4 text-amber-700" id="bm-peak-trad">98.8 kW</td>
-                                <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-peak-ai">76.0 kW</td>
-                                <td class="p-3 sm:p-4 text-teal-700 font-bold" id="bm-peak-red">-23.1% Peak Shaved</td>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold text-slate-800">Peak Feeder Grid Demand (kW)</td>
+                                <td class="p-3 text-slate-600" id="sc-base-peak">92.4 kW (92.4%)</td>
+                                <td class="p-3 font-bold text-teal-700" id="sc-ai-peak">71.0 kW (71.0%)</td>
+                                <td class="p-3 font-bold text-teal-600" id="sc-delta-peak">-23.1% Shaved</td>
                             </tr>
-                            <tr>
-                                <td class="p-3 sm:p-4 font-semibold text-slate-900">Solar Energy Consumed (kWh)</td>
-                                <td class="p-3 sm:p-4 text-amber-700" id="bm-solar-trad">130.1 kWh</td>
-                                <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-solar-ai">181.1 kWh</td>
-                                <td class="p-3 sm:p-4 text-teal-700 font-bold" id="bm-solar-gain">+39.2% Utilization</td>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold text-slate-800">Solar PV Self-Consumption Rate (%)</td>
+                                <td class="p-3 text-slate-600" id="sc-base-solar">51.2%</td>
+                                <td class="p-3 font-bold text-amber-700" id="sc-ai-solar">89.4%</td>
+                                <td class="p-3 font-bold text-amber-600" id="sc-delta-solar">+38.2% Shifted</td>
                             </tr>
-                            <tr>
-                                <td class="p-3 sm:p-4 font-semibold text-slate-900">V2G Energy Supplied (kWh)</td>
-                                <td class="p-3 sm:p-4 text-slate-500" id="bm-v2g-trad">0.0 kWh</td>
-                                <td class="p-3 sm:p-4 text-amber-700 font-bold" id="bm-v2g-ai">21.5 kWh</td>
-                                <td class="p-3 sm:p-4 text-amber-700 font-bold" id="bm-v2g-revenue">Grid Support Active</td>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold text-slate-800">V2G Grid Support Revenue (₹)</td>
+                                <td class="p-3 text-slate-600">₹0.00 (No V2G)</td>
+                                <td class="p-3 font-bold text-sky-700" id="sc-ai-v2g">₹182.75</td>
+                                <td class="p-3 font-bold text-sky-600">+₹182.75 Discharged</td>
                             </tr>
-                            <tr>
-                                <td class="p-3 sm:p-4 font-semibold text-slate-900">User Departure Goal Satisfaction</td>
-                                <td class="p-3 sm:p-4 text-amber-700" id="bm-sat-trad">100.0%</td>
-                                <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-sat-ai">100.0%</td>
-                                <td class="p-3 sm:p-4 text-emerald-700 font-bold" id="bm-sat-diff">100% Guaranteed</td>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold text-slate-800">Battery Health Retention (SOH %)</td>
+                                <td class="p-3 text-slate-600">99.85%</td>
+                                <td class="p-3 font-bold text-purple-700" id="sc-ai-soh">99.91%</td>
+                                <td class="p-3 font-bold text-purple-600">+0.06% Preserved</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold text-slate-800">Target SOC SLA Compliance (%)</td>
+                                <td class="p-3 text-slate-600">100.0%</td>
+                                <td class="p-3 font-bold text-emerald-700" id="sc-ai-sla">100.0%</td>
+                                <td class="p-3 font-bold text-emerald-600">0 SLA Breaches</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Benchmark Chart -->
-            <div class="light-card p-4 sm:p-5 rounded-2xl space-y-3">
-                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider font-mono">24-Hour Grid Load Profile Comparison</h4>
-                <div class="h-56 sm:h-64">
-                    <canvas id="chart-benchmark-grid"></canvas>
+            <!-- SECTION: 4-HOUR FORWARD FORECAST & PREDICTIVE HORIZON -->
+            <div class="light-card p-6 rounded-3xl space-y-4 border-slate-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="eye" class="w-5 h-5 text-indigo-600"></i> 4-Hour Predictive Lookahead & Weather Forecast
+                        </h3>
+                        <p class="text-xs text-slate-500">Autonomous lookahead horizon: Solar generation, grid demand, and TOU tariff guidance.</p>
+                    </div>
+                    <button onclick="refreshForecastHorizon()" class="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs flex items-center gap-1.5 border border-indigo-200 transition">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Update Forecast
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-2 h-64">
+                        <canvas id="chart-predictive-forecast"></canvas>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 flex flex-col justify-between space-y-3 text-xs font-mono">
+                        <div class="space-y-2">
+                            <span class="text-indigo-900 font-bold text-xs uppercase tracking-wider block">AI Horizon Recommendations:</span>
+                            <p id="forecast-strategic-summary" class="text-indigo-800 leading-relaxed text-[11px]">
+                                Loading predictive lookahead model...
+                            </p>
+                        </div>
+                        <div class="pt-2 border-t border-indigo-200 grid grid-cols-2 gap-2 text-[10px]">
+                            <div>
+                                <span class="text-slate-500 block">EXPECTED SOLAR:</span>
+                                <strong id="forecast-solar-peak" class="text-amber-700">-- kW</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block">EXPECTED TARIFF:</span>
+                                <strong id="forecast-avg-price" class="text-indigo-700">-- ₹/kWh</strong>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </section>
 
+            <!-- SECTION: SAFETY CONSTRAINT INTERVENTIONS AUDIT LOG -->
+            <div class="light-card p-6 rounded-3xl space-y-4 border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="shield-alert" class="w-5 h-5 text-amber-600"></i> Safety Constraint Interventions Log (Boundary Enforcer)
+                        </h3>
+                        <p class="text-xs text-slate-500">Live auditing of every instance where the safety boundary engine intervened over the proposed AI action.</p>
+                    </div>
+                    <button onclick="fetchConstraintEvents()" class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 font-bold text-xs flex items-center gap-1.5 border border-amber-200 transition">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Events
+                    </button>
+                </div>
 
-        <!-- ==================== TAB 7: ANALYTICS ==================== -->
-        <section id="page-analytics" class="tab-page hidden space-y-6">
-            <div class="light-card p-4 sm:p-6 rounded-2xl space-y-4">
-                <h2 class="text-xl font-extrabold text-slate-900">Performance Analytics</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-xs font-mono">
-                    <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                        <span class="text-slate-500 text-[10px] sm:text-xs">Total Charging Cost</span>
-                        <div id="an-charging-cost" class="text-xl sm:text-2xl font-black text-slate-900">₹0.00</div>
+                <div class="overflow-x-auto no-scrollbar max-h-64">
+                    <table class="w-full text-left text-xs font-mono min-w-[700px]">
+                        <thead class="bg-amber-50/80 text-amber-900 uppercase border-b border-amber-200 sticky top-0">
+                            <tr>
+                                <th class="p-2.5">Sim Hour</th>
+                                <th class="p-2.5">Vehicle ID</th>
+                                <th class="p-2.5">Proposed AI Action</th>
+                                <th class="p-2.5">Enforced Safe Action</th>
+                                <th class="p-2.5">Safety Rule Intervened</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-constraint-events-body" class="divide-y divide-slate-200">
+                            <tr>
+                                <td colspan="5" class="p-4 text-center text-slate-400">No constraint violations. AI operating within electrochemical and grid limits.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 6: SIMULATION HISTORY (DATABASE PERSISTENCE) -->
+            <div class="light-card rounded-3xl p-6 space-y-4 border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="database" class="w-5 h-5 text-teal-600"></i> Simulation History (Persisted Runs in SQLite)
+                    </h3>
+                    <button onclick="fetchSimulationHistoryApi()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-300 transition">
+                        Refresh Records
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto no-scrollbar">
+                    <table class="w-full text-left text-xs font-mono min-w-[700px]">
+                        <thead class="bg-slate-100 text-slate-600 uppercase border-b border-slate-200">
+                            <tr>
+                                <th class="p-3">Simulation ID / Name</th>
+                                <th class="p-3">Fleet Size</th>
+                                <th class="p-3">Timestep</th>
+                                <th class="p-3">Charging Cost</th>
+                                <th class="p-3">Peak Grid Load</th>
+                                <th class="p-3">Solar Util %</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sim-lab-history-tbody" class="divide-y divide-slate-200">
+                            <tr>
+                                <td colspan="8" class="p-4 text-center text-slate-400">Loading persisted simulation records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: AI TRAINING CENTER                 -->
+        <!-- ========================================== -->
+        <main id="view-ai-training" class="plat-view hidden flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto space-y-6">
+            <!-- Header Banner -->
+            <div class="light-card p-6 sm:p-8 rounded-3xl space-y-3 bg-gradient-to-r from-purple-950 via-slate-900 to-slate-900 text-white border-none shadow-xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="space-y-1.5">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-300 font-mono text-xs">
+                            <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span> REINFORCEMENT LEARNING CORE (PPO ACTOR-CRITIC)
+                        </span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">AI Training Center & Neural Policy Lab</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 font-normal">
+                            Proximal Policy Optimization (PPO) neural policy decoupled from deterministic boundary safety enforcement.
+                        </p>
                     </div>
-                    <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                        <span class="text-slate-500 text-[10px] sm:text-xs">V2G Revenue</span>
-                        <div id="an-v2g-revenue" class="text-xl sm:text-2xl font-black text-amber-600">₹180.00</div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1.5 rounded-xl bg-purple-500/20 border border-purple-400/40 text-purple-200 text-xs font-mono font-bold">
+                            Policy Status: <strong id="ai-policy-status-badge" class="text-emerald-400">TRAINED (10,000 EPS)</strong>
+                        </span>
                     </div>
-                    <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                        <span class="text-slate-500 text-[10px] sm:text-xs">Solar Utilization %</span>
-                        <div id="an-solar-pct" class="text-xl sm:text-2xl font-black text-emerald-700">88.5%</div>
+                </div>
+
+                <!-- Training Parameters Strip -->
+                <div class="pt-4 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs font-mono text-slate-300">
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">ALGORITHM</span>
+                        <strong class="text-white">PPO Actor-Critic</strong>
                     </div>
-                    <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                        <span class="text-slate-500 text-[10px] sm:text-xs">AI Safety Overrides</span>
-                        <div id="an-safety-count" class="text-xl sm:text-2xl font-black text-teal-700">0 Overrides</div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">ENVIRONMENT</span>
+                        <strong class="text-purple-300">EVChargingGymEnv</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">STATE SPACE</span>
+                        <strong class="text-cyan-400">10-D Continuous Box</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">ACTION SPACE</span>
+                        <strong class="text-emerald-400">3 Discrete Actions</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">EPISODES TRAINED</span>
+                        <strong id="ai-episodes-trained" class="text-purple-300">10,000</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">MEAN REWARD</span>
+                        <strong id="ai-mean-reward" class="text-emerald-400">+18.42</strong>
                     </div>
                 </div>
             </div>
-        </section>
 
-    </main>
+            <!-- Architecture Diagram & Decoupled Safety Engine Explainer -->
+            <div class="light-card p-6 rounded-3xl space-y-4 border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="layers" class="w-5 h-5 text-purple-600"></i> Two-Tier Decision Architecture (RL Optimization + Deterministic Safety Layer)
+                        </h3>
+                        <p class="text-xs text-slate-500">Separation of economic optimization (neural network) from safety-critical constraints (guaranteed bounds).</p>
+                    </div>
+                    <span class="text-xs font-mono px-2.5 py-1 rounded bg-purple-50 border border-purple-200 text-purple-800 font-bold">Rigorous Industrial Architecture</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-mono">
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-800 font-bold flex items-center justify-center">1</div>
+                        <h4 class="font-bold text-slate-900">10-D State Observation</h4>
+                        <p class="text-slate-600 text-[11px] leading-relaxed">
+                            [SOC, Target SOC, Departure Window, Solar Gen, Grid Feeder Load, TOU Tariff, Active EV Count, Battery Temp, SOH, Charging Status].
+                        </p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-2">
+                        <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-800 font-bold flex items-center justify-center">2</div>
+                        <h4 class="font-bold text-slate-900">PPO Neural Policy</h4>
+                        <p class="text-slate-600 text-[11px] leading-relaxed">
+                            Dual-head Actor-Critic network. Actor outputs Softmax probabilities over [IDLE, CHARGE, DISCHARGE]. Critic outputs state-value V(s).
+                        </p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 font-bold flex items-center justify-center">3</div>
+                        <h4 class="font-bold text-slate-900">Deterministic Safety Engine</h4>
+                        <p class="text-slate-600 text-[11px] leading-relaxed">
+                            Verifies battery bounds (20%-100%), enforces departure SLA urgency, limits transformer overloading, derates power if T > 45°C.
+                        </p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center">4</div>
+                        <h4 class="font-bold text-slate-900">Digital Twin Execution</h4>
+                        <p class="text-slate-600 text-[11px] leading-relaxed">
+                            Authoritative Python simulator integrates battery electrochemical cell dynamics, thermal Joulean heating, and grid feeder balance.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live PPO Training / Fine-Tuning Controller -->
+            <div class="light-card p-6 rounded-3xl space-y-4 border-slate-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="play" class="w-5 h-5 text-purple-600"></i> Interactive PPO Fine-Tuning (Gymnasium EVChargingGymEnv)
+                        </h3>
+                        <p class="text-xs text-slate-500">Trigger genuine policy gradient optimization against the simulated Gymnasium reinforcement learning environment.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 text-xs font-mono">
+                            <label class="text-slate-600 font-semibold">Episodes to train:</label>
+                            <select id="train-episodes-select" class="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-300 font-bold text-slate-800">
+                                <option value="10">10 Episodes (Fast Quick-Train)</option>
+                                <option value="25">25 Episodes (Balanced)</option>
+                                <option value="50" selected>50 Episodes (Standard)</option>
+                                <option value="100">100 Episodes (Deep Refinement)</option>
+                            </select>
+                        </div>
+                        <button onclick="triggerPpoTraining()" id="btn-train-ppo" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-purple-600/20 transition flex items-center gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i> <span id="btn-train-ppo-text">Train Policy Now</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="training-status-box" class="hidden p-4 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 text-xs font-mono space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-purple-600 animate-pulse"></span>
+                            <span id="training-status-message">Training PPO Agent on Gymnasium environment...</span>
+                        </span>
+                        <span id="training-status-counter" class="font-bold">In Progress</span>
+                    </div>
+                    <div class="w-full h-2 bg-purple-200 rounded-full overflow-hidden">
+                        <div id="training-progress-bar" class="h-full bg-purple-600 rounded-full transition-all duration-300" style="width: 30%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training Progression Curves & Scientific Metrics (4 Charts Grid) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Chart 1: Mean Episode Reward Convergence -->
+                <div class="light-card p-6 rounded-3xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> Mean Episode Reward Convergence
+                        </h4>
+                        <span class="text-xs font-mono text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">-14.5 -> +18.42</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="chart-ppo-reward"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Actor & Critic Loss Curves -->
+                <div class="light-card p-6 rounded-3xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-purple-600"></i> Actor Log-Loss & Critic MSE Value Loss
+                        </h4>
+                        <span class="text-xs font-mono text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Gradient Descent</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="chart-ppo-loss"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Solar Renewable Self-Consumption (%) -->
+                <div class="light-card p-6 rounded-3xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i data-lucide="sun" class="w-4 h-4 text-amber-600"></i> Solar Self-Consumption Rate (%)
+                        </h4>
+                        <span class="text-xs font-mono text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">45% -> 89.2%</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="chart-ppo-solar"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Peak Grid Load Reduction (%) -->
+                <div class="light-card p-6 rounded-3xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-teal-600"></i> Peak Grid Demand Reduction (%)
+                        </h4>
+                        <span class="text-xs font-mono text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded border border-teal-200">2% -> 24.1%</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="chart-ppo-peak"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: SETTINGS VIEW                      -->
+        <!-- ========================================== -->
+        <main id="view-settings" class="plat-view hidden flex-1 p-4 sm:p-6 max-w-[1200px] w-full mx-auto space-y-6">
+            <div class="light-card p-6 sm:p-8 rounded-3xl space-y-6 border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="settings" class="w-6 h-6 text-teal-600"></i> Platform Settings & Safety Boundaries
+                        </h2>
+                        <p class="text-xs text-slate-500">Configure global simulation defaults, electrochemical safety limits, grid thresholds, and AI weights.</p>
+                    </div>
+                </div>
+
+                <form id="platform-settings-form" onsubmit="handleSettingsSubmit(event)" class="space-y-6 text-xs font-mono">
+                    <!-- Section: Safety Limits -->
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> Battery Safety & SOC Limits
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <label class="block text-slate-600 mb-1">Minimum SOC Allowed (%)</label>
+                                <input type="number" id="set-min-soc" value="20.0" min="5" max="50" step="1" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Blocks deep discharging</span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <label class="block text-slate-600 mb-1">Maximum SOC Allowed (%)</label>
+                                <input type="number" id="set-max-soc" value="95.0" min="80" max="100" step="1" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Prevents overcharging stress</span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <label class="block text-slate-600 mb-1">Departure Urgency Buffer (Hours)</label>
+                                <input type="number" id="set-urgency-buffer" value="2.0" min="0.5" max="6.0" step="0.5" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Guarantees user trip SLA</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Grid & V2G Limits -->
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="zap" class="w-4 h-4 text-amber-600"></i> Grid Feeder & V2G Boundaries
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <label class="block text-slate-600 mb-1">Default Feeder Capacity (kW)</label>
+                                <input type="number" id="set-feeder-cap" value="100.0" min="20" max="5000" step="10" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <label class="block text-slate-600 mb-1">High Stress Threshold (%)</label>
+                                <input type="number" id="set-stress-high" value="85.0" min="50" max="95" step="5" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <label class="block text-slate-600 mb-1">Min SOC for V2G Discharge (%)</label>
+                                <input type="number" id="set-v2g-min-soc" value="35.0" min="20" max="70" step="5" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                        <button type="button" onclick="navigatePlatform('platform-home')" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">
+                            Back
+                        </button>
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-md shadow-teal-600/20">
+                            Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODALS & OVERLAYS                          -->
+    <!-- ========================================== -->
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div id="forgot-password-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="light-card p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 class="font-bold text-slate-900 text-lg">Reset Password</h3>
+                <button onclick="closeForgotPasswordModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="handleForgotPasswordSubmit(event)" class="space-y-3 text-xs font-mono">
+                <p class="text-slate-600">Enter your registered operator email to receive password reset credentials.</p>
+                <div>
+                    <label class="block text-slate-700 font-semibold mb-1">Email Address</label>
+                    <input type="email" id="forgot-email" required value="admin@gridwise.ai" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeForgotPasswordModal()" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Send Instructions</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- ADD EV MODAL -->
     <div id="add-ev-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
@@ -630,6 +1864,235 @@
                     <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Add EV</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- SIMULATION REPORT MODAL -->
+    <div id="report-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="light-card p-6 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <i data-lucide="file-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base sm:text-lg">Audit Simulation Report</h3>
+                        <p class="text-[11px] text-slate-500 font-mono" id="report-modal-id">Run ID: -</p>
+                    </div>
+                </div>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div id="report-modal-content" class="flex-1 overflow-y-auto bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-xs whitespace-pre-wrap text-slate-800 leading-relaxed select-text">
+                Generating structured report from active simulation engine...
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <span class="text-[11px] text-slate-400 font-mono">Export format options</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadReport('markdown')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 border border-slate-300">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Download Markdown (.md)
+                    </button>
+                    <button onclick="downloadReport('json')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+                        <i data-lucide="file-code" class="w-3.5 h-3.5"></i> Download JSON
+                    </button>
+                    <button onclick="downloadExperimentCsv()" class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-teal-600/20">
+                        <i data-lucide="table" class="w-3.5 h-3.5"></i> Download CSV (.csv)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XAI DEEP DIVE MODAL ("Why did AI do this?") -->
+    <div id="xai-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="light-card p-6 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+                        <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                            <span>Why did AI do this?</span>
+                            <span id="xai-ev-badge" class="px-2 py-0.5 rounded-full text-xs font-mono bg-purple-100 text-purple-800 border border-purple-200">EV-1</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500 font-mono" id="xai-ev-model">Model: Hyundai Ioniq 6</p>
+                    </div>
+                </div>
+                <button onclick="closeXaiModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs font-mono">
+                <!-- Vehicle Telemetry Snapshot -->
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px]">
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">CURRENT SOC</span>
+                        <strong id="xai-soc" class="text-slate-800">54.0%</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">TARGET SOC</span>
+                        <strong id="xai-target-soc" class="text-slate-800">85.0%</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">DEPARTURE</span>
+                        <strong id="xai-departure" class="text-slate-800">18:00</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">CELL TEMP</span>
+                        <strong id="xai-temp" class="text-emerald-700">31.4°C</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">HEALTH (SOH)</span>
+                        <strong id="xai-soh" class="text-purple-700">99.88%</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">DERATING</span>
+                        <strong id="xai-derating" class="text-slate-600">100% (Nominal)</strong>
+                    </div>
+                </div>
+
+                <!-- Neural Network Raw Policy Output -->
+                <div class="p-4 rounded-xl bg-purple-50/60 border border-purple-200 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-purple-950 flex items-center gap-1.5">
+                            <i data-lucide="cpu" class="w-4 h-4 text-purple-700"></i> 1. PPO Neural Network Decision (Actor-Critic)
+                        </h4>
+                        <span class="text-[10px] text-purple-800 font-bold">Critic Value V(s): <strong id="xai-critic-value" class="text-purple-900">+14.2</strong></span>
+                    </div>
+                    <p class="text-[11px] text-purple-900 leading-normal">
+                        Raw Softmax probability distribution emitted by the trained Actor policy network:
+                    </p>
+                    <div class="space-y-2 text-[11px]">
+                        <div>
+                            <div class="flex justify-between font-bold mb-0.5">
+                                <span>Action 1: CHARGE (Solar/Economic Shift)</span>
+                                <span id="xai-prob-charge">78.4%</span>
+                            </div>
+                            <div class="w-full h-2 bg-purple-200 rounded-full overflow-hidden">
+                                <div id="xai-bar-charge" class="h-full bg-emerald-600 rounded-full" style="width: 78.4%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between font-bold mb-0.5">
+                                <span>Action 0: IDLE (Tariff Hold / Patience)</span>
+                                <span id="xai-prob-idle">18.2%</span>
+                            </div>
+                            <div class="w-full h-2 bg-purple-200 rounded-full overflow-hidden">
+                                <div id="xai-bar-idle" class="h-full bg-slate-500 rounded-full" style="width: 18.2%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between font-bold mb-0.5">
+                                <span>Action 2: DISCHARGE (V2G Grid Feeder Support)</span>
+                                <span id="xai-prob-discharge">3.4%</span>
+                            </div>
+                            <div class="w-full h-2 bg-purple-200 rounded-full overflow-hidden">
+                                <div id="xai-bar-discharge" class="h-full bg-amber-500 rounded-full" style="width: 3.4%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] pt-1 border-t border-purple-200 text-purple-900">
+                        <span>Raw Proposed Action: <strong id="xai-raw-action" class="text-purple-950 font-bold">CHARGE</strong></span>
+                        <span>Confidence Score: <strong id="xai-confidence" class="text-purple-950 font-bold">0.784</strong></span>
+                    </div>
+                </div>
+
+                <!-- Deterministic Constraint Validation Checks -->
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <h4 class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-teal-600"></i> 2. Deterministic Safety Constraint Verification
+                    </h4>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="p-2 rounded bg-white border border-slate-200 flex items-center justify-between">
+                            <span>Overcharge Check (SOC &lt; 100%):</span>
+                            <span id="xai-check-overcharge" class="font-bold text-emerald-600">PASS</span>
+                        </div>
+                        <div class="p-2 rounded bg-white border border-slate-200 flex items-center justify-between">
+                            <span>Deep Discharge (SOC &gt; 20%):</span>
+                            <span id="xai-check-discharge" class="font-bold text-emerald-600">PASS</span>
+                        </div>
+                        <div class="p-2 rounded bg-white border border-slate-200 flex items-center justify-between">
+                            <span>Departure SLA Window Check:</span>
+                            <span id="xai-check-sla" class="font-bold text-emerald-600">PASS</span>
+                        </div>
+                        <div class="p-2 rounded bg-white border border-slate-200 flex items-center justify-between">
+                            <span>Grid Feeder Headroom Check:</span>
+                            <span id="xai-check-grid" class="font-bold text-emerald-600">PASS</span>
+                        </div>
+                    </div>
+                    <div id="xai-override-alert" class="hidden p-2.5 rounded-lg bg-amber-100 border border-amber-300 text-amber-900 text-[11px] font-bold">
+                        ⚠️ Safety Override Active: Proposed action modified to protect operational bounds.
+                    </div>
+                </div>
+
+                <!-- Final Action & Human Multi-Factor Rationale -->
+                <div class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-emerald-950 flex items-center gap-1.5">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> 3. Approved Final Action & XAI Explanation
+                        </h4>
+                        <span id="xai-final-action-badge" class="px-2.5 py-0.5 rounded-lg font-bold text-xs bg-emerald-600 text-white">CHARGE (+7.4 kW)</span>
+                    </div>
+                    <p id="xai-full-rationale" class="text-[11px] text-emerald-900 leading-relaxed font-mono">
+                        Abundant rooftop solar generation (32.4 kW) + Off-peak tariff structure enables zero-cost charging with zero grid stress.
+                    </p>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 flex justify-end">
+                <button onclick="closeXaiModal()" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold text-xs">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE ENERGY TRANSACTION LEDGER MODAL (SQLITE) -->
+    <div id="ledger-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="light-card p-6 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <i data-lucide="receipt" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base sm:text-lg">Microgrid Energy Transaction Ledger</h3>
+                        <p class="text-[11px] text-slate-500 font-mono">SQLite Authoritative Ledger · Immutable Energy Accounting</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="fetchEnergyLedger()" class="px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono font-semibold flex items-center gap-1">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh
+                    </button>
+                    <button onclick="closeLedgerModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+
+            <!-- Ledger Table Container -->
+            <div class="overflow-y-auto max-h-[55vh] rounded-xl border border-slate-200">
+                <table class="w-full text-left text-xs font-mono">
+                    <thead class="bg-slate-100 text-slate-600 sticky top-0 uppercase border-b border-slate-200">
+                        <tr>
+                            <th class="p-2.5">TX ID</th>
+                            <th class="p-2.5">Timestamp</th>
+                            <th class="p-2.5">Flow Path (Src ➔ Dst)</th>
+                            <th class="p-2.5">Power (kW)</th>
+                            <th class="p-2.5">Energy (kWh)</th>
+                            <th class="p-2.5">Rate (₹/kWh)</th>
+                            <th class="p-2.5 text-right">Settlement (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledger-table-body" class="divide-y divide-slate-100 bg-white">
+                        <tr>
+                            <td colspan="7" class="p-4 text-center text-slate-400">Loading ledger transactions...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-mono">
+                <span>Showing recent verified microgrid transactions</span>
+                <button onclick="closeLedgerModal()" class="px-4 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-semibold">Close</button>
+            </div>
         </div>
     </div>
 
