@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cncCase" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="npuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="50%" stop-color="#6d28d9"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+    <filter id="aiGlow">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Shadow -->
+  <ellipse cx="200" cy="202" rx="145" ry="12" fill="#000" opacity="0.45"/>
+
+  <!-- Heavy Extruded Anodized Aluminum Enclosure -->
+  <rect x="70" y="32" width="260" height="162" rx="10" fill="url(#cncCase)" stroke="#475569" stroke-width="2.5"/>
+
+  <!-- CNC Thermal Cooling Heatsink Fins (Left & Right Flanges) -->
+  <g stroke="#334155" stroke-width="2.5" stroke-linecap="round">
+    <line x1="56" y1="50" x2="70" y2="50"/><line x1="56" y1="70" x2="70" y2="70"/>
+    <line x1="56" y1="90" x2="70" y2="90"/><line x1="56" y1="110" x2="70" y2="110"/>
+    <line x1="56" y1="130" x2="70" y2="130"/><line x1="56" y1="150" x2="70" y2="150"/>
+
+    <line x1="330" y1="50" x2="344" y2="50"/><line x1="330" y1="70" x2="344" y2="70"/>
+    <line x1="330" y1="90" x2="344" y2="90"/><line x1="330" y1="110" x2="344" y2="110"/>
+    <line x1="330" y1="130" x2="344" y2="130"/><line x1="330" y1="150" x2="344" y2="150"/>
+  </g>
+
+  <!-- Central High-Performance Neural Accelerator / NPU Chip -->
+  <rect x="160" y="55" width="80" height="70" rx="8" fill="url(#npuGrad)" stroke="#a78bfa" stroke-width="2" filter="url(#aiGlow)"/>
+  <!-- Silicon Die Heat Spreader -->
+  <rect x="175" y="68" width="50" height="44" rx="4" fill="#0f172a" stroke="#c4b5fd" stroke-width="1.2"/>
+  <text x="200" y="86" fill="#c4b5fd" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="middle">DEEP-RL</text>
+  <text x="200" y="100" fill="#a78bfa" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">PPO-NPU</text>
+
+  <!-- Golden Neural Trace Bus Interconnects -->
+  <path d="M 120 72 L 160 72 M 120 90 L 160 90 M 120 108 L 160 108 M 240 72 L 280 72 M 240 90 L 280 90 M 240 108 L 280 108" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+  <!-- OLED Diagnostic Display Bar -->
+  <rect x="110" y="136" width="180" height="26" rx="5" fill="#060913" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="120" y="152" fill="#c4b5fd" font-family="monospace" font-size="9" font-weight="bold">POLICY: G2V/V2G (ACT)</text>
+  <text x="280" y="152" fill="#34d399" font-family="monospace" font-size="9" font-weight="bold" text-anchor="end">REWARD: +0.84</text>
+
+  <!-- Dual Shielded RJ45 Gigabit Ethernet Ports -->
+  <rect x="85" y="168" width="30" height="20" rx="2" fill="#0f172a" stroke="#94a3b8" stroke-width="1.2"/>
+  <rect x="91" y="172" width="18" height="12" fill="#334155"/>
+  
+  <rect x="125" y="168" width="30" height="20" rx="2" fill="#0f172a" stroke="#94a3b8" stroke-width="1.2"/>
+  <rect x="131" y="172" width="18" height="12" fill="#334155"/>
+
+  <!-- Pluggable Industrial Green Terminal Blocks (CAN / RS485) -->
+  <rect x="235" y="168" width="80" height="20" rx="3" fill="#15803d" stroke="#22c55e" stroke-width="1.5"/>
+  <circle cx="247" cy="178" r="3.5" fill="#fef08a"/>
+  <circle cx="262" cy="178" r="3.5" fill="#fef08a"/>
+  <circle cx="277" cy="178" r="3.5" fill="#fef08a"/>
+  <circle cx="292" cy="178" r="3.5" fill="#fef08a"/>
+  <circle cx="305" cy="178" r="3.5" fill="#fef08a"/>
+
+  <!-- Status LEDs -->
+  <circle cx="95" cy="46" r="3" fill="#22c55e" filter="url(#aiGlow)"/>
+  <text x="103" y="49" fill="#94a3b8" font-family="monospace" font-size="7">SYS</text>
+
+  <circle cx="130" cy="46" r="3" fill="#8b5cf6" filter="url(#aiGlow)"/>
+  <text x="138" y="49" fill="#94a3b8" font-family="monospace" font-size="7">DRL</text>
+
+  <circle cx="165" cy="46" r="3" fill="#38bdf8" filter="url(#aiGlow)"/>
+  <text x="173" y="49" fill="#94a3b8" font-family="monospace" font-size="7">ACT</text>
+
+  <circle cx="200" cy="46" r="3" fill="#10b981" filter="url(#aiGlow)"/>
+  <text x="208" y="49" fill="#94a3b8" font-family="monospace" font-size="7">NET</text>
+</svg>

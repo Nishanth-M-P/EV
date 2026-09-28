@@ -7,6 +7,8 @@ from backend.app.ai.constraints import ConstraintEngine
 from backend.app.ai.reward import RewardFunction
 from backend.app.ai.ppo_model import PPOActorCritic
 
+from backend.app.ai.state_space import StateSpaceModule
+
 class RLAgent:
     """
     Intelligent RL Decision Engine powered by genuine PPO Actor-Critic Neural Policy
@@ -17,31 +19,24 @@ class RLAgent:
         self.reward_fn = RewardFunction()
         self.ppo = ppo_model or PPOActorCritic()
         self.action_names = {0: "IDLE", 1: "CHARGE", 2: "DISCHARGE (V2G)"}
+        self.previous_action = 0
 
     def build_observation(self, ev: EVDigitalTwin, current_hour: float) -> np.ndarray:
-        """Constructs the standard 10-dimensional normalized continuous observation vector."""
+        """Constructs the standard 19-dimensional normalized continuous observation vector."""
         grid_state = self.energy_provider.get_grid_state(current_hour)
         price_info = self.energy_provider.get_electricity_price(current_hour)
         solar_kw = self.energy_provider.get_solar_generation(current_hour)
-
-        time_remaining = max(0.0, ev.departure_time - current_hour)
-        total_window = max(1.0, ev.departure_time - ev.arrival_time)
-        norm_power = (ev.current_power_kw / ev.max_charge_power_kw) if ev.max_charge_power_kw > 0 else 0.0
-
         solar_cap = getattr(self.energy_provider.solar, "solar_peak_capacity_kw", 40.0)
 
-        return np.array([
-            ev.current_soc / 100.0,
-            ev.target_soc / 100.0,
-            ev.minimum_soc / 100.0,
-            min(1.0, time_remaining / total_window),
-            min(1.0, price_info["current_price"] / 15.0),
-            min(1.0, grid_state["utilization_pct"] / 100.0),
-            min(1.0, solar_kw / max(1.0, solar_cap)),
-            max(-1.0, min(1.0, norm_power)),
-            0.0,
-            ev.battery_health / 100.0
-        ], dtype=np.float32)
+        vec, _ = StateSpaceModule.build_state(
+            ev=ev,
+            grid_data=grid_state,
+            price_data=price_info,
+            solar_data={"generation_kw": solar_kw, "installed_capacity_kw": solar_cap},
+            current_hour=current_hour,
+            previous_action=self.previous_action
+        )
+        return vec
 
     def select_action(
         self,
@@ -109,6 +104,20 @@ class RLAgent:
             timestep_hours=timestep_hours
         )
 
+        self.previous_action = final_action
+        reward_breakdown = self.reward_fn.calculate_reward_breakdown(
+            actual_power_kw=approved_power,
+            timestep_hours=timestep_hours,
+            electricity_price=price,
+            solar_generation_kw=solar_kw,
+            grid_load_pct=grid_pct,
+            is_done=current_hour >= getattr(ev, "departure_time", 24.0),
+            current_soc=getattr(ev, "current_soc", 50.0),
+            target_soc=getattr(ev, "target_soc", 80.0),
+            had_constraint_violation=len(overrides) > 0,
+            v2g_enabled=getattr(ev, "v2g_enabled", True)
+        )
+
         return {
             "ev_id": ev.ev_id,
             "ev_name": ev.name,
@@ -122,6 +131,7 @@ class RLAgent:
             "confidence": confidence,
             "reason": reason_str,
             "reward": round(step_reward, 2),
+            "reward_breakdown": reward_breakdown,
             "soc": round(ev.current_soc, 1),
             "safety_overrides": overrides,
             "is_safety_overridden": len(overrides) > 0 and (raw_action != final_action)

@@ -1,0 +1,14 @@
+{
+  "model_name": "ppo_v2g_latest",
+  "algorithm": "PPO",
+  "total_timesteps": 5000,
+  "learning_rate": 0.0003,
+  "gamma": 0.99,
+  "batch_size": 64,
+  "clip_range": 0.2,
+  "fleet_size": 50,
+  "random_seed": 42,
+  "training_duration_seconds": 14.83,
+  "training_date": "2026-09-22T22:21:58.408916",
+  "model_path": "C:\\Users\\l\\OneDrive\\Documents\\EV\\models\\ppo_v2g_latest.zip"
+}

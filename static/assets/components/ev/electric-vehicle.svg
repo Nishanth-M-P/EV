@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" width="100%" height="100%">
+  <defs>
+    <linearGradient id="carBody" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="35%" stop-color="#0284c7"/>
+      <stop offset="85%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#075985"/>
+    </linearGradient>
+    <linearGradient id="carGlass" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="40%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="wheelRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="evGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Ground Shadows -->
+  <ellipse cx="205" cy="188" rx="165" ry="16" fill="#000" opacity="0.5"/>
+
+  <!-- Sleek Aerodynamic Car Silhouette -->
+  <!-- Underbody battery pack slab -->
+  <rect x="90" y="152" width="220" height="14" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1.2"/>
+  <rect x="94" y="155" width="212" height="8" rx="2" fill="#10b981" opacity="0.3" filter="url(#evGlow)"/>
+
+  <!-- Main Body Shell -->
+  <path d="M 50 148 C 45 140, 52 125, 75 120 C 110 114, 135 98, 175 75 C 220 50, 275 52, 315 78 C 345 98, 365 120, 368 138 C 370 148, 360 156, 345 156 L 55 156 Z" fill="url(#carBody)" stroke="#0284c7" stroke-width="1.5"/>
+
+  <!-- Aerodynamic Cabin Greenhouse / Tinted Windows -->
+  <path d="M 148 108 L 180 75 C 215 57, 260 57, 295 78 L 325 108 Z" fill="url(#carGlass)" stroke="#38bdf8" stroke-width="1.5"/>
+  <!-- B-Pillar divider -->
+  <line x1="230" y1="62" x2="230" y2="108" stroke="#0f172a" stroke-width="4"/>
+
+  <!-- Front Headlight LED Blade -->
+  <path d="M 50 134 L 78 136 L 75 140 L 48 138 Z" fill="#f8fafc" filter="url(#evGlow)"/>
+  <line x1="48" y1="136" x2="95" y2="137" stroke="#38bdf8" stroke-width="2"/>
+
+  <!-- Rear Taillight Lightbar -->
+  <path d="M 355 126 L 368 135 L 366 142 L 350 132 Z" fill="#f43f5e" filter="url(#evGlow)"/>
+
+  <!-- Wheels & Low-drag Aero Rims -->
+  <!-- Front Wheel -->
+  <g transform="translate(105, 162)">
+    <circle cx="0" cy="0" r="26" fill="#0f172a" stroke="#334155" stroke-width="3"/>
+    <circle cx="0" cy="0" r="18" fill="url(#wheelRim)"/>
+    <circle cx="0" cy="0" r="7" fill="#0f172a"/>
+    <!-- Aero Spokes -->
+    <line x1="-15" y1="0" x2="15" y2="0" stroke="#cbd5e1" stroke-width="3"/>
+    <line x1="0" y1="-15" x2="0" y2="15" stroke="#cbd5e1" stroke-width="3"/>
+  </g>
+
+  <!-- Rear Wheel -->
+  <g transform="translate(295, 162)">
+    <circle cx="0" cy="0" r="26" fill="#0f172a" stroke="#334155" stroke-width="3"/>
+    <circle cx="0" cy="0" r="18" fill="url(#wheelRim)"/>
+    <circle cx="0" cy="0" r="7" fill="#0f172a"/>
+    <!-- Aero Spokes -->
+    <line x1="-15" y1="0" x2="15" y2="0" stroke="#cbd5e1" stroke-width="3"/>
+    <line x1="0" y1="-15" x2="0" y2="15" stroke="#cbd5e1" stroke-width="3"/>
+  </g>
+
+  <!-- Rear Charging Port Door & Connected Cable -->
+  <g transform="translate(330, 118)">
+    <circle cx="0" cy="0" r="10" fill="#0f172a" stroke="#10b981" stroke-width="2" filter="url(#evGlow)"/>
+    <circle cx="0" cy="0" r="6" fill="#065f46"/>
+    <!-- CCS Plug inserted -->
+    <rect x="-4" y="-6" width="16" height="12" rx="3" fill="#334155" stroke="#64748b" stroke-width="1"/>
+    <!-- Orange Cable leading downward -->
+    <path d="M 12 0 C 35 0, 45 45, 55 75" fill="none" stroke="#f97316" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Door Line Accents & Flush Handles -->
+  <path d="M 175 116 L 175 148 M 245 116 L 245 148" stroke="#0369a1" stroke-width="1.2"/>
+  <rect x="185" y="122" width="14" height="2.5" rx="1" fill="#cbd5e1"/>
+  <rect x="255" y="122" width="14" height="2.5" rx="1" fill="#cbd5e1"/>
+</svg>

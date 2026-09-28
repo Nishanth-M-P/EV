@@ -7,6 +7,7 @@ from backend.app.simulator.charger_simulator import ChargerSimulator
 from backend.app.simulator.energy_provider import SimulationEnergyProvider
 from backend.app.simulator.energy_balance import EnergyBalanceEngine, PowerFlowState
 from backend.app.ai.agent import RLAgent
+from backend.app.simulation.action_state_machine import ActionStateMachine, Action
 from backend.app.ai.constraints import ConstraintEngine
 
 class SimulationEngine:
@@ -44,6 +45,7 @@ class SimulationEngine:
         
         # AI Engine
         self.rl_agent = RLAgent(self.energy_provider)
+        self.action_state_machine = ActionStateMachine()
         
         # History
         self.history: List[Dict[str, Any]] = []

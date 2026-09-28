@@ -26,8 +26,17 @@ class EVDigitalTwin:
         self.ev_id = ev_id
         self.name = name
         self.target_soc = float(target_soc)
-        self.arrival_time = float(arrival_time)
-        self.departure_time = float(departure_time)
+        if isinstance(arrival_time, str) and ":" in arrival_time:
+            h, m = arrival_time.split(":")
+            self.arrival_time = float(h) + float(m) / 60.0
+        else:
+            self.arrival_time = float(arrival_time)
+
+        if isinstance(departure_time, str) and ":" in departure_time:
+            h, m = departure_time.split(":")
+            self.departure_time = float(h) + float(m) / 60.0
+        else:
+            self.departure_time = float(departure_time)
         self.max_charge_power_kw = float(max_charge_power_kw)
         self.max_discharge_power_kw = float(max_discharge_power_kw)
 

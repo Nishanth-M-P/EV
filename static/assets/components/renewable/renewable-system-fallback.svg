@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" width="100%" height="100%">
+  <defs>
+    <linearGradient id="reSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f2b38"/>
+      <stop offset="60%" stop-color="#0b1b2b"/>
+      <stop offset="100%" stop-color="#08101e"/>
+    </linearGradient>
+    <linearGradient id="pvCell" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="60%" stop-color="#172554"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="solarGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Sky & Landscape -->
+  <rect x="0" y="0" width="400" height="220" fill="url(#reSky)"/>
+  <path d="M 0 170 Q 120 155, 240 165 T 400 172 L 400 220 L 0 220 Z" fill="#0d1b2a"/>
+
+  <!-- High-Efficiency Solar PV Array (Tilted) -->
+  <g transform="translate(45, 110)">
+    <!-- Metal Support Stanchions -->
+    <line x1="30" y1="65" x2="45" y2="40" stroke="#64748b" stroke-width="4"/>
+    <line x1="120" y1="65" x2="135" y2="40" stroke="#64748b" stroke-width="4"/>
+    
+    <!-- Angled PV Panel Surface -->
+    <polygon points="10,45 155,20 185,75 40,100" fill="url(#pvCell)" stroke="#38bdf8" stroke-width="2"/>
+    
+    <!-- Monocrystalline Cell Gridlines -->
+    <!-- Transverse -->
+    <line x1="45" y1="39" x2="75" y2="94" stroke="#60a5fa" stroke-width="1.2" opacity="0.6"/>
+    <line x1="82" y1="33" x2="112" y2="88" stroke="#60a5fa" stroke-width="1.2" opacity="0.6"/>
+    <line x1="118" y1="27" x2="148" y2="82" stroke="#60a5fa" stroke-width="1.2" opacity="0.6"/>
+    <!-- Longitudinal Busbars -->
+    <line x1="20" y1="63" x2="165" y2="38" stroke="#cbd5e1" stroke-width="1.2" opacity="0.7"/>
+    <line x1="30" y1="82" x2="175" y2="57" stroke="#cbd5e1" stroke-width="1.2" opacity="0.7"/>
+    <!-- Glass Anti-Reflective Glare -->
+    <polygon points="25,50 140,30 110,60 15,80" fill="#38bdf8" opacity="0.15"/>
+  </g>
+
+  <!-- Modern Commercial 3-Blade Wind Turbine -->
+  <g transform="translate(295, 30)">
+    <!-- Tapered Tower Mast -->
+    <polygon points="0,65 -4,155 4,155" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+    <!-- Nacelle Housing -->
+    <rect x="-12" y="55" width="26" height="14" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+    <!-- Aerodynamic Spinner Rotor Hub -->
+    <circle cx="-12" cy="62" r="6" fill="#cbd5e1"/>
+    
+    <!-- 3 Rotor Blades -->
+    <!-- Blade 1 (Upward) -->
+    <path d="M -12 62 C -18 35, -16 10, -12 0 C -8 10, -6 35, -12 62 Z" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <!-- Blade 2 (Bottom-Right) -->
+    <path d="M -12 62 C 10 75, 35 90, 48 98 C 42 86, 25 72, -12 62 Z" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <!-- Blade 3 (Bottom-Left) -->
+    <path d="M -12 62 C -32 80, -50 96, -60 108 C -50 98, -35 80, -12 62 Z" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    
+    <!-- Red Aviation Obstruction Light -->
+    <circle cx="2" cy="54" r="2.5" fill="#ef4444" filter="url(#solarGlow)"/>
+  </g>
+
+  <!-- Hydro Generation Penstock / Water Flow Curve in background -->
+  <path d="M 195 168 C 220 178, 240 195, 270 200" fill="none" stroke="#06b6d4" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 205 174 C 225 182, 245 198, 275 204" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0.8"/>
+
+  <!-- Energy Generation Summary Pill -->
+  <rect x="25" y="25" width="130" height="24" rx="6" fill="#042f2e" stroke="#10b981" stroke-width="1.5"/>
+  <circle cx="38" cy="37" r="4" fill="#34d399" filter="url(#solarGlow)"/>
+  <text x="50" y="41" fill="#6ee7b7" font-family="monospace" font-size="9" font-weight="bold">5.02 GW TOTAL RE</text>
+</svg>

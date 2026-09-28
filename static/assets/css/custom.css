@@ -1,0 +1,792 @@
+/* GridWise AI Custom Styles & Telemetry Design Tokens */
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #0c1324;
+    color: #dce1fb;
+  }
+  body {
+    overscroll-behavior: none;
+  }
+  main > :first-child {
+    margin-top: 0 !important;
+  }
+  main > :last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0c1324;
+}
+::-webkit-scrollbar-thumb {
+  background: #23293c;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3c4a42;
+}
+
+/* Glowing Accent Utilities */
+.glow-primary {
+  box-shadow: 0 0 15px -2px rgba(78, 222, 163, 0.35);
+}
+.glow-secondary {
+  box-shadow: 0 0 15px -2px rgba(76, 215, 246, 0.35);
+}
+.glow-tertiary {
+  box-shadow: 0 0 15px -2px rgba(255, 185, 95, 0.35);
+}
+.glow-error {
+  box-shadow: 0 0 15px -2px rgba(255, 180, 171, 0.35);
+}
+
+/* Pulse indicator animation */
+@keyframes telemetry-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.92); }
+}
+.animate-telemetry-pulse {
+  animation: telemetry-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Chart curve hover interactions */
+.chart-curve {
+  transition: stroke-width 0.2s ease, opacity 0.2s ease;
+}
+.chart-curve:hover {
+  stroke-width: 4px !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+/* Node circle hover in IEEE 33-Bus visualization */
+.bus-node {
+  cursor: pointer;
+  transition: transform 0.2s ease, r 0.2s ease, stroke-width 0.2s ease;
+}
+.bus-node:hover {
+  r: 8px !important;
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 8px #4edea3);
+}
+
+/* Tab & navigation transition */
+.nav-item-active {
+  background-color: #10b981 !important;
+  color: #002113 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 12px -2px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Drawer overlay transitions */
+#config-drawer-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+#config-drawer-panel.active {
+  transform: translateX(0);
+}
+
+/* ================= Tinkercad Simulation Lab Styles ================= */
+.sim-canvas-grid {
+  background-color: #080d1a;
+  background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+/* Canvas Component Node */
+.sim-node {
+  position: absolute;
+  user-select: none;
+  cursor: grab;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+}
+.sim-node:active {
+  cursor: grabbing;
+}
+.sim-node.selected {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+/* Port Sockets */
+.sim-port {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: crosshair;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  z-index: 20;
+}
+.sim-port:hover {
+  transform: scale(1.45);
+  box-shadow: 0 0 12px currentColor;
+}
+.sim-port.connecting {
+  animation: telemetry-pulse 0.8s infinite;
+  box-shadow: 0 0 14px #38bdf8;
+}
+.sim-port.port-valid-target {
+  background-color: #10b981 !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.9) !important;
+  transform: scale(1.5) !important;
+  animation: pulse-green 1s infinite alternate;
+}
+.sim-port.port-invalid-target {
+  background-color: #ef4444 !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.9) !important;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes pulse-green {
+  from { box-shadow: 0 0 8px #10b981; }
+  to { box-shadow: 0 0 18px #34d399; }
+}
+
+/* Animated Wire Energy Flow */
+@keyframes wire-flow-forward {
+  from { stroke-dashoffset: 32; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes wire-flow-reverse {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 32; }
+}
+
+.wire-charging {
+  stroke: #10b981;
+  stroke-dasharray: 8 4;
+  animation: wire-flow-forward 0.8s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.8));
+}
+
+.wire-discharging {
+  stroke: #38bdf8;
+  stroke-dasharray: 8 4;
+  animation: wire-flow-reverse 0.8s linear infinite;
+  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.9));
+}
+
+.wire-control {
+  stroke: #c084fc;
+  stroke-dasharray: 4 4;
+  animation: wire-flow-forward 1.2s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.7));
+}
+
+.wire-idle {
+  stroke: #64748b;
+  stroke-dasharray: 5 5;
+  opacity: 0.6;
+}
+
+.wire-selected-halo {
+  stroke: #f59e0b;
+  stroke-width: 8px;
+  opacity: 0.35;
+  filter: drop-shadow(0 0 8px #f59e0b);
+}
+
+.wire-clickable {
+  cursor: pointer;
+  pointer-events: stroke;
+}
+.wire-clickable:hover {
+  filter: drop-shadow(0 0 6px #38bdf8);
+}
+
+/* Engineering Object Styles */
+.eng-component {
+  background: linear-gradient(145deg, #131b2e 0%, #0c1324 100%);
+  border: 1px solid #1e293b;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.eng-component:hover {
+  border-color: #334155;
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.eng-component.selected {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4), 0 16px 36px -6px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Draggable item ghost */
+.component-ghost {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* EV Integrated Chassis & Battery Cell Visuals */
+.ev-cell-module {
+  transition: all 0.3s ease;
+}
+.ev-cell-charging {
+  animation: cell-glow-green 1.2s infinite alternate ease-in-out;
+}
+.ev-cell-discharging {
+  animation: cell-glow-cyan 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes cell-glow-green {
+  from { opacity: 0.7; box-shadow: 0 0 4px #10b981; }
+  to { opacity: 1; box-shadow: 0 0 10px #34d399; }
+}
+
+@keyframes cell-glow-cyan {
+  from { opacity: 0.7; box-shadow: 0 0 4px #38bdf8; }
+  to { opacity: 1; box-shadow: 0 0 10px #06b6d4; }
+}
+
+/* ================= Real Industrial Hardware & 2.5D Enclosure Styles ================= */
+
+/* Metallic Corner Screws */
+.eng-screw {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #94a3b8, #334155 70%, #0f172a);
+  border: 1px solid #1e293b;
+  position: absolute;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.eng-screw::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 1px;
+  width: 3px;
+  height: 0.8px;
+  background: #0f172a;
+  transform: rotate(35deg);
+}
+
+/* Ventilation Louver Slits */
+.eng-louver {
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, #090d16, #1e293b);
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Realistic Dark OLED / Backlit LCD Screen */
+.eng-lcd {
+  background: radial-gradient(circle at 50% 30%, #0a1120 0%, #030712 100%);
+  border: 1px solid #1e293b;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+.eng-lcd::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.04), transparent);
+  pointer-events: none;
+}
+
+/* Physical Hardware Status LEDs */
+.eng-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  position: relative;
+  transition: all 0.25s ease;
+}
+.eng-led::after {
+  content: '';
+  position: absolute;
+  top: 1px; left: 1px; width: 2px; height: 2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+}
+.eng-led-green {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981, inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+}
+.eng-led-blue {
+  background: #3b82f6;
+  box-shadow: 0 0 8px #3b82f6, inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+}
+.eng-led-orange {
+  background: #f97316;
+  box-shadow: 0 0 8px #f97316, inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+}
+.eng-led-red {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444, inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+}
+.eng-led-grey {
+  background: #475569;
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Emergency Stop Button Visual */
+.eng-estop {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #f87171, #dc2626 65%, #991b1b);
+  border: 2px solid #eab308;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.eng-estop:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 8px #ef4444;
+}
+
+/* Transformer Cooling Radiator Fin Styling */
+.transformer-fin {
+  width: 5px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #1e293b, #334155 50%, #0f172a);
+  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* EV Silhouette and Charging Port Glow Ring */
+.ev-port-ring {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #334155;
+  background: #0f172a;
+  transition: all 0.3s ease;
+}
+.ev-port-ring.connected {
+  border-color: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+.ev-port-ring.charging {
+  border-color: #10b981;
+  animation: telemetry-pulse 0.9s infinite alternate;
+  box-shadow: 0 0 12px #34d399;
+}
+.ev-port-ring.discharging {
+  border-color: #38bdf8;
+  animation: telemetry-pulse 0.9s infinite alternate;
+  box-shadow: 0 0 12px #38bdf8;
+}
+
+/* Port Socket Subtlety: Hidden or subtle normally, prominent on hover/select */
+.sim-port {
+  opacity: 0.3;
+  transform: scale(0.85);
+  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sim-node:hover .sim-port,
+.sim-node.selected .sim-port,
+.sim-port:hover,
+.sim-port.connecting,
+.engineering-mode .sim-port {
+  opacity: 1 !important;
+  transform: scale(1.15) !important;
+}
+
+/* Realistic Heavy Industrial Cable & Plug Heads */
+.cable-jacket {
+  stroke: #090e17;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cable-plug-head {
+  fill: #1e293b;
+  stroke: #475569;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+.cable-terminal-lug {
+  fill: #b45309;
+  stroke: #d97706;
+  stroke-width: 1.5;
+}
+
+/* Engineering Schematic Blueprint Grid Mode */
+.engineering-mode {
+  background-color: #060a14 !important;
+  background-image: 
+    linear-gradient(rgba(56, 189, 248, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.07) 1px, transparent 1px) !important;
+  background-size: 20px 20px !important;
+}
+.engineering-mode .eng-component {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.15) !important;
+}
+.engineering-mode .sim-port::after {
+  content: attr(title);
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #090d16;
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  font-family: monospace;
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+}
+
+/* ================= System Architecture Diagram Styles (GECR CSE) ================= */
+.arch-card {
+  background: rgba(13, 21, 39, 0.96);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+.arch-card:hover {
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Fixed Circuit Node Behavior */
+.sim-node.is-fixed {
+  cursor: default !important;
+}
+.sim-node.is-fixed:active {
+  cursor: default !important;
+}
+.sim-node.is-fixed .sim-port {
+  pointer-events: none !important;
+  opacity: 0.15 !important;
+}
+
+/* Arrow badges along connection wires */
+.wire-badge-rect {
+  fill: #090d16;
+  stroke-width: 1.2px;
+  rx: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+.wire-badge-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  dominant-baseline: central;
+  text-anchor: middle;
+}
+
+/* Dashed live feedback animation */
+@keyframes feedback-flow {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+.wire-feedback {
+  stroke: #38bdf8;
+  stroke-dasharray: 6 4;
+  animation: feedback-flow 1s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8));
+}
+
+.wire-command {
+  stroke: #10b981;
+  stroke-dasharray: 6 3;
+  animation: feedback-flow 0.8s linear infinite;
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.8));
+}
+
+.wire-data-blue {
+  stroke: #38bdf8;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.6));
+}
+
+.wire-power-down {
+  stroke: #10b981;
+  stroke-dasharray: 6 3;
+  animation: feedback-flow 0.8s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.8));
+}
+
+.wire-power-up {
+  stroke: #f43f5e;
+  stroke-dasharray: 6 3;
+  animation: feedback-flow 0.8s linear infinite reverse;
+  filter: drop-shadow(0 0 4px rgba(244, 63, 94, 0.8));
+}
+
+.wire-measurement {
+  stroke: #ec4899;
+  stroke-dasharray: 4 3;
+  stroke-width: 1.8;
+  animation: feedback-flow 1.5s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(236, 72, 153, 0.6));
+}
+
+/* Contextual Inspector Tab Buttons */
+.insp-tab-btn {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  color: #94a3b8;
+  transition: all 0.2s ease;
+}
+.insp-tab-btn:hover {
+  color: #f1f5f9;
+}
+.insp-tab-btn.active {
+  color: #10b981;
+  border-bottom-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.08);
+}
+
+/* ================= THEME SYSTEM (PRD Section 37-41) ================= */
+:root {
+  --bg-main: #080d1a;
+  --bg-surface: #0f172a;
+  --bg-surface-secondary: #020617;
+  --bg-panel: rgba(15, 23, 42, 0.95);
+  --border-color: #1e293b;
+  --border-subtle: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --card-bg: rgba(2, 6, 23, 0.75);
+  --chart-grid: rgba(148, 163, 184, 0.12);
+  --chart-text: #94a3b8;
+}
+
+html.light {
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-secondary: #f1f5f9;
+  --bg-panel: rgba(255, 255, 255, 0.96);
+  --border-color: #cbd5e1;
+  --border-subtle: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --card-bg: rgba(255, 255, 255, 0.92);
+  --chart-grid: rgba(15, 23, 42, 0.08);
+  --chart-text: #475569;
+}
+
+html.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-\[\#080d1a\], html.light .bg-slate-900, html.light .bg-slate-950, html.light .bg-slate-900\/95, html.light .bg-slate-950\/70, html.light .bg-slate-950\/90, html.light .bg-slate-950\/80, html.light .bg-slate-950\/50, html.light .bg-slate-950\/40 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.light .border-slate-800, html.light .border-slate-700, html.light .border-slate-800\/80, html.light .border-slate-800\/60 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .text-slate-200, html.light .text-slate-100, html.light .text-slate-300 {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-400, html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+html.light .sim-canvas-grid {
+  background-color: #f1f5f9 !important;
+  background-image: radial-gradient(rgba(100, 116, 139, 0.22) 1.5px, transparent 1.5px) !important;
+}
+
+html.light .eng-component {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+html.light .eng-component:hover {
+  border-color: #94a3b8 !important;
+  box-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.12) !important;
+}
+
+html.light header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light aside {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light .chart-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* ================= RESPONSIVE ANALYTICS GRID (PRD Section 4) ================= */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  width: 100%;
+  min-width: 0;
+  height: 280px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chart-card:hover {
+  border-color: var(--border-subtle);
+}
+
+.chart-canvas-wrapper {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.chart-canvas-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* ================= REALISTIC ENGINEERING POWER CABLE & FLOW STYLES ================= */
+.cable-outer-sheath {
+  stroke: #0a0f1d;
+  stroke-width: 14px;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.7));
+}
+
+.cable-insulator {
+  stroke: #1e293b;
+  stroke-width: 10px;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.cable-core-idle {
+  stroke: #475569;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.6;
+}
+
+.cable-core-charging {
+  stroke: #059669;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.85));
+}
+
+.cable-core-v2g {
+  stroke: #0284c7;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.85));
+}
+
+.cable-pulse-charge {
+  stroke: #34d399;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  stroke-dasharray: 12 18;
+  animation: power-flow-forward 0.8s linear infinite;
+  fill: none;
+  filter: drop-shadow(0 0 8px #10b981);
+}
+
+.cable-pulse-v2g {
+  stroke: #38bdf8;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  stroke-dasharray: 12 18;
+  animation: power-flow-reverse 0.8s linear infinite;
+  fill: none;
+  filter: drop-shadow(0 0 8px #06b6d4);
+}
+
+@keyframes power-flow-forward {
+  from { stroke-dashoffset: 30; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes power-flow-reverse {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 30; }
+}
+
+/* 50/50 Engineering Object Card Visuals */
+.arch-card-50-50 {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(8, 13, 26, 0.98) 100%);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.arch-card-50-50:hover {
+  box-shadow: 0 8px 26px -3px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* Telemetry and Control Bus Flow Animations */
+.data-flow-pulse {
+  animation: data-bus-travel 1.2s linear infinite;
+}
+@keyframes data-bus-travel {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+.control-flow-pulse {
+  animation: control-bus-travel 1.0s linear infinite;
+}
+@keyframes control-bus-travel {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+.meter-flow-pulse {
+  animation: meter-bus-travel 0.8s linear infinite;
+}
+@keyframes meter-bus-travel {
+  from { stroke-dashoffset: 16; }
+  to { stroke-dashoffset: 0; }
+}
+
+
+
+
+

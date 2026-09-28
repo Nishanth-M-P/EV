@@ -17,29 +17,26 @@ from backend.app.models.database_models import (
     AnalyticsRecord
 )
 
+from backend.simulation.unified_engine import authoritative_simulation_engine
+
 class SimulationService:
     def __init__(self):
-        self.engine = SimulationEngine()
+        self.engine = authoritative_simulation_engine
         self.tick_interval_seconds = 1.0  # Real-time update cadence
         self.is_running = True  # Default Mode A: continuous real-time advance
-        self.engine.is_running = True
-        self.engine.status = "RUNNING"
         self.preset_scenario = "Smart Grid Peak-Shaving Demo"
 
     def start(self):
         self.is_running = True
-        self.engine.is_running = True
-        self.engine.status = "RUNNING"
+        self.engine.start()
 
     def pause(self):
         self.is_running = False
-        self.engine.is_running = False
-        self.engine.status = "PAUSED"
+        self.engine.pause()
 
     def stop(self):
         self.is_running = False
-        self.engine.is_running = False
-        self.engine.status = "STOPPED"
+        self.engine.stop()
 
     def reset(self):
         self.is_running = False
@@ -59,14 +56,15 @@ class SimulationService:
         scenario_name: str = "Smart Grid Peak-Shaving Demo"
     ):
         self.preset_scenario = scenario_name
-        self.engine = SimulationEngine(
+        return self.engine.configure(
+            duration_hours=duration_hours,
+            timestep_minutes=timestep_minutes,
             grid_capacity_kw=grid_capacity_kw,
             solar_capacity_kw=solar_capacity_kw,
-            timestep_minutes=timestep_minutes,
-            duration_hours=duration_hours
+            cloud_factor=cloud_factor,
+            num_evs=num_evs,
+            scenario_name=scenario_name
         )
-        self.engine.energy_provider.solar.cloud_factor = cloud_factor
-        return self.engine.get_current_state()
 
     def create_custom_scenario(
         self,
@@ -82,54 +80,21 @@ class SimulationService:
         ai_enabled: bool = True,
         v2g_enabled: bool = True
     ) -> Dict[str, Any]:
-        """Creates and loads an advanced scenario into the Digital Twin."""
+        """Creates and loads an advanced scenario into the Authoritative Digital Twin."""
         self.preset_scenario = name
-        self.engine = SimulationEngine(
+        return self.engine.create_custom_scenario(
+            name=name,
+            scenario=scenario,
+            duration_hours=duration_hours,
+            timestep_minutes=timestep_minutes,
             grid_capacity_kw=grid_capacity_kw,
             solar_capacity_kw=solar_capacity_kw,
-            timestep_minutes=timestep_minutes,
-            duration_hours=duration_hours
+            cloud_factor=cloud_factor,
+            evs_config=evs_config,
+            pricing_config=pricing_config,
+            ai_enabled=ai_enabled,
+            v2g_enabled=v2g_enabled
         )
-        self.engine.energy_provider.solar.cloud_factor = cloud_factor
-
-        # Configure custom fleet if provided
-        if evs_config and len(evs_config) > 0:
-            self.engine.evs.clear()
-            self.engine.chargers.clear()
-            for idx, item in enumerate(evs_config):
-                ev_id = item.get("id") or item.get("ev_id") or f"EV-{idx+1:03d}"
-                ev_name = item.get("name", f"EV-{idx+1}")
-                cap = float(item.get("battery_capacity_kwh", 60.0))
-                cur_soc = float(item.get("current_soc", 50.0))
-                min_soc = float(item.get("minimum_soc", 20.0))
-                max_soc = float(item.get("maximum_soc", 100.0))
-                tgt_soc = float(item.get("target_soc", item.get("required_soc", 85.0)))
-                arr = float(item.get("arrival_time", 8.0))
-                dep = float(item.get("departure_time", 18.0))
-                max_chg = float(item.get("max_charge_power_kw", 7.4))
-                max_dis = float(item.get("max_discharge_power_kw", 5.0)) if v2g_enabled else 0.0
-
-                ev = EVDigitalTwin(
-                    ev_id=ev_id,
-                    name=ev_name,
-                    battery_capacity_kwh=cap,
-                    current_soc=cur_soc,
-                    minimum_soc=min_soc,
-                    maximum_soc=max_soc,
-                    target_soc=tgt_soc,
-                    arrival_time=arr,
-                    departure_time=dep,
-                    max_charge_power_kw=max_chg,
-                    max_discharge_power_kw=max_dis
-                )
-                self.engine.evs[ev.ev_id] = ev
-                charger = ChargerSimulator(
-                    charger_id=f"CHG-{ev.ev_id}",
-                    max_power_kw=max(ev.max_charge_power_kw, ev.max_discharge_power_kw) * 1.5
-                )
-                self.engine.chargers[charger.charger_id] = charger
-
-        return self.engine.get_current_state()
 
     def run_benchmark(self) -> Dict[str, Any]:
         fleet_specs = [ev.to_dict() for ev in self.engine.evs.values()]
@@ -388,7 +353,11 @@ class SimulationService:
             sol_kw = s.get("solar_generation_kw", 0.0)
             pr = s.get("electricity_price", 0.0)
             evs = s.get("evs", [])
-            decisions = {d["ev_id"]: d for d in s.get("ai_decisions", [])}
+            decisions = {}
+            for d in s.get("ai_decisions", []):
+                if isinstance(d, dict):
+                    eid = d.get("ev_id") or d.get("id") or "EV-001"
+                    decisions[eid] = d
 
             for ev in evs:
                 eid = ev.get("id") or ev.get("ev_id")

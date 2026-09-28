@@ -1,0 +1,49 @@
+{
+  "uncontrolled": {
+    "strategy": "Uncontrolled (S1)",
+    "peak_demand_mw": 4.411,
+    "baseline_peak_mw": 4.411,
+    "peak_reduction_pct": 0.0,
+    "total_cost": 6517.6,
+    "v2g_energy_kwh": 0.0,
+    "charging_energy_kwh": 828.95,
+    "valley_to_peak_ratio": 0.435,
+    "soc_compliance_pct": 100.0,
+    "battery_throughput_efc": 0.1455
+  },
+  "rule_based": {
+    "strategy": "Rule-Based (S2)",
+    "peak_demand_mw": 4.305,
+    "baseline_peak_mw": 4.411,
+    "peak_reduction_pct": 2.4,
+    "total_cost": 5999.72,
+    "v2g_energy_kwh": 16.25,
+    "charging_energy_kwh": 816.6,
+    "valley_to_peak_ratio": 0.446,
+    "soc_compliance_pct": 86.0,
+    "battery_throughput_efc": 0.1462
+  },
+  "drl": {
+    "strategy": "DRL-V2G (S3)",
+    "peak_demand_mw": 4.408,
+    "baseline_peak_mw": 4.411,
+    "peak_reduction_pct": 0.07,
+    "total_cost": 9608.92,
+    "v2g_energy_kwh": 0.0,
+    "charging_energy_kwh": 1283.36,
+    "valley_to_peak_ratio": 0.435,
+    "soc_compliance_pct": 92.0,
+    "battery_throughput_efc": 0.2253
+  },
+  "summary": {
+    "fleet_size": 50,
+    "duration_hours": 24,
+    "s1_peak_mw": 4.411,
+    "s2_peak_mw": 4.305,
+    "s3_peak_mw": 4.408,
+    "peak_reduction_pct_vs_s1": 0.07,
+    "cost_reduction_pct_vs_s1": -47.43,
+    "v2g_energy_delivered_kwh": 0.0,
+    "drl_soc_compliance_pct": 92.0
+  }
+}

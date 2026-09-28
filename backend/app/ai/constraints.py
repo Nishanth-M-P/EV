@@ -1,6 +1,9 @@
-from typing import Tuple, List, Dict, Any
+from __future__ import annotations
+from typing import Tuple, List, Dict, Any, TYPE_CHECKING
 from datetime import datetime
-from backend.app.simulator.ev_simulator import EVDigitalTwin
+
+if TYPE_CHECKING:
+    from backend.app.simulator.ev_simulator import EVDigitalTwin
 
 class ConstraintEngine:
     """

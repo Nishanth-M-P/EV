@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" width="100%" height="100%">
+  <defs>
+    <linearGradient id="iexBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.0"/>
+    </linearGradient>
+    <filter id="mktGlow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Trading Terminal Enclosure -->
+  <rect x="20" y="20" width="360" height="180" rx="12" fill="url(#iexBg)" stroke="#334155" stroke-width="2"/>
+  <rect x="25" y="25" width="350" height="32" rx="6" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Header Banner -->
+  <text x="40" y="45" fill="#f87171" font-family="monospace" font-size="11" font-weight="bold">IEX RTM (REAL-TIME MARKET)</text>
+  <rect x="260" y="32" width="105" height="18" rx="4" fill="#881337" stroke="#f43f5e" stroke-width="1"/>
+  <text x="312" y="45" fill="#fecdd3" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="middle">BLOCK: 18:45–19:00</text>
+
+  <!-- Market Price Big Ticker Display -->
+  <text x="40" y="88" fill="#fda4af" font-family="monospace" font-size="10">MARKET CLEARING PRICE (MCP):</text>
+  <text x="40" y="120" fill="#f43f5e" font-family="monospace" font-size="28" font-weight="bold" filter="url(#mktGlow)">₹8.20 <tspan font-size="14" fill="#cbd5e1">/ kWh</tspan></text>
+  <text x="40" y="136" fill="#94a3b8" font-family="monospace" font-size="9">(₹8,200 / MWh)</text>
+
+  <!-- Grid Graph / 15-Minute Clearing Curves (Right Side) -->
+  <rect x="215" y="65" width="150" height="120" rx="6" fill="#090d16" stroke="#1e293b" stroke-width="1"/>
+  <!-- Gridlines -->
+  <line x1="215" y1="95" x2="365" y2="95" stroke="#1e293b" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="215" y1="125" x2="365" y2="125" stroke="#1e293b" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="215" y1="155" x2="365" y2="155" stroke="#1e293b" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Candlesticks / Step Curves -->
+  <!-- Step price profile -->
+  <path d="M 225 155 L 245 155 L 245 140 L 270 140 L 270 115 L 305 115 L 305 85 L 340 85 L 340 92 L 355 92" fill="none" stroke="#f43f5e" stroke-width="2.5"/>
+  <path d="M 225 155 L 245 155 L 245 140 L 270 140 L 270 115 L 305 115 L 305 85 L 340 85 L 340 92 L 355 92 L 355 175 L 225 175 Z" fill="url(#areaGrad)"/>
+
+  <!-- Merit Order Supply & Demand Crossing Point (MCP Equilibrium) -->
+  <circle cx="305" cy="85" r="4.5" fill="#facc15" stroke="#000" stroke-width="1" filter="url(#mktGlow)"/>
+  <text x="305" y="78" fill="#fef08a" font-family="monospace" font-size="7.5" font-weight="bold" text-anchor="middle">EQUILIBRIUM</text>
+
+  <!-- Market State Indicator Pill -->
+  <rect x="40" y="152" width="145" height="22" rx="4" fill="#450a0a" stroke="#ef4444" stroke-width="1"/>
+  <circle cx="52" cy="163" r="3.5" fill="#ef4444" filter="url(#mktGlow)"/>
+  <text x="62" y="167" fill="#fca5a5" font-family="monospace" font-size="8.5" font-weight="bold">HIGH PEAK TARIFF (₹)</text>
+</svg>

@@ -1132,27 +1132,38 @@ function updateEnergyFlowCanvas(state) {
 }
 
 function updateAIDecisionCard(state) {
-    const decisions = state.ai_decisions || [];
-    if (decisions.length === 0) return;
+    if (!state) return;
+    const decisions = state.ai_decisions || (state.ai_decision ? [state.ai_decision] : (state.ai ? [state.ai] : []));
+    if (!decisions || decisions.length === 0) return;
 
-    const activeDecision = decisions.find(d => d.action_name !== "IDLE") || decisions[0];
+    const activeDecision = decisions.find(d => {
+        const act = String(d?.action_name || d?.action || d?.final_action || "IDLE").toUpperCase();
+        return act !== "IDLE";
+    }) || decisions[0];
+
+    if (!activeDecision) return;
 
     const evNameElem = document.getElementById("decision-ev-name");
     const badgeElem = document.getElementById("decision-action-badge");
     const reasonElem = document.getElementById("decision-reason-text");
     const rewardElem = document.getElementById("decision-reward-val");
 
-    if (evNameElem) evNameElem.innerText = `${activeDecision.ev_id} (${activeDecision.ev_name || 'Tesla Model 3'})`;
+    if (evNameElem) evNameElem.innerText = `${activeDecision.ev_id || 'EV-001'} (${activeDecision.ev_name || activeDecision.name || 'Primary EV'})`;
     if (reasonElem) reasonElem.innerText = activeDecision.reason || "Autonomous PPO optimization";
-    if (rewardElem) rewardElem.innerText = activeDecision.reward > 0 ? `+${activeDecision.reward.toFixed(1)}` : `${activeDecision.reward?.toFixed(1) || '0.0'}`;
+    if (rewardElem) {
+        const rVal = typeof activeDecision.reward === 'number' ? activeDecision.reward : (typeof state.reward === 'number' ? state.reward : 0);
+        rewardElem.innerText = rVal > 0 ? `+${rVal.toFixed(1)}` : `${rVal.toFixed(1)}`;
+    }
 
     if (badgeElem) {
-        if (activeDecision.action_name === "CHARGE") {
+        const actName = String(activeDecision.action_name || activeDecision.action || activeDecision.final_action || "IDLE").toUpperCase();
+        const pwr = Math.abs(activeDecision.power_kw || activeDecision.command_kw || 0.0);
+        if (actName === "CHARGE" || actName.includes("CHARGE")) {
             badgeElem.className = "self-start sm:self-auto px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold flex items-center gap-1.5 font-mono pulse-charge";
-            badgeElem.innerHTML = `⚡ CHARGE (+${(activeDecision.power_kw || 7.4).toFixed(1)} kW)`;
-        } else if (activeDecision.action_name === "DISCHARGE" || activeDecision.action_name.includes("DISCHARGE")) {
+            badgeElem.innerHTML = `⚡ CHARGE (+${(pwr || 7.4).toFixed(1)} kW)`;
+        } else if (actName === "DISCHARGE" || actName.includes("DISCHARGE") || actName.includes("V2G")) {
             badgeElem.className = "self-start sm:self-auto px-3 py-1 rounded-xl bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold flex items-center gap-1.5 font-mono pulse-discharge";
-            badgeElem.innerHTML = `🔋 DISCHARGE / V2G (${(activeDecision.power_kw || -5.0).toFixed(1)} kW)`;
+            badgeElem.innerHTML = `🔋 DISCHARGE / V2G (-${(pwr || 5.0).toFixed(1)} kW)`;
         } else {
             badgeElem.className = "self-start sm:self-auto px-3 py-1 rounded-xl bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold flex items-center gap-1.5 font-mono";
             badgeElem.innerHTML = `⏸️ IDLE (0.0 kW)`;
@@ -1208,15 +1219,15 @@ function renderSimulatorEvTwins() {
     container.innerHTML = evs.map(ev => {
         const dec = decisions.find(d => d.ev_id === ev.id || d.ev_id === ev.ev_id) || {};
         const reason = dec.reason || "Autonomous RL Energy Policy Active";
-        const action = dec.action_name || (ev.status === "CHARGING" ? "CHARGE" : (ev.status === "DISCHARGING" ? "DISCHARGE" : "IDLE"));
+        const action = String(dec.action_name || dec.action || dec.final_action || (ev.status === "CHARGING" ? "CHARGE" : (ev.status === "DISCHARGING" ? "DISCHARGE" : "IDLE"))).toUpperCase();
 
         let statusClass = "bg-slate-100 text-slate-700 border-slate-300";
         let actionClass = "bg-slate-100 text-slate-700 border-slate-300";
 
-        if (action === "CHARGE") {
+        if (action === "CHARGE" || action.includes("CHARGE")) {
             actionClass = "bg-emerald-100 text-emerald-800 border-emerald-300 pulse-charge";
             statusClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
-        } else if (action === "DISCHARGE" || action.includes("DISCHARGE")) {
+        } else if (action === "DISCHARGE" || action.includes("DISCHARGE") || action.includes("V2G")) {
             actionClass = "bg-amber-100 text-amber-800 border-amber-300 pulse-discharge";
             statusClass = "bg-amber-100 text-amber-800 border-amber-300";
         }
@@ -2254,10 +2265,11 @@ async function openXaiModal(evId) {
         const finalBadge = document.getElementById("xai-final-action-badge");
         if (finalBadge) {
             const pwr = data.approved_power_kw || 0.0;
-            finalBadge.innerText = `${data.final_approved_action} (${pwr >= 0 ? '+' : ''}${pwr.toFixed(1)} kW)`;
-            if (data.final_approved_action === "CHARGE") {
+            const finalAct = String(data.final_approved_action || data.final_action || "IDLE").toUpperCase();
+            finalBadge.innerText = `${finalAct} (${pwr >= 0 ? '+' : ''}${pwr.toFixed(1)} kW)`;
+            if (finalAct === "CHARGE" || finalAct.includes("CHARGE")) {
                 finalBadge.className = "px-2.5 py-0.5 rounded-lg font-bold text-xs bg-emerald-600 text-white";
-            } else if (data.final_approved_action.includes("DISCHARGE")) {
+            } else if (finalAct === "DISCHARGE" || finalAct.includes("DISCHARGE") || finalAct.includes("V2G")) {
                 finalBadge.className = "px-2.5 py-0.5 rounded-lg font-bold text-xs bg-amber-600 text-white";
             } else {
                 finalBadge.className = "px-2.5 py-0.5 rounded-lg font-bold text-xs bg-slate-600 text-white";

@@ -1,0 +1,43 @@
+simulation:
+  duration_hours: 24
+  timestep_minutes: 15
+  random_seed: 42
+  fleet_size: 50
+
+ev:
+  battery_capacity_kwh: 60.0
+  initial_soc: 0.4
+  required_departure_soc: 0.8
+  max_charge_kw: 7.4
+  max_discharge_kw: 5.0
+  min_soc: 0.2
+  max_soc: 1.0
+  charging_efficiency: 0.95
+  discharging_efficiency: 0.95
+
+grid:
+  base_peak_mw: 5.5
+  substation_limit_mw: 7.0
+  noise_std_mw: 0.05
+
+pricing:
+  type: "tou"
+  off_peak_rate: 4.10
+  normal_rate: 6.80
+  peak_rate: 9.20
+
+drl:
+  algorithm: "PPO"
+  learning_rate: 0.0003
+  gamma: 0.99
+  batch_size: 64
+  clip_range: 0.2
+  gae_lambda: 0.95
+  total_timesteps: 25000
+  reward_weights:
+    grid_support: 1.5
+    cost: 1.0
+    soc_violation: 2.5
+    battery_cycling: 0.2
+    departure_bonus: 2.0
+
