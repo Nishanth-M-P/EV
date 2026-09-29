@@ -894,82 +894,8 @@ async function fetchEnergyLedger() {
     }
 }
 
-function renderFleetTable() {
-    const tbody = document.getElementById("ev-fleet-table-body");
-    if (!tbody) return;
+// renderFleetTable is defined in Section 14 (Fleet Table & Operator Controls)
 
-    const evs = currentSimulationState.evs || [];
-    if (evs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">No EVs registered in fleet.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = evs.map(ev => {
-        const soc = ev.current_soc || 50.0;
-        const target = ev.target_soc || 85.0;
-        const pwr = ev.current_power_kw || 0.0;
-        const bd = ev.power_breakdown || { solar_pct: 100, grid_pct: 0, solar_power_kw: pwr, grid_power_kw: 0 };
-        const temp = ev.temperature_c !== undefined ? ev.temperature_c : 28.5;
-        const soh = ev.soh_pct !== undefined ? ev.soh_pct : 99.8;
-        const isDerated = temp > 43.0;
-
-        let statusBadge = "bg-slate-100 text-slate-700 border-slate-300";
-        if (ev.status === "CHARGING") statusBadge = "bg-emerald-100 text-emerald-800 border-emerald-300";
-        else if (ev.status === "DISCHARGING") statusBadge = "bg-purple-100 text-purple-800 border-purple-300";
-
-        return `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="p-3 sm:p-4">
-                    <div class="font-bold text-slate-900">${ev.name}</div>
-                    <div class="text-[10px] text-slate-400">${ev.id || ev.ev_id} · ${ev.battery_capacity_kwh} kWh</div>
-                </td>
-                <td class="p-3 sm:p-4">
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-slate-800">${soc.toFixed(1)}%</span>
-                        <div class="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-                            <div class="h-full bg-emerald-500 rounded-full" style="width: ${Math.min(100, soc)}%"></div>
-                        </div>
-                    </div>
-                    <span class="text-[10px] text-slate-400">Target: ${target}%</span>
-                </td>
-                <td class="p-3 sm:p-4">
-                    <div class="font-bold ${pwr > 0 ? 'text-emerald-700' : (pwr < 0 ? 'text-purple-700' : 'text-slate-600')}">
-                        ${pwr > 0 ? '+' : ''}${pwr.toFixed(1)} kW
-                    </div>
-                    ${Math.abs(pwr) > 0.05 ? `
-                        <div class="text-[10px] flex items-center gap-1 mt-0.5">
-                            <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold">${bd.solar_pct || 0}% Solar</span>
-                            <span class="px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-bold">${bd.grid_pct || 0}% Grid</span>
-                        </div>
-                    ` : '<span class="text-[10px] text-slate-400">Standby</span>'}
-                </td>
-                <td class="p-3 sm:p-4">
-                    <span class="${isDerated ? 'text-rose-600 font-bold' : 'text-slate-800'}">${temp.toFixed(1)}°C</span>
-                    <span class="text-[10px] text-slate-400 block">SOH: ${soh.toFixed(1)}%</span>
-                </td>
-                <td class="p-3 sm:p-4 text-slate-600">
-                    ${ev.arrival_time}:00 - ${ev.departure_time}:00
-                </td>
-                <td class="p-3 sm:p-4">
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge}">${ev.status}</span>
-                </td>
-                <td class="p-3 sm:p-4 text-center">
-                    <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-[10px]">
-                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', 'CHARGE')" class="px-2 py-0.5 rounded hover:bg-emerald-600 hover:text-white transition">Charge</button>
-                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', 'DISCHARGE')" class="px-2 py-0.5 rounded hover:bg-amber-600 hover:text-white transition">V2G</button>
-                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', null)" class="px-2 py-0.5 rounded hover:bg-slate-200 transition">Auto</button>
-                    </div>
-                </td>
-                <td class="p-3 sm:p-4 text-right">
-                    <button onclick="openXaiModal('${ev.id || ev.ev_id}')" class="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-bold border border-purple-200">
-                        Why AI?
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-    if (window.lucide) lucide.createIcons();
-}
 
 function logSimConsole(text) {
     const consoleElem = document.getElementById("sim-log-console");
@@ -1935,36 +1861,111 @@ function renderFleetTable() {
     if (!tbody) return;
 
     const evs = currentSimulationState.evs || [];
+    if (evs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400 font-sans">No EVs registered in fleet. Click "Add New EV" to connect vehicles.</td></tr>`;
+        return;
+    }
+
     tbody.innerHTML = evs.map(ev => {
-        const soc = ev.current_soc || 50.0;
-        const targetSoc = ev.target_soc || 85.0;
+        const soc = ev.current_soc !== undefined ? ev.current_soc : 50.0;
+        const targetSoc = ev.target_soc !== undefined ? ev.target_soc : (ev.required_soc || 85.0);
+        const pwr = ev.current_power_kw || 0.0;
+        const maxChg = ev.max_charge_power_kw || 11.0;
+        const maxDischg = ev.max_discharge_power_kw || 11.0;
+        const cap = ev.battery_capacity_kwh || 75.0;
+
+        let socColor = "bg-emerald-500";
+        let socTextColor = "text-emerald-700";
+        if (soc < 25) {
+            socColor = "bg-rose-500";
+            socTextColor = "text-rose-600";
+        } else if (soc < 60) {
+            socColor = "bg-amber-500";
+            socTextColor = "text-amber-700";
+        }
+
+        let statusClass = "bg-slate-100 text-slate-700 border-slate-300";
+        let statusDot = "bg-slate-400";
+        if (ev.status === "CHARGING") {
+            statusClass = "bg-emerald-50 text-emerald-800 border-emerald-300";
+            statusDot = "bg-emerald-500 animate-pulse";
+        } else if (ev.status === "DISCHARGING") {
+            statusClass = "bg-purple-50 text-purple-800 border-purple-300";
+            statusDot = "bg-purple-500 animate-pulse";
+        }
+
         return `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="p-3 sm:p-4">
-                    <span class="font-bold text-slate-900">${ev.id || ev.ev_id}</span>
-                    <span class="text-slate-400 block text-[10px]">${ev.name}</span>
-                </td>
-                <td class="p-3 sm:p-4">
-                    <span class="font-bold text-slate-800">${soc.toFixed(1)}%</span>
-                </td>
-                <td class="p-3 sm:p-4">${targetSoc}%</td>
-                <td class="p-3 sm:p-4">${ev.arrival_time}:00 - ${ev.departure_time}:00</td>
-                <td class="p-3 sm:p-4">+${ev.max_charge_power_kw}kW / -${ev.max_discharge_power_kw}kW</td>
-                <td class="p-3 sm:p-4"><span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 border border-slate-300">${ev.status}</span></td>
-                <td class="p-3 sm:p-4 text-center">
-                    <div class="inline-flex items-center gap-1">
-                        <button onclick="openXaiModal('${ev.id || ev.ev_id}')" class="px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold rounded text-[10px] flex items-center gap-1" title="Explainable AI Decision Details"><i data-lucide="brain-circuit" class="w-3 h-3"></i> AI Rationale</button>
-                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', 'CHARGE')" class="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold rounded text-[10px]">CHARGE</button>
-                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', 'DISCHARGE')" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded text-[10px]">V2G</button>
-                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', null)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded text-[10px]">AUTO</button>
+            <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="p-3.5 sm:p-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+                            <i data-lucide="car" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-900">${ev.name || 'EV Unit'}</div>
+                            <div class="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono">
+                                <span class="font-semibold text-slate-600">${ev.id || ev.ev_id}</span>
+                                <span>·</span>
+                                <span>${cap} kWh</span>
+                            </div>
+                        </div>
                     </div>
                 </td>
-                <td class="p-3 sm:p-4 text-right">
-                    <button onclick="deleteEvApi('${ev.id || ev.ev_id}')" class="text-rose-600 hover:underline">Delete</button>
+                <td class="p-3.5 sm:p-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between font-bold text-xs">
+                            <span class="${socTextColor}">${soc.toFixed(1)}%</span>
+                        </div>
+                        <div class="w-24 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                            <div class="h-full ${socColor} rounded-full transition-all duration-300" style="width: ${Math.min(100, Math.max(0, soc))}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="p-3.5 sm:p-4">
+                    <span class="inline-flex items-center gap-1 font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200 text-xs">
+                        ${targetSoc}%
+                    </span>
+                </td>
+                <td class="p-3.5 sm:p-4">
+                    <span class="inline-flex items-center gap-1 text-[11px] font-mono text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                        <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i>
+                        ${ev.arrival_time}:00 ➔ ${ev.departure_time}:00
+                    </span>
+                </td>
+                <td class="p-3.5 sm:p-4">
+                    <div class="flex flex-col gap-0.5 text-[10px] font-mono">
+                        <span class="text-emerald-700 font-bold">+${maxChg} kW (Chg)</span>
+                        <span class="text-purple-700 font-bold">-${maxDischg} kW (V2G)</span>
+                    </div>
+                </td>
+                <td class="p-3.5 sm:p-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${statusClass}">
+                        <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
+                        <span>${ev.status || 'IDLE'}</span>
+                    </span>
+                </td>
+                <td class="p-3.5 sm:p-4 text-center">
+                    <div class="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/90 p-0.5 shadow-sm text-[10px] font-mono font-bold">
+                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', 'CHARGE')" class="px-2 py-1 rounded-lg hover:bg-emerald-600 hover:text-white transition-all ${ev.status === 'CHARGING' ? 'bg-emerald-600 text-white' : 'text-emerald-800'}" title="Force Charge">CHG</button>
+                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', 'DISCHARGE')" class="px-2 py-1 rounded-lg hover:bg-amber-600 hover:text-white transition-all ${ev.status === 'DISCHARGING' ? 'bg-amber-600 text-white' : 'text-amber-800'}" title="Force V2G Discharge">V2G</button>
+                        <button onclick="setEvOverride('${ev.id || ev.ev_id}', null)" class="px-2 py-1 rounded-lg hover:bg-slate-700 hover:text-white transition-all text-slate-600" title="Return to AI Autonomous Control">AUTO</button>
+                    </div>
+                </td>
+                <td class="p-3.5 sm:p-4 text-right">
+                    <div class="inline-flex items-center gap-1.5">
+                        <button onclick="openXaiModal('${ev.id || ev.ev_id}')" class="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-bold rounded-lg text-[10px] flex items-center gap-1 transition shadow-sm" title="Explainable AI Decision Audit">
+                            <i data-lucide="brain-circuit" class="w-3.5 h-3.5"></i> Why AI?
+                        </button>
+                        <button onclick="deleteEvApi('${ev.id || ev.ev_id}')" class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Remove EV from Fleet">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
+
+    if (window.lucide) lucide.createIcons();
 }
 
 async function setEvOverride(evId, action) {

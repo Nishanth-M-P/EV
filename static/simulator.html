@@ -44,17 +44,17 @@
 <body class="bg-[#080d1a] text-slate-200 h-screen w-screen flex flex-col overflow-hidden font-sans select-none">
 
   <!-- ================= TOP TOOLBAR (PRD Section 24, 73, 74) ================= -->
-  <header class="h-14 bg-slate-900/95 border-b border-slate-800 flex items-center justify-between px-3 z-20 shrink-0">
+  <header class="h-14 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-3.5 z-20 shrink-0 overflow-x-auto no-scrollbar shadow-lg shadow-black/20">
     <!-- Left: Brand Logo & Mode Indicator -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 shrink-0">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shadow-sm">
           <span class="material-symbols-outlined text-xl">electric_car</span>
         </div>
         <div>
           <div class="flex items-center gap-1.5">
             <span class="font-bold text-slate-100 tracking-tight text-sm">GridWise AI</span>
-            <span class="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono rounded font-semibold">TWIN v2.5</span>
+            <span class="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-mono rounded-md font-bold">TWIN v2.5</span>
           </div>
           <p class="text-[9px] text-slate-400 font-mono">Real-Time V2G Digital Twin</p>
         </div>
@@ -63,13 +63,13 @@
       <div class="h-5 w-px bg-slate-800 mx-1"></div>
 
       <!-- Data Mode Selector (PRD Section 61, 62) -->
-      <div class="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-0.5 text-xs">
-        <button id="tb-mode-live" class="tb-mode-tab px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-mono font-bold text-[11px] border border-emerald-500/40 transition-all" title="External Real-Time Data (KPTCL / IEX)">LIVE</button>
-        <button id="tb-mode-hist" class="tb-mode-tab px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 font-mono text-[11px] transition-all" title="Recorded Historical Telemetry Profile">HISTORICAL</button>
+      <div class="flex items-center gap-1 bg-slate-950/90 border border-slate-800 rounded-xl p-0.5 text-xs shadow-inner">
+        <button id="tb-mode-live" class="tb-mode-tab px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono font-bold text-[11px] border border-emerald-500/40 transition-all shadow-sm" title="External Real-Time Data (KPTCL / IEX)">LIVE</button>
+        <button id="tb-mode-hist" class="tb-mode-tab px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 font-mono text-[11px] transition-all" title="Recorded Historical Telemetry Profile">HISTORICAL</button>
       </div>
 
       <!-- Data Mode Live Indicator Badge -->
-      <div id="data-mode-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5">
+      <div id="data-mode-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
         <span id="data-mode-label">● LIVE</span>
       </div>
@@ -78,11 +78,11 @@
 
       <!-- Architecture Lock & Edit Mode Controls (PRD Section 14, 15, 17) -->
       <div id="arch-lock-container" class="flex items-center gap-1.5">
-        <span id="arch-locked-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 text-xs font-mono font-bold">
+        <span id="arch-locked-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-mono font-bold shadow-inner">
           <span class="material-symbols-outlined text-[15px] text-amber-400">lock</span>
           <span> ARCHITECTURE LOCKED</span>
         </span>
-        <button id="tb-edit-btn" class="flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold transition-all shadow-sm" title="Edit parameters without breaking circuit topology.">
+        <button id="tb-edit-btn" class="flex items-center gap-1 px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold transition-all shadow-sm" title="Edit parameters without breaking circuit topology.">
           <span class="material-symbols-outlined text-[15px]">tune</span>
           <span>EDIT</span>
         </button>
@@ -348,69 +348,71 @@
       </div>
 
       <!-- ================= PROMINENT LIVE STATUS STRIP (PRD Section 3 & 42-46) ================= -->
-      <section class="p-3 bg-slate-900/90 border-b border-slate-800 shrink-0">
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 text-xs font-mono">
+      <section class="p-3.5 bg-slate-900/90 border-b border-slate-800 shrink-0 shadow-md">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 text-xs font-mono">
           <!-- 1. Live Digital Twin Clock & Sequence -->
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between">
+          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-amber-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
               <span>LIVE CLOCK</span>
-              <span id="strip-sim-status" class="text-emerald-400 text-[9px] font-bold">● CONTINUOUS LIVE</span>
+              <span id="strip-sim-status" class="text-emerald-400 text-[9px] font-bold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> CONTINUOUS
+              </span>
             </div>
-            <div id="strip-sim-time" class="text-base font-bold text-amber-300">--:--:--</div>
-            <div class="text-[10px] text-slate-500 flex items-center justify-between">
+            <div id="strip-sim-time" class="text-lg font-black text-amber-300 py-0.5">--:--:--</div>
+            <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-800/80 pt-1">
               <span>Seq: <strong id="strip-seq" class="text-slate-300 font-mono">#0</strong></span>
               <span id="strip-data-health" class="text-emerald-400 font-bold">100% HEALTHY</span>
             </div>
           </div>
 
           <!-- 2. Battery SOC & Stored Energy -->
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between">
+          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-emerald-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
               <span>BATTERY SOC</span>
-              <span id="strip-batt-state" class="text-emerald-400 text-[9px] font-bold">CHARGING</span>
+              <span id="strip-batt-state" class="text-emerald-400 text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 border border-emerald-500/30">CHARGING</span>
             </div>
-            <div class="flex items-baseline gap-1">
-              <span id="strip-batt-soc" class="text-base font-bold text-emerald-400">64.2%</span>
-              <span class="text-[10px] text-slate-400">/ <span id="strip-batt-target">80%</span></span>
+            <div class="flex items-baseline gap-1.5 py-0.5">
+              <span id="strip-batt-soc" class="text-lg font-black text-emerald-400">64.2%</span>
+              <span class="text-[10px] text-slate-400 font-medium">/ <span id="strip-batt-target">80%</span></span>
             </div>
-            <div class="text-[10px] text-slate-500">Energy: <span id="strip-batt-energy" class="text-slate-300">46.2</span> / <span id="strip-batt-cap">72 kWh</span></div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1">Energy: <span id="strip-batt-energy" class="text-slate-300 font-bold">46.2</span> / <span id="strip-batt-cap">72 kWh</span></div>
           </div>
 
           <!-- 3. Battery Power Flow -->
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between">
-            <div class="text-[10px] text-slate-400">POWER FLOW</div>
-            <div id="strip-batt-power" class="text-base font-bold text-emerald-400">+8.4 kW</div>
-            <div class="text-[10px] text-slate-500">Eff: <span id="strip-chg-eff" class="text-slate-300">95%</span> (<span id="strip-eff-power">7.98 kW net</span>)</div>
+          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-teal-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-400 font-bold">POWER FLOW</div>
+            <div id="strip-batt-power" class="text-lg font-black text-emerald-400 py-0.5">+8.4 kW</div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1">Eff: <span id="strip-chg-eff" class="text-slate-300 font-bold">95%</span> (<span id="strip-eff-power" class="text-teal-400">7.98 kW net</span>)</div>
           </div>
 
           <!-- 4. Dynamic Time to Target & Full -->
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between">
+          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-cyan-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
               <span>TIME TO TARGET</span>
-              <span id="strip-dep-badge" class="text-[9px] text-emerald-400 font-bold">check FEASIBLE</span>
+              <span id="strip-dep-badge" class="text-[9px] text-emerald-400 font-bold">FEASIBLE</span>
             </div>
-            <div id="strip-time-target" class="text-base font-bold text-cyan-300">01:27:35</div>
-            <div class="text-[10px] text-slate-500">Full in: <span id="strip-time-full" class="text-slate-300">02:37:30</span> (Est: <span id="strip-est-time">21:20</span>)</div>
+            <div id="strip-time-target" class="text-lg font-black text-cyan-300 py-0.5">01:27:35</div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1">Full in: <span id="strip-time-full" class="text-slate-300 font-bold">02:37:30</span> (Est: <span id="strip-est-time">21:20</span>)</div>
           </div>
 
           <!-- 5. Grid Telemetry -->
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between">
+          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-sky-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
               <span>GRID (KPTCL)</span>
-              <span id="strip-grid-state" class="text-emerald-400 text-[9px] font-bold">NORMAL</span>
+              <span id="strip-grid-state" class="text-emerald-400 text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10">NORMAL</span>
             </div>
-            <div id="strip-grid-demand" class="text-sm font-bold text-slate-200">13.74 GW <span class="text-[10px] text-slate-400">live</span></div>
-            <div class="text-[10px] text-slate-500">Margin: <span id="strip-grid-margin" class="text-slate-300">+0.46 GW</span> | <span id="strip-grid-freq">49.96Hz</span></div>
+            <div id="strip-grid-demand" class="text-base font-black text-slate-200 py-0.5">13.74 GW <span class="text-[10px] text-slate-400 font-normal">live</span></div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1">Margin: <span id="strip-grid-margin" class="text-slate-300 font-bold">+0.46 GW</span> | <span id="strip-grid-freq" class="text-cyan-400">49.96Hz</span></div>
           </div>
 
           <!-- 6. Price & Controller -->
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between">
+          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-purple-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
               <span>CONTROLLER</span>
               <span id="strip-next-eval" class="text-cyan-400 text-[10px] font-mono font-bold">NEXT: 00:10</span>
             </div>
-            <div id="strip-ctrl-action" class="text-sm font-bold text-emerald-400">CHARGING (+11.0 kW)</div>
-            <div id="strip-ctrl-reason" class="text-[10px] text-slate-400 truncate" title="EV SOC below target; normal charging active">EV SOC below target</div>
+            <div id="strip-ctrl-action" class="text-sm font-black text-emerald-400 py-0.5 truncate">CHARGING (+11.0 kW)</div>
+            <div id="strip-ctrl-reason" class="text-[10px] text-slate-400 truncate border-t border-slate-800/80 pt-1" title="EV SOC below target; normal charging active">EV SOC below target</div>
           </div>
         </div>
       </section>
