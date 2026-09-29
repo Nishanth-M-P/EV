@@ -334,6 +334,8 @@ async def websocket_simulation_endpoint(websocket: WebSocket, simulation_id: str
             "evs": current_state.get("evs", []),
             "energy_state": current_state.get("energy_state", {}),
             "manual_overrides": getattr(sim_service.engine, "manual_overrides", {}),
+            "ai_decisions": current_state.get("ai_decisions", []),
+            "ai_decision": current_state.get("ai_decision", {}),
             "data": current_state,
             "realtime": realtime_data
         })

@@ -557,10 +557,26 @@ function scheduleWsReconnect() {
 }
 
 function handleWebSocketMessage(msg) {
+    if (!msg || typeof msg !== "object") return;
     if (msg.type === "INIT_STATE") {
-        currentSimulationState = { ...currentSimulationState, ...msg.data };
+        if (msg.data && typeof msg.data === "object") {
+            currentSimulationState = { ...currentSimulationState, ...msg.data };
+        }
+        if (msg.energy_state) {
+            currentSimulationState.energy_state = msg.energy_state;
+        }
+        if (msg.evs) {
+            currentSimulationState.evs = msg.evs;
+        }
         updateUIFromState(currentSimulationState);
         if (msg.realtime) handleRealtimeTelemetry(msg.realtime);
+    } else if (msg.type === "digital_twin_update") {
+        const twinData = msg.state || msg;
+        if (twinData && typeof twinData === "object") {
+            currentSimulationState = { ...currentSimulationState, ...twinData };
+            updateUIFromState(currentSimulationState);
+        }
+        if (msg.telemetry) handleRealtimeTelemetry(msg.telemetry);
     } else if (msg.type === "REALTIME_UPDATE") {
         if (msg.data?.step_data) {
             currentSimulationState = { ...currentSimulationState, ...msg.data.step_data };
@@ -570,9 +586,11 @@ function handleWebSocketMessage(msg) {
     } else if (msg.type === "REALTIME_STATIC") {
         handleRealtimeTelemetry(msg.data);
     } else if (msg.type === "SIM_STEP") {
-        currentSimulationState = { ...currentSimulationState, ...msg.data };
-        updateUIFromState(currentSimulationState);
-        logSimConsole(`[STEP ${msg.data.step_index}] Hour ${msg.data.time} | Grid: ${msg.data.net_grid_load_kw} kW | Solar: ${msg.data.solar?.generation_kw || msg.data.solar_generation_kw} kW | Tariff: ₹${msg.data.price?.current_price || msg.data.electricity_price}`);
+        if (msg.data && typeof msg.data === "object") {
+            currentSimulationState = { ...currentSimulationState, ...msg.data };
+            updateUIFromState(currentSimulationState);
+            logSimConsole(`[STEP ${msg.data.step_index || 0}] Hour ${msg.data.time || '00:00'} | Grid: ${msg.data.net_grid_load_kw || 0} kW | Solar: ${msg.data.solar?.generation_kw || msg.data.solar_generation_kw || 0} kW | Tariff: ₹${msg.data.price?.current_price || msg.data.electricity_price || 0}`);
+        }
     } else if (msg.type === "SIM_STARTED") {
         currentSimulationState.is_running = true;
         updateSimButtons(true);
@@ -970,18 +988,56 @@ function logSimConsole(text) {
 async function fetchInitialData() {
     try {
         const resState = await apiFetch('/api/simulation/current/state');
-        const stateData = await resState.json();
-        currentSimulationState = { ...currentSimulationState, ...stateData };
-        updateUIFromState(currentSimulationState);
+        if (resState && resState.ok) {
+            const stateData = await resState.json();
+            if (stateData && !stateData.detail) {
+                currentSimulationState = { ...currentSimulationState, ...stateData };
+                updateUIFromState(currentSimulationState);
+            }
+        } else {
+            // Fall back to public digital-twin state if unauthorized or unavailable
+            try {
+                const resTwin = await fetch('/api/digital-twin/state');
+                if (resTwin.ok) {
+                    const twinData = await resTwin.json();
+                    if (twinData && !twinData.detail) {
+                        currentSimulationState = { ...currentSimulationState, ...twinData };
+                        updateUIFromState(currentSimulationState);
+                    }
+                }
+            } catch (twinErr) {
+                console.warn("[Twin] Fallback fetch error:", twinErr);
+            }
+        }
 
-        const [resGrid, resSolar, resPrice] = await Promise.all([
+        // Fetch recent rolling telemetry history for instant chart population
+        try {
+            const resHist = await fetch('/api/telemetry/history?window=60');
+            if (resHist.ok) {
+                const histData = await resHist.json();
+                if (Array.isArray(histData.history) && histData.history.length > 0) {
+                    histData.history.forEach(pt => appendTelemetryPointToCharts(pt));
+                }
+            }
+        } catch (hErr) {
+            console.warn("[History] Could not populate initial charts:", hErr);
+        }
+
+        const [resGrid, resSolar, resPrice] = await Promise.allSettled([
             apiFetch('/api/energy/grid'),
             apiFetch('/api/energy/solar'),
             apiFetch('/api/energy/price')
         ]);
-        const gridData = await resGrid.json();
-        const solarData = await resSolar.json();
-        const priceData = await resPrice.json();
+        let gridData = {}, solarData = {}, priceData = {};
+        if (resGrid.status === "fulfilled" && resGrid.value?.ok) {
+            gridData = await resGrid.value.json().catch(() => ({}));
+        }
+        if (resSolar.status === "fulfilled" && resSolar.value?.ok) {
+            solarData = await resSolar.value.json().catch(() => ({}));
+        }
+        if (resPrice.status === "fulfilled" && resPrice.value?.ok) {
+            priceData = await resPrice.value.json().catch(() => ({}));
+        }
 
         updateChartsWithProfiles(
             gridData.baseline_hourly_kw || [],
@@ -1074,6 +1130,18 @@ function updateUIFromState(state) {
     // Update Energy Flow Schematics
     updateEnergyFlowCanvas(state);
 
+    // Update glowing circuit wires strictly by actual current
+    updateCircuitWires(state);
+
+    // Update Circuit Diagnostics Panel
+    updateCircuitDiagnostics(state);
+
+    // Update real-time continuous streaming charts
+    appendTelemetryPointToCharts(state);
+
+    // Continuous event stream logging
+    logContinuousEvent(state);
+
     // Update AI Decision Card
     updateAIDecisionCard(state);
 
@@ -1082,6 +1150,146 @@ function updateUIFromState(state) {
 
     // Update Simulator Twin Cards
     updateSimulatorTwinCards(state);
+}
+
+function updateCircuitWires(state) {
+    if (!state) return;
+    const wires = state.circuit_wires || {};
+    const wGrid = wires.grid_bus;
+    const wSolar = wires.solar_bus;
+    const wEv = wires.bus_ev;
+    const wAux = wires.bus_aux;
+
+    const evChgKw = state.total_charging_power_kw || 0.0;
+    const v2gKw = state.total_v2g_power_kw || 0.0;
+    const solKw = state.solar_generation_kw || state.solar?.generation_kw || 0.0;
+    const gridKw = state.net_grid_load_kw || 0.0;
+
+    const pGrid = document.getElementById("path-grid-bus");
+    const pSolar = document.getElementById("path-solar-bus");
+    const pEv = document.getElementById("path-bus-ev");
+    const pAux = document.getElementById("path-bus-aux");
+
+    // 1. Grid Wire
+    if (pGrid) {
+        const isAct = wGrid ? wGrid.active : (Math.abs(gridKw) > 0.05);
+        const dir = wGrid ? wGrid.direction : (gridKw < 0 ? "REVERSE" : (gridKw > 0.05 ? "FORWARD" : "IDLE"));
+        const glow = wGrid?.glow_intensity || "med";
+
+        if (isAct && dir === "REVERSE") {
+            pGrid.setAttribute("stroke", "url(#gradGridOut)");
+            pGrid.setAttribute("class", `flow-particle-reverse wire-glow-${glow}`);
+            pGrid.style.opacity = "1";
+        } else if (isAct && dir === "FORWARD") {
+            pGrid.setAttribute("stroke", "url(#gradGridIn)");
+            pGrid.setAttribute("class", `flow-particle wire-glow-${glow}`);
+            pGrid.style.opacity = "1";
+        } else {
+            pGrid.setAttribute("class", "wire-idle");
+            pGrid.style.opacity = "0.2";
+        }
+    }
+
+    // 2. Solar Wire
+    if (pSolar) {
+        const isAct = wSolar ? wSolar.active : (solKw > 0.1);
+        const glow = wSolar?.glow_intensity || "low";
+        if (isAct) {
+            pSolar.setAttribute("stroke", "url(#gradSolar)");
+            pSolar.setAttribute("class", `flow-particle wire-glow-${glow}`);
+            pSolar.style.opacity = "1";
+        } else {
+            pSolar.setAttribute("class", "wire-idle");
+            pSolar.style.opacity = "0.2";
+        }
+    }
+
+    // 3. EV Wire (Crucial for Section 18: Stops glowing when IDLE, reverses for V2G)
+    if (pEv) {
+        const isV2G = wEv ? (wEv.active && wEv.direction === "REVERSE") : (v2gKw > 0.05);
+        const isChg = wEv ? (wEv.active && wEv.direction === "FORWARD") : (evChgKw > 0.05);
+        const glow = wEv?.glow_intensity || "high";
+
+        if (isV2G) {
+            pEv.setAttribute("stroke", "url(#gradEVDischarge)");
+            pEv.setAttribute("class", `flow-particle-reverse wire-glow-v2g-${glow}`);
+            pEv.style.opacity = "1";
+        } else if (isChg) {
+            pEv.setAttribute("stroke", "url(#gradEVCharge)");
+            pEv.setAttribute("class", `flow-particle wire-glow-${glow}`);
+            pEv.style.opacity = "1";
+        } else {
+            pEv.setAttribute("class", "wire-idle");
+            pEv.style.opacity = "0.2";
+        }
+    }
+
+    // 4. Aux Load Wire
+    if (pAux) {
+        pAux.setAttribute("stroke", "url(#gradAux)");
+        pAux.setAttribute("class", "flow-particle wire-glow-low");
+        pAux.style.opacity = "0.85";
+    }
+}
+
+function updateCircuitDiagnostics(state) {
+    if (!state) return;
+    const errors = state.circuit_errors || [];
+    const healthBadge = document.getElementById("circuit-health-badge");
+    const errAlert = document.getElementById("circuit-error-alert");
+    const errMsg = document.getElementById("circuit-error-msg");
+
+    if (healthBadge) {
+        if (errors.length > 0) {
+            healthBadge.innerText = "CIRCUIT FAULT";
+            healthBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300";
+            if (errAlert) errAlert.classList.remove("hidden");
+            if (errMsg) errMsg.innerText = errors.map(e => e.cause || e.message || String(e)).join(" | ");
+        } else {
+            healthBadge.innerText = "CIRCUIT HEALTHY";
+            healthBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300";
+            if (errAlert) errAlert.classList.add("hidden");
+        }
+    }
+
+    const solKw = state.solar_generation_kw || state.solar?.generation_kw || 0.0;
+    const netGrid = state.net_grid_load_kw || 0.0;
+    const evChg = state.total_charging_power_kw || 0.0;
+    const evDis = state.total_v2g_power_kw || 0.0;
+    const soc = state.ev?.soc_pct || state.evs?.[0]?.current_soc || state.ev_soc || 50.0;
+
+    const dGrid = document.getElementById("diag-grid-status");
+    const dSolar = document.getElementById("diag-solar-status");
+    const dCharger = document.getElementById("diag-charger-status");
+    const dBatt = document.getElementById("diag-battery-status");
+    const dHead = document.getElementById("diag-headroom-kw");
+    const dErr = document.getElementById("diag-balance-err");
+
+    if (dGrid) dGrid.innerText = "11 kV CONNECTED";
+    if (dSolar) dSolar.innerText = solKw > 0.05 ? `${solKw.toFixed(1)} kW ACTIVE` : "STANDBY (NIGHT)";
+    if (dCharger) dCharger.innerText = evChg > 0 ? `CHARGING (+${evChg.toFixed(1)} kW)` : (evDis > 0 ? `V2G EXPORT (-${evDis.toFixed(1)} kW)` : "IDLE STANDBY");
+    if (dBatt) dBatt.innerText = `${soc.toFixed(1)}% (400V)`;
+    if (dHead) dHead.innerText = `${Math.max(0.0, 100.0 - netGrid).toFixed(1)} kW`;
+    if (dErr) dErr.innerText = `${Math.abs(state.energy_flow?.balance_error_kw || 0.0).toFixed(2)} kW`;
+}
+
+let lastLoggedAction = null;
+
+function logContinuousEvent(state) {
+    if (!state) return;
+    const action = String(state.current_action || state.ai_decision?.action_name || state.ai_decision?.action || "IDLE").toUpperCase();
+    const timeStr = state.time || state.simulation_time || new Date().toLocaleTimeString();
+    const evChg = state.total_charging_power_kw || 0.0;
+    const evDis = state.total_v2g_power_kw || 0.0;
+    const netGrid = state.net_grid_load_kw || 0.0;
+    const soc = state.ev?.soc_pct || state.evs?.[0]?.current_soc || 50.0;
+    const pwr = evChg > 0 ? `+${evChg.toFixed(1)} kW` : (evDis > 0 ? `-${evDis.toFixed(1)} kW (V2G)` : "0.0 kW");
+
+    if (action !== lastLoggedAction) {
+        lastLoggedAction = action;
+        const icon = action === "CHARGE" ? "⚡" : (action === "DISCHARGE" ? "🔋" : "⏸️");
+        logSimConsole(`[${timeStr}] ${icon} PPO Decision: ${action} (${pwr}) | Net Grid: ${netGrid.toFixed(1)} kW | SOC: ${soc.toFixed(1)}% | Wire: ${action !== "IDLE" ? "GLOWING" : "OFF"}`);
+    }
 }
 
 function updateEnergyFlowCanvas(state) {
@@ -1129,17 +1337,23 @@ function updateEnergyFlowCanvas(state) {
     if (s2) s2.innerText = `${solarToGrid.toFixed(1)} kW`;
     if (s3) s3.innerText = `${gridToEv.toFixed(1)} kW`;
     if (s4) s4.innerText = `${v2gKw.toFixed(1)} kW`;
+
+    // Also update glowing wires
+    updateCircuitWires(state);
 }
 
 function updateAIDecisionCard(state) {
-    if (!state) return;
-    const decisions = state.ai_decisions || (state.ai_decision ? [state.ai_decision] : (state.ai ? [state.ai] : []));
-    if (!decisions || decisions.length === 0) return;
+    if (!state || typeof state !== "object") return;
+    const rawDecisions = state.ai_decisions || (state.ai_decision ? [state.ai_decision] : (state.ai ? [state.ai] : (state.ai_action ? [state.ai_action] : [])));
+    const decisions = Array.isArray(rawDecisions) ? rawDecisions : (rawDecisions && typeof rawDecisions === 'object' ? Object.values(rawDecisions) : []);
+    
+    const validDecisions = decisions.filter(d => d && typeof d === 'object');
+    if (validDecisions.length === 0) return;
 
-    const activeDecision = decisions.find(d => {
-        const act = String(d?.action_name || d?.action || d?.final_action || "IDLE").toUpperCase();
+    const activeDecision = validDecisions.find(d => {
+        const act = String(d.action_name || d.final_action || d.action || d.mode || "IDLE").toUpperCase();
         return act !== "IDLE";
-    }) || decisions[0];
+    }) || validDecisions[0];
 
     if (!activeDecision) return;
 
@@ -1156,7 +1370,7 @@ function updateAIDecisionCard(state) {
     }
 
     if (badgeElem) {
-        const actName = String(activeDecision.action_name || activeDecision.action || activeDecision.final_action || "IDLE").toUpperCase();
+        const actName = String(activeDecision.action_name || activeDecision.final_action || activeDecision.action || activeDecision.mode || "IDLE").toUpperCase();
         const pwr = Math.abs(activeDecision.power_kw || activeDecision.command_kw || 0.0);
         if (actName === "CHARGE" || actName.includes("CHARGE")) {
             badgeElem.className = "self-start sm:self-auto px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold flex items-center gap-1.5 font-mono pulse-charge";
@@ -1851,48 +2065,190 @@ function loadAiScheduleMatrix() {
 // 15. CHARTS INITIALIZATION
 // ===================================================
 
+const MAX_TELEMETRY_POINTS = 60;
+let telemetryBuffer = [];
+
 function initCharts() {
     const ctx1 = document.getElementById("chart-grid-load")?.getContext("2d");
     if (ctx1) {
         gridLoadChart = new Chart(ctx1, {
             type: 'line',
             data: {
-                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                labels: [],
                 datasets: [
-                    { label: 'Base Feeder Demand (kW)', data: [], borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.08)', fill: true, tension: 0.4 },
-                    { label: 'Net Feeder Load with EVs (kW)', data: [], borderColor: '#059669', borderWidth: 2.5, tension: 0.4 }
+                    {
+                        label: 'Net Feeder Load (kW)',
+                        data: [],
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5, 150, 105, 0.08)',
+                        fill: true,
+                        borderWidth: 2.5,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'EV Power (+Chg / -V2G) (kW)',
+                        data: [],
+                        borderColor: '#8b5cf6',
+                        borderWidth: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Solar Gen (kW)',
+                        data: [],
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#334155', font: { family: 'monospace' } } } }, scales: { x: { grid: { color: '#e2e8f0' }, ticks: { color: '#64748b', font: { family: 'monospace' } } }, y: { grid: { color: '#e2e8f0' }, ticks: { color: '#64748b', font: { family: 'monospace' } } } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: { labels: { color: '#334155', font: { family: 'monospace', size: 10 } } },
+                    tooltip: {
+                        callbacks: {
+                            afterBody: function(context) {
+                                const idx = context[0]?.dataIndex;
+                                const action = telemetryBuffer[idx]?.action || "IDLE";
+                                return `PPO Decision: ${action}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#f1f5f9' },
+                        ticks: { color: '#64748b', font: { family: 'monospace', size: 9 }, maxTicksLimit: 8 }
+                    },
+                    y: {
+                        grid: { color: '#f1f5f9' },
+                        ticks: { color: '#64748b', font: { family: 'monospace', size: 10 } }
+                    }
+                }
+            }
         });
     }
 
     const ctx2 = document.getElementById("chart-tariff-solar")?.getContext("2d");
     if (ctx2) {
         tariffSolarChart = new Chart(ctx2, {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                labels: [],
                 datasets: [
-                    { label: 'Simulated Electricity Price (₹/kWh)', data: [], backgroundColor: 'rgba(217, 119, 6, 0.7)', yAxisID: 'y' },
-                    { label: 'Solar Power (kW)', data: [], type: 'line', borderColor: '#d97706', borderWidth: 2.5, yAxisID: 'y1', tension: 0.4 }
+                    {
+                        label: 'Primary EV Battery SOC (%)',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        borderWidth: 2.5,
+                        yAxisID: 'ySOC',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Electricity Tariff (₹/kWh)',
+                        data: [],
+                        borderColor: '#d97706',
+                        borderWidth: 2,
+                        yAxisID: 'yPrice',
+                        tension: 0.3
+                    }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#334155', font: { family: 'monospace' } } } }, scales: { y: { position: 'left', grid: { color: '#e2e8f0' }, ticks: { color: '#64748b', font: { family: 'monospace' } } }, y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#64748b', font: { family: 'monospace' } } } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: { labels: { color: '#334155', font: { family: 'monospace', size: 10 } } }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#f1f5f9' },
+                        ticks: { color: '#64748b', font: { family: 'monospace', size: 9 }, maxTicksLimit: 8 }
+                    },
+                    ySOC: {
+                        position: 'left',
+                        min: 0,
+                        max: 100,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { color: '#10b981', font: { family: 'monospace', size: 10 }, callback: v => `${v}%` }
+                    },
+                    yPrice: {
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#d97706', font: { family: 'monospace', size: 10 }, callback: v => `₹${v}` }
+                    }
+                }
+            }
         });
     }
 }
 
-function updateChartsWithProfiles(gridLoad, prices, solar) {
-    if (gridLoadChart) {
-        gridLoadChart.data.datasets[0].data = gridLoad;
-        gridLoadChart.data.datasets[1].data = gridLoad;
-        gridLoadChart.update();
+function appendTelemetryPointToCharts(state) {
+    if (!state) return;
+    const timeLabel = state.time || state.simulation_time || new Date().toLocaleTimeString();
+
+    const netGrid = typeof state.net_grid_load_kw === 'number' ? state.net_grid_load_kw : 40.0;
+    const evChg = state.total_charging_power_kw || 0.0;
+    const evDis = state.total_v2g_power_kw || 0.0;
+    const evPwr = evChg > 0 ? evChg : (evDis > 0 ? -evDis : (state.actual_power_kw || 0.0));
+    const solarKw = state.solar?.generation_kw || state.solar_generation_kw || 0.0;
+
+    let socVal = 50.0;
+    if (state.ev?.soc_pct !== undefined) socVal = state.ev.soc_pct;
+    else if (Array.isArray(state.evs) && state.evs.length > 0) socVal = state.evs[0].current_soc || 50.0;
+    else if (state.ev_soc !== undefined) socVal = state.ev_soc;
+
+    const tariff = state.price?.current_price || state.electricity_price || 6.8;
+    const action = String(state.current_action || state.ai_decision?.action_name || state.ai_decision?.action || "IDLE").toUpperCase();
+
+    const lastPt = telemetryBuffer[telemetryBuffer.length - 1];
+    if (lastPt && lastPt.time === timeLabel && Math.abs(lastPt.ev_power_kw - evPwr) < 0.01 && Math.abs(lastPt.grid_load_kw - netGrid) < 0.01) {
+        return;
     }
+
+    const pt = {
+        time: timeLabel,
+        grid_load_kw: netGrid,
+        ev_power_kw: evPwr,
+        solar_kw: solarKw,
+        battery_soc: socVal,
+        electricity_price: tariff,
+        action: action
+    };
+
+    telemetryBuffer.push(pt);
+    if (telemetryBuffer.length > MAX_TELEMETRY_POINTS) {
+        telemetryBuffer.shift();
+    }
+
+    if (gridLoadChart) {
+        gridLoadChart.data.labels = telemetryBuffer.map(p => p.time);
+        gridLoadChart.data.datasets[0].data = telemetryBuffer.map(p => p.grid_load_kw);
+        gridLoadChart.data.datasets[1].data = telemetryBuffer.map(p => p.ev_power_kw);
+        gridLoadChart.data.datasets[2].data = telemetryBuffer.map(p => p.solar_kw);
+        gridLoadChart.update('none');
+    }
+
     if (tariffSolarChart) {
-        tariffSolarChart.data.datasets[0].data = prices;
-        tariffSolarChart.data.datasets[1].data = solar;
-        tariffSolarChart.update();
+        tariffSolarChart.data.labels = telemetryBuffer.map(p => p.time);
+        tariffSolarChart.data.datasets[0].data = telemetryBuffer.map(p => p.battery_soc);
+        tariffSolarChart.data.datasets[1].data = telemetryBuffer.map(p => p.electricity_price);
+        tariffSolarChart.update('none');
+    }
+}
+
+function updateChartsWithProfiles(gridLoad, prices, solar) {
+    if (telemetryBuffer.length === 0) {
+        if (gridLoadChart && Array.isArray(gridLoad) && gridLoad.length > 0) {
+            gridLoadChart.data.labels = Array.from({length: gridLoad.length}, (_, i) => `${i}:00`);
+            gridLoadChart.data.datasets[0].data = gridLoad;
+            gridLoadChart.update('none');
+        }
     }
 }
 

@@ -51,6 +51,15 @@ class PPOActorCritic:
         self.best_reward = 27.81
         self.model_status = "TRAINED"
         self.model_filename = "ppo_ev_charging.json"
+
+        # Attempt to load persistent trained weights
+        resolved_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models", "ppo_ev_charging.json"))
+        if os.path.exists(resolved_path) and self.obs_dim == 19 and self.act_dim == 3:
+            try:
+                self.load_weights(resolved_path)
+                self.model_path = resolved_path
+            except Exception as load_err:
+                pass
         
         # Training history curves
         self.training_history = self._generate_baseline_training_curves()

@@ -182,8 +182,14 @@ class SimulationEngine:
                 final_act, power, overrides = ConstraintEngine.validate_action(
                     ev, raw_act, hour, 70.0, price
                 )
-                res = ev.apply_power(power, timestep)
+                # Use state machine – manual overrides are authoritative
+                next_action = self.action_state_machine.transition(
+                    ev.ev_id, final_act, overrides, manual=True
+                )
+                apply_power = power if next_action != Action.IDLE else 0.0
+                res = ev.apply_power(apply_power, timestep)
                 pwr = res["actual_power_kw"]
+                # Update step totals
                 if pwr > 0:
                     step_charging_kw += pwr
                 elif pwr < 0:
@@ -193,8 +199,8 @@ class SimulationEngine:
                     "ev_id": ev.ev_id,
                     "ev_name": ev.name,
                     "raw_action": raw_act,
-                    "final_action": final_act,
-                    "action_name": "CHARGE" if final_act == 1 else ("DISCHARGE (V2G)" if final_act == 2 else "IDLE"),
+                    "final_action": next_action.value,
+                    "action_name": Action(next_action.value).name,
                     "power_kw": pwr,
                     "reason": f"Manual Operator Override: Forced {override}",
                     "reward": 0.0,
@@ -206,10 +212,20 @@ class SimulationEngine:
 
             # Intelligent RL Decision
             decision = self.rl_agent.select_action(ev, hour, timestep)
-            res = ev.apply_power(decision["power_kw"], timestep)
+            # Apply state machine to RL decision
+            next_action = self.action_state_machine.transition(
+                ev.ev_id,
+                decision["final_action"],
+                decision["safety_overrides"],
+                manual=False
+            )
+            apply_power = decision["power_kw"] if next_action != Action.IDLE else 0.0
+            res = ev.apply_power(apply_power, timestep)
             pwr = res["actual_power_kw"]
             decision["power_kw"] = pwr
             decision["soc"] = res["soc"]
+            decision["final_action"] = next_action.value
+            decision["action_name"] = Action(next_action.value).name
             decision["is_manual_override"] = False
             ai_decisions.append(decision)
 
