@@ -1,259 +1,281 @@
 # ⚡ GridWise AI
 
-### **Autonomous EV Charging & Vehicle-to-Grid (V2G) Energy Management Platform**
+### **Autonomous EV Charging, Digital Twin Circuit Simulation & Vehicle-to-Grid (V2G) Platform**
 
-GridWise AI is an intelligent energy management platform that leverages **Reinforcement Learning (RL)** and a **Hard Safety Constraint Layer** to optimize EV charging and Vehicle-to-Grid (V2G) decisions in real time.
+GridWise AI is an enterprise-grade energy management platform that combines a **Real-Time Digital Twin Circuit Simulation Engine**, **Deep Reinforcement Learning (PPO)**, and a **Deterministic Hard Safety Constraint Layer** to optimize EV charging and Vehicle-to-Grid (V2G) bidirectional power flow in real time.
 
-Instead of charging electric vehicles immediately upon plug-in, GridWise AI treats EVs as **intelligent distributed energy resources**. The platform dynamically balances user departure requirements, electricity tariffs (Time-of-Use dynamic pricing), solar/renewable availability, grid stress levels, and battery health degradation.
+Instead of treating EV charging as an uncontrolled on/off load, GridWise AI models electric vehicles as **intelligent, distributed flexible energy assets**. The platform continuously balances real-time electrical physics, customer departure guarantees, dynamic Time-of-Use (TOU) tariffs, solar generation, and grid feeder constraints.
 
 ---
 
 ## 📋 Table of Contents
-- [Product Vision & Problem Statement](#-product-vision--problem-statement)
-- [Core Features](#-core-features)
-- [AI & Reinforcement Learning Architecture](#-ai--reinforcement-learning-architecture)
-- [Safety & Constraint Enforcement Layer](#-safety--constraint-enforcement-layer)
-- [Quantitative Performance Benchmark](#-quantitative-performance-benchmark)
+- [System Highlights & Problem Statement](#-system-highlights--problem-statement)
+- [Core Architecture & Continuous Simulation](#-core-architecture--continuous-simulation)
+- [Physical Circuit Simulation & Wire Glow Dynamics](#-physical-circuit-simulation--wire-glow-dynamics)
+- [PPO Reinforcement Learning & State Space](#-ppo-reinforcement-learning--state-space)
+- [Hierarchical Safety Constraint Validator](#-hierarchical-safety-constraint-validator)
+- [Circuit Diagnostics & Real-Time Telemetry](#-circuit-diagnostics--real-time-telemetry)
 - [Tech Stack](#-tech-stack)
-- [System Architecture](#-system-architecture)
-- [API Documentation](#-api-documentation)
+- [System Architecture Diagram](#-system-architecture-diagram)
+- [API & WebSocket Specification](#-api--websocket-specification)
 - [Getting Started & Installation](#-getting-started--installation)
-- [Demo Story & Walkthrough](#-demo-story--walkthrough)
-- [Future Roadmap](#-future-roadmap)
+- [Test Suite & Verification](#-test-suite--verification)
+- [Demo Walkthrough](#-demo-walkthrough)
+- [License](#-license)
 
 ---
 
-## 🎯 Product Vision & Problem Statement
+## 🎯 System Highlights & Problem Statement
 
 ### **The Problem**
-Uncontrolled EV charging creates severe challenges for modern electricity grids:
-- **Peak Load Spikes**: Simultaneous evening charging causes grid overload and transformer stress.
-- **Inflated Charging Costs**: Uncoordinated charging during expensive peak dynamic tariff hours.
-- **Renewable Curtailment**: Underutilization of daytime solar energy generation.
-- **Battery Wear**: Accelerated battery degradation due to unoptimized charge cycling.
-- **Lack of V2G Support**: Missed opportunities to feed stored energy back to the grid during critical load peaks.
+Uncontrolled EV charging creates acute strain on modern distribution networks:
+- **Feeder Transformer Overload**: Simultaneous evening charging spikes trigger feeder congestion.
+- **High Electricity Tariffs**: Charging during peak pricing hours inflates operating costs.
+- **Renewable Curtailment**: Surplus daytime solar generation is underutilized.
+- **Battery Health Degradation**: Aggressive, uncontrolled cycling accelerates cell degradation.
+- **Missed V2G Value**: Failure to leverage EV battery reserves to stabilize grid frequency and supply peak power.
 
 ### **The GridWise AI Solution**
-GridWise AI continuously evaluates environment telemetry to make real-time decisions for every connected EV:
-- **CHARGE ⚡**: When solar generation is high or electricity tariffs are cheap.
-- **IDLE ⏸️**: When electricity tariffs or grid load demand are at peak levels.
-- **DISCHARGE 🔋 (V2G)**: When grid load is critically high and the EV has sufficient battery buffer, returning power back to the grid for financial feed-in value and grid stabilization.
+GridWise AI continuously executes a closed-loop control pipeline:
+```text
+REAL-TIME TELEMETRY → ENVIRONMENT → 19D STATE SPACE → PPO AGENT → SAFETY VALIDATOR → FINAL ACTION → DIGITAL TWIN CIRCUIT (PHYSICS & POWER FLOW) → BATTERY / GRID / SOLAR / LOAD → REWARD
+```
+- **CHARGE ⚡**: When solar generation is abundant, electricity tariffs are low, or departure deadlines require immediate energy intake.
+- **IDLE ⏸️**: When dynamic electricity prices or grid feeder loads peak, holding EV state without artificial switching or oscillation.
+- **DISCHARGE 🔋 (V2G)**: When the grid experiences critical peak stress and the EV has safe battery buffer above its V2G reserve floor, injecting power into the local bus/grid.
 
 ---
 
-## ⚡ Core Features
+## ⚡ Core Architecture & Continuous Simulation
 
-### 1. **Autonomous RL Optimization Engine**
-Powered by **Proximal Policy Optimization (PPO)** in a custom **Gymnasium 1.3.0** environment (`EVChargingEnv`). Sub-millisecond decision inference with explainable AI reason generation.
+Unlike standard discrete-step dashboards that alternate states artificially, GridWise AI implements a **continuous, decoupled dual-rate simulation architecture**:
 
-### 2. **Safety & Constraint Enforcement Layer**
-Hard physical boundaries ensuring the AI agent operates strictly within safe limits:
-- **Departure Urgency Guarantee**: Forces charging when time remaining is tight to guarantee 100% of user required departure State of Charge (SOC).
-- **SOC Minimum/Maximum Bounds**: Protects batteries from overcharging ($>max\_soc$) or deep discharging ($<min\_soc$).
-- **V2G Buffer Safeguard**: Restricts V2G discharging unless SOC is safely above target thresholds.
-- **Grid Stress Cap**: Throttles non-urgent charging when grid load exceeds 92%.
+1. **Decoupled Dual-Rate Execution**:
+   - **Physics Loop (1.0s interval)**: Solves Kirchhoff's current/voltage equations, Ohm's law, battery electrochemical SOC integration, and conservation of energy every second.
+   - **AI Control Loop (10.0s interval)**: Evaluates the PPO policy and updates target operational states at a steady 10-second cadence.
+   - **Event-Driven Early Interrupts**: If a physical safety boundary is reached (e.g., target SOC reached, V2G reserve floor hit, emergency grid curtailment), the engine intercepts immediately without waiting for the control timer.
 
-### 3. **Digital Energy Flow SVG Visualization**
-Real-time animated SVG canvas showing energy movement:
-- **Solar $\rightarrow$ Grid $\rightarrow$ EV**
-- **EV $\rightarrow$ Grid (V2G)**
-
-### 4. **AI vs. Traditional Charging Benchmark**
-Runs **Scenario A (Uncontrolled Immediate Charging)** vs **Scenario B (GridWise AI RL Optimization)** side-by-side over identical 24-hour load/solar/price profiles, producing quantitative metrics for cost savings, peak shaving, and solar utilization.
-
-### 5. **OpenAI GPT-4o Strategic Energy Insights**
-Backend integration with OpenAI (`OpenAIService`) to generate natural-language LLM strategic energy advisor recommendations (`GET /api/ai/insight`).
-
-### 6. **Real-Time Operator Control Overrides**
-Interactive manual overrides on EV fleet rows (Force Charge ⚡, Force V2G 🔋, Force Standby ⏸️, Clear Override).
+2. **Action State Machine**:
+   - Governs smooth transitions across `CHARGING`, `DISCHARGING`, `IDLE`, and `FAULT`.
+   - Enforces a minimum dwell time (3.0s) and power slew rate ramping (max $1.0\text{ kW/s}$) to eliminate relay chatter and unnatural rapid toggling.
 
 ---
 
-## 🧠 AI & Reinforcement Learning Architecture
+## 🔌 Physical Circuit Simulation & Wire Glow Dynamics
 
-### **Observation State Vector (8 Features)**
-1. `Current SOC` (Normalized $0.0 - 1.0$)
-2. `Required SOC` (Normalized $0.0 - 1.0$)
-3. `Time Remaining Fraction` ($0.0 - 1.0$)
-4. `Electricity Price` (Normalized to max tariff)
-5. `Grid Load Percentage` ($0.0 - 1.0$)
-6. `Solar Generation` (Normalized to max solar capacity)
-7. `Hour Sin` ($\sin(2\pi \cdot \text{hour} / 24)$)
-8. `Hour Cos` ($\cos(2\pi \cdot \text{hour} / 24)$)
+The frontend SVG electrical circuit dynamically reflects the backend physics engine calculations:
 
-### **Action Space (Discrete 3)**
-- `0 = IDLE` ($0\text{ kW}$)
-- `1 = CHARGE` ($+7.4\text{ kW}$)
-- `2 = DISCHARGE / V2G` ($-5.0\text{ kW}$)
-
-### **Reward Function**
-$$R = R_{\text{solar\_use}} + R_{\text{v2g\_revenue}} + R_{\text{user\_dep\_bonus}} - C_{\text{grid\_cost}} - P_{\text{grid\_peak}} - P_{\text{battery\_wear}}$$
+- **True Electrical Current Calculation**:
+  $$I = \frac{P}{V}$$
+  - **Grid $\leftrightarrow$ Charger Bus**: 400V 3-phase AC ($I = \frac{P}{\sqrt{3} \times 400\text{V}}$).
+  - **Solar $\rightarrow$ Inverter Bus**: 600V DC ($I = \frac{P}{600\text{V}}$).
+  - **Charger $\leftrightarrow$ EV Battery**: 400V DC traction pack ($I = \frac{P}{400\text{V}}$).
+- **Physical Wire Glow Intensity**:
+  - `high`: $I \ge 40\text{ A}$ (intense energetic glow).
+  - `med`: $15\text{ A} \le I < 40\text{ A}$ (moderate glow).
+  - `low`: $0.05\text{ A} < I < 15\text{ A}$ (subtle glow).
+  - `none`: $I \le 0.05\text{ A}$ (completely idle, glow turned off, flow animation halted).
+- **Bidirectional Flow & V2G Direction**:
+  - During **Charging**, particles flow forward into the EV battery (`FORWARD`).
+  - During **V2G Discharge**, SVG flow particles reverse direction (`REVERSE`) with dynamic amber/cyan energy accents.
+  - During **Idle**, stroke dashes and glow filters turn off completely (`.wire-idle`).
 
 ---
 
-## 🛡️ Safety & Constraint Enforcement Layer
+## 🧠 PPO Reinforcement Learning & State Space
 
-The Safety Layer intercepts raw RL actions before physical power execution:
+### **19-Dimensional State Space (`StateSpaceModule`)**
+The PPO Actor-Critic model receives a normalized 19-dimensional continuous observation vector:
+1. `battery_soc` ($0.0 - 1.0$)
+2. `battery_temperature` (Normalized against thermal limits)
+3. `battery_health` / SOH ($0.0 - 1.0$)
+4. `battery_power` (Normalized $[-1.0, 1.0]$)
+5. `grid_load` (Normalized kW)
+6. `grid_capacity` (Installed feeder limit)
+7. `grid_utilization` ($0.0 - 1.0$)
+8. `grid_voltage` (Per-unit voltage deviation)
+9. `grid_frequency` (Normalized around nominal 50.0 Hz)
+10. `electricity_price` (Normalized dynamic TOU tariff)
+11. `solar_generation` (Real-time kW output)
+12. `solar_availability` ($0.0 - 1.0$)
+13. `building_load` (Facility base load kW)
+14. `ev_connected` (Binary $0/1$)
+15. `time_until_departure` (Hours remaining normalized)
+16. `target_soc` (User target SOC fraction)
+17. `required_energy` (kWh needed to reach target)
+18. `v2g_enabled` (User V2G permission flag $0/1$)
+19. `previous_action` (Categorical action feedback)
 
-| Rule | Trigger Condition | Action Taken |
+### **Continuous & Discrete Policy Outputs**
+- **Continuous Action**: Output in $[-1.0, 1.0]$ mapped to vehicle charger physical bounds ($[-P_{\text{max\_discharge}}, +P_{\text{max\_charge}}]$).
+- **Discrete Action Mode**: `IDLE` (0), `CHARGE` (1), `DISCHARGE` (2).
+
+---
+
+## 🛡️ Hierarchical Safety Constraint Validator
+
+All raw actions proposed by the PPO neural network pass through the **Safety Validator** before reaching the physical circuit:
+
+| Rule | Validation Logic | Enforcement Action |
 | :--- | :--- | :--- |
-| **Departure Guarantee** | $t_{\text{remaining}} \le t_{\text{needed}} \cdot 1.35$ | Forced **CHARGE** ⚡ |
-| **Max SOC Limit** | $SOC \ge max\_soc$ | Forced **IDLE** ⏸️ |
-| **Min SOC Limit** | $SOC \le min\_soc$ | Block **DISCHARGE**, Forced **IDLE** |
-| **V2G Buffer Safeguard** | $SOC - min\_soc < 20\%$ | Block **DISCHARGE**, Forced **IDLE** |
-| **Grid Stress Cap** | Grid Load $\ge 92\%$ & Non-urgent | Postpone charging, Forced **IDLE** |
+| **1. Max SOC / Target Protection** | $SOC \ge \min(max\_soc, target\_soc)$ and $P > 0$ | Intercept charge command $\rightarrow$ force **IDLE** (0 kW) |
+| **2. V2G Reserve Floor Protection** | $SOC \le \max(min\_soc, v2g\_reserve)$ and $P < 0$ | Block discharge $\rightarrow$ hold battery in **IDLE** |
+| **3. Departure SLA Travel Guarantee** | $t_{\text{needed}} / t_{\text{left}} \ge 0.70$ and $SOC < target\_soc$ | Override V2G/Idle $\rightarrow$ force **CHARGE** at safe power |
+| **4. Feeder Capacity Overload Cap** | $P_{\text{charge}} > Feeder_{\text{headroom}}$ | Curtail charging power to available headroom |
+| **5. V2G Grid Stress Gating** | Grid stress $< 70\%$ and condition is NORMAL | Prevent unnecessary discharge $\rightarrow$ switch to **IDLE** |
+| **6. Topology / Connection Fault** | Broken wire or missing breaker connection | Trip circuit breaker $\rightarrow$ switch to **FAULT** safe state |
 
 ---
 
-## 📊 Quantitative Performance Benchmark
+## 📊 Circuit Diagnostics & Real-Time Telemetry
 
-Over a 24-hour simulation cycle with identical grid load, dynamic TOU tariffs, and solar generation profiles:
+### **Rolling Telemetry Buffer**
+- Telemetry buffer maintains a rolling window of recent simulation frames.
+- Streams live series into interactive Chart.js graphs:
+  - **Net Feeder Load** (kW)
+  - **EV Power** (+Charge / -V2G kW)
+  - **Solar Generation** (kW)
+  - **Primary EV Battery SOC** (%)
+  - **Electricity Tariff** (₹/kWh)
 
-| Metric | Scenario A — Traditional Immediate | Scenario B — GridWise AI | Performance Delta |
-| :--- | :--- | :--- | :--- |
-| **Grid Energy Cost** | ₹1,924.74 | **₹0.00** | **100% Savings** (Solar Shifted) |
-| **Peak Grid Load** | 98.8 kW | **76.0 kW** | **-23.1% Peak Shaved** |
-| **Solar Energy Consumed** | 130.1 kWh | **181.1 kWh** | **+39.2% Solar Utilization** |
-| **V2G Energy Supplied** | 0.0 kWh | **21.5 kWh** | **Grid Support Active** |
-| **Departure Satisfaction** | 100.0% | **100.0%** | **100% Guaranteed** |
+### **Circuit Diagnostics Panel & Decision Stream Console**
+- **Diagnostics Panel**: Monitors Grid Port, Solar Inverter, Charger, Battery Pack, Feeder Headroom, and Conservation-of-Energy balance error in real time.
+- **Simulation Event Console (`#sim-log-console`)**: Logs every PPO decision, safety filter intervention, mode change, and circuit telemetry tick with precise timestamps.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### **Frontend**
-- **HTML5 & Tailwind CSS**: Responsive, pristine Light Theme design.
-- **Chart.js**: Real-time synchronized telemetry charts.
-- **Lucide Icons**: Modern icon library.
-- **WebSockets**: Real-time streaming client.
-
-### **Backend**
-- **Python 3.14**: High-performance runtime.
-- **Starlette & Uvicorn**: Async Web Framework and WebSockets server.
-- **Gymnasium 1.3.0 & Stable-Baselines3**: Reinforcement Learning framework (PPO).
-- **PyTorch**: Deep learning backend for RL policies.
-- **OpenAI API**: GPT-4o integration for natural language strategic insights.
+- **Backend**: Python 3.11+, FastAPI, Starlette, Uvicorn, SQLAlchemy.
+- **Reinforcement Learning**: Gymnasium, Stable-Baselines3, PyTorch, NumPy.
+- **Frontend**: Responsive HTML5, Tailwind CSS, Lucide Icons, Chart.js, WebSocket Client.
+- **Simulation**: Custom Continuous Electrical Digital Twin Engine, Kirchhoff Power Flow Solver.
+- **Testing**: Pytest, Pytest-Asyncio.
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ System Architecture Diagram
 
 ```text
-               ┌────────────────────────────────────────────────────────┐
-               │              Frontend UI (Browser Single-Page App)    │
-               │   Dashboard | Fleet | AI Center | Sim Lab | Analytics  │
-               └───────────────────────────┬────────────────────────────┘
-                                           │
-                                  REST API │ WebSockets (/ws/simulation)
-                                           ▼
-               ┌────────────────────────────────────────────────────────┐
-               │               Starlette / Uvicorn Web Server           │
-               └────┬──────────────────────┬──────────────────────┬─────┘
-                    │                      │                      │
-                    ▼                      ▼                      ▼
-           ┌────────────────┐    ┌─────────────────┐    ┌──────────────────┐
-           │   EV Fleet     │    │  Energy Service │    │ OpenAI Service   │
-           │   Service      │    │  (Grid, Tariff, │    │  (GPT-4o LLM     │
-           │ (SOC, Battery) │    │   Solar Gen)    │    │    Advisor)      │
-           └───────┬────────┘    └────────┬────────┘    └──────────────────┘
-                   │                      │
-                   ▼                      ▼
-           ┌───────────────────────────────────────────────────────────┐
-           │                  Simulation Engine                        │
-           │      (24h Step Simulator & Real-Time Background Loop)     │
-           └───────────────────────────┬───────────────────────────────┘
-                                       │
-                                       ▼
-           ┌───────────────────────────────────────────────────────────┐
-           │                   RL Optimizer Engine                     │
-           │            (PPO Agent + EVChargingGymEnv)                 │
-           └───────────────────────────┬───────────────────────────────┘
-                                       │
-                                       ▼
-           ┌───────────────────────────────────────────────────────────┐
-           │              Safety & Constraint Layer                    │
-           │    (SOC Bounds, Departure Guarantee, Grid Load Cap)       │
-           └───────────────────────────────────────────────────────────┘
+       ┌────────────────────────────────────────────────────────┐
+       │              Browser Single-Page App (SPA)             │
+       │   • Digital Twin Circuit Schematic (Glowing SVG Wires) │
+       │   • Live Telemetry Charts (Rolling 60-Point Stream)    │
+       │   • Circuit Diagnostics & PPO Decision Event Console   │
+       └───────────────────────────┬────────────────────────────┘
+                                   │
+                          REST API │ WebSockets (/ws/simulation)
+                                   ▼
+       ┌────────────────────────────────────────────────────────┐
+       │             FastAPI / Starlette Backend Engine         │
+       └────┬──────────────────────┬──────────────────────┬─────┘
+            │                      │                      │
+            ▼                      ▼                      ▼
+   ┌────────────────┐    ┌─────────────────┐    ┌──────────────────┐
+   │ Real-Time Data │    │ Physical Solar  │    │ EV Battery Twin  │
+   │ Service (SLDC/ │    │ Geometry Model  │    │ (Thevenin / SOC  │
+   │ IEX Tariffs)   │    │ (Irradiance)    │    │ Integration)     │
+   └───────┬────────┘    └────────┬────────┘    └────────┬─────────┘
+           │                      │                      │
+           └──────────────────────┼──────────────────────┘
+                                  ▼
+       ┌────────────────────────────────────────────────────────┐
+       │         19-Dimensional State Vector Construction       │
+       └──────────────────────────┬─────────────────────────────┘
+                                  ▼
+       ┌────────────────────────────────────────────────────────┐
+       │          PPO Reinforcement Learning Controller         │
+       │           (Continuous / Discrete Action Policy)        │
+       └──────────────────────────┬─────────────────────────────┘
+                                  ▼
+       ┌────────────────────────────────────────────────────────┐
+       │         Hierarchical Safety Constraint Validator       │
+       │    (Feeder Headroom, Departure SLA, SOC Floor/Ceiling) │
+       └──────────────────────────┬─────────────────────────────┘
+                                  ▼
+       ┌────────────────────────────────────────────────────────┐
+       │          Unified Circuit Topology & Power Flow         │
+       │     (Ohm's Law, Wire Currents, Conservation of Energy) │
+       └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔌 API Documentation
+## 🔌 API & WebSocket Specification
 
-### **EV Fleet Endpoints**
-- `GET /api/evs`: List all EVs and active operator overrides.
-- `POST /api/evs`: Create a new simulated EV.
-- `GET /api/evs/{ev_id}`: Retrieve details for a specific EV.
-- `DELETE /api/evs/{ev_id}`: Delete an EV from the fleet.
-- `POST /api/evs/{ev_id}/override`: Set manual operator override (`"CHARGE"`, `"DISCHARGE"`, `"IDLE"`, or `null`).
-
-### **Energy Profile Endpoints**
-- `GET /api/grid`: Get 24-hour grid load profile and current load state.
-- `GET /api/prices`: Get 24-hour dynamic TOU electricity price profile (₹/kWh).
-- `GET /api/renewables`: Get 24-hour solar generation curve (kW).
-
-### **AI Endpoints**
-- `GET /api/ai/status`: Current RL agent model status and active configuration.
-- `GET /api/ai/schedule`: Predictive 24-hour AI action schedule matrix for all EVs.
-- `POST /api/ai/decision`: Request AI decision for a specific EV at a given hour.
-- `GET /api/ai/insight`: Get OpenAI GPT-4o LLM strategic energy advisor insight.
-
-### **Simulation Endpoints**
-- `GET /api/simulation/status`: Current simulation clock and running state.
-- `POST /api/simulation/start`: Resume continuous real-time background loop.
-- `POST /api/simulation/pause`: Pause real-time loop.
-- `POST /api/simulation/step`: Advance simulation by 1 step (+30 minutes).
-- `POST /api/simulation/reset`: Reset simulation back to Hour 00:00.
-- `GET /api/simulation/benchmark`: Run 24-hour Scenario A vs Scenario B comparison.
+### **Digital Twin & Telemetry Endpoints**
+- `GET /api/digital-twin/state`: Full authoritative snapshot of electrical topology, wire currents, battery state, and AI decisions.
+- `GET /api/telemetry/history?window=60`: Rolling historical time-series buffer for instant chart pre-fill.
+- `GET /api/simulation/status`: Simulation clock state, speed multiplier (1x, 5x, 10x), and active mode.
+- `POST /api/simulation/start`: Resume continuous background simulation.
+- `POST /api/simulation/pause`: Pause simulation.
+- `POST /api/simulation/reset`: Reset simulation clock and fleet states.
+- `POST /api/evs/{ev_id}/override`: Set manual operator override (`CHARGE`, `DISCHARGE`, `IDLE`, or `null`).
 
 ### **WebSockets**
-- `WS /ws/simulation`: Bi-directional WebSocket endpoint for streaming real-time simulation ticks.
+- `WS /ws/simulation`: Bi-directional real-time telemetry stream emitting `digital_twin_update` and `SIMULATION_UPDATE` packets on every physics tick.
 
 ---
 
 ## 🚀 Getting Started & Installation
 
 ### **Prerequisites**
-- Python 3.10+ (Python 3.14 recommended)
-- `pip` package manager
+- Python 3.11 or higher
+- Git
 
 ### **Installation**
-1. Clone or download the project directory.
-2. Ensure required Python dependencies are installed:
+1. Clone the repository:
    ```bash
-   pip install starlette uvicorn gymnasium stable-baselines3 torch numpy pandas requestsjinja2 websockets
+   git clone https://github.com/Nishanth-M-P/EV.git
+   cd EV
+   ```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   # Windows
+   .venv\Scripts\activate
+   # Linux/macOS
+   source .venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
    ```
 
 ### **Running the Application**
-Launch the server via the main entrypoint:
+Launch the server via:
 ```bash
 python run.py
 ```
-
-Open your browser and navigate to:
+Open your browser at:
 **`http://127.0.0.1:8000`**
 
 ---
 
-## 🎬 Demo Story & Walkthrough
+## 🧪 Test Suite & Verification
 
-When presenting or testing GridWise AI, follow this 4-step story:
+The project includes an automated test suite covering continuous simulation physics, wire currents, safety layer interventions, and PPO closed-loop control:
 
-1. **EV Arrival (Morning)**: EVs connect to chargers with initial low battery levels.
-2. **AI Observation & Solar Alignment (Midday)**: As solar generation peaks around 12:00 PM – 2:00 PM, GridWise AI automatically schedules high-power charging, shifting consumption to 100% free renewable solar energy.
-3. **Grid Peak & V2G Support (Evening)**: At 6:00 PM – 9:00 PM when grid demand reaches critical load and dynamic electricity tariffs peak, eligible EVs discharge stored energy back to the grid (V2G), earning feed-in value and stabilizing grid frequency.
-4. **Benchmark Verification**: Click **"Run 24-Hour Benchmark"** to generate side-by-side comparative charts proving 100% cost savings, -23.1% peak shaving, and 100% departure goal satisfaction.
+```bash
+# Run full pytest suite (82 unit and integration tests)
+pytest
 
----
+# Run multi-minute continuous simulation scenarios
+python verify_simulation.py
+```
 
-## 🛣️ Future Roadmap
-
-- **Phase 1 (Completed)**: Gymnasium RL Environment + Safety Layer + Starlette WebSockets Real-Time Platform.
-- **Phase 2**: Solar generation and dynamic electricity price forecasting using LSTM / Transformer models.
-- **Phase 3**: Multi-charging station hub optimization and feeder transformer load balancing.
-- **Phase 4**: Hardware charger integration via standard Open Charge Point Protocol (OCPP 2.0.1).
+All 82 tests pass cleanly with zero warnings or balance errors.
 
 ---
 
-### 📄 License
-This project is developed as an open-source AI energy management platform for research and practical deployment.
+## 🎬 Demo Walkthrough
+
+1. **Morning Connection & Charge**: EV connects at 45% SOC. The wire glows high forward (`FORWARD`, $57.3\text{ A}$), steadily increasing battery energy without toggle interruptions.
+2. **Solar Peak Alignment**: Midday solar generation reaches peak output, directly supplying charging power and minimizing grid imports.
+3. **Evening Peak & V2G Discharge**: Grid load surges during peak tariff hours. Eligible EVs switch to V2G export (`REVERSE`, $-27.1\text{ A}$), sending power back to the grid.
+4. **Target Reached & Standby Idle**: Once the vehicle battery satisfies user target SOC (e.g. 80%), charging halts immediately. Current drops to $0.0\text{ A}$ and wire glow turns completely OFF (`IDLE`).
+
+---
+
+## 📄 License
+Developed as an open-source AI energy management platform for research, smart grid optimization, and V2G commercial deployment.
