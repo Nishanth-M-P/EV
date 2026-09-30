@@ -12,12 +12,24 @@
   ],
   "routes": [
     {
+      "src": "/assets/(.*)",
+      "dest": "/static/assets/$1"
+    },
+    {
+      "src": "/simulator",
+      "dest": "/static/simulator.html"
+    },
+    {
       "src": "/static/(.*)",
       "dest": "/static/$1"
     },
     {
       "src": "/api/(.*)",
       "dest": "api/index.py"
+    },
+    {
+      "src": "/",
+      "dest": "/static/index.html"
     },
     {
       "src": "/(.*)",
