@@ -164,17 +164,17 @@
     <div class="flex items-center gap-2">
       <!-- Zoom & Canvas Fit Controls -->
       <div class="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-0.5 text-xs shadow-inner">
-        <button id="canvas-zoom-out" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300" title="Zoom Out">
+        <button id="canvas-zoom-out" onclick="LabWorkspace.zoomOut()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300" title="Zoom Out">
           <span class="material-symbols-outlined text-sm">zoom_out</span>
         </button>
-        <button id="canvas-zoom-reset" class="px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 font-mono text-[11px] font-bold" title="Reset Zoom">
+        <button id="canvas-zoom-reset" onclick="LabWorkspace.resetZoom()" class="zoom-display-val px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 font-mono text-[11px] font-bold" title="Reset Zoom">
           100%
         </button>
-        <button id="canvas-zoom-in" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300" title="Zoom In">
+        <button id="canvas-zoom-in" onclick="LabWorkspace.zoomIn()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300" title="Zoom In">
           <span class="material-symbols-outlined text-sm">zoom_in</span>
         </button>
         <div class="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
-        <button id="canvas-zoom-fit" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 flex items-center gap-0.5" title="Fit Canvas to Viewport">
+        <button id="canvas-zoom-fit" onclick="LabWorkspace.fitZoom()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 flex items-center gap-0.5" title="Fit Canvas to Viewport">
           <span class="material-symbols-outlined text-sm">fit_screen</span>
           <span class="text-[10px] font-mono pr-0.5">FIT</span>
         </button>
@@ -333,12 +333,14 @@
       <!-- FIXED SIMULATION WORKBENCH (PRD Section 3) -->
       <div class="relative w-full shrink-0 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#080d1a]">
         <div id="sim-canvas-container" class="sim-canvas-grid relative h-[530px] w-full overflow-auto cursor-default">
-          <div id="sim-canvas-viewport" class="relative min-w-[1080px] h-[530px] w-full">
-            <!-- SVG Layer for Connection Wires & Flow Particles -->
-            <svg id="sim-wires-svg" class="w-full h-full absolute inset-0 pointer-events-auto z-0"></svg>
+          <div id="sim-canvas-scaler" class="relative" style="width: 1100px; height: 530px; min-width: 1100px;">
+            <div id="sim-canvas-viewport" class="absolute top-0 left-0 w-[1100px] h-[530px]" style="transform-origin: 0 0; transition: transform 0.15s ease-out;">
+              <!-- SVG Layer for Connection Wires & Flow Particles -->
+              <svg id="sim-wires-svg" class="w-full h-full absolute inset-0 pointer-events-auto z-0"></svg>
 
-            <!-- HTML Layer for Architecture Nodes -->
-            <div id="sim-nodes-layer" class="w-full h-full absolute inset-0 pointer-events-none z-10 [&>*]:pointer-events-auto"></div>
+              <!-- HTML Layer for Architecture Nodes -->
+              <div id="sim-nodes-layer" class="w-full h-full absolute inset-0 pointer-events-none z-10 [&>*]:pointer-events-auto"></div>
+            </div>
           </div>
 
           <!-- Canvas Floating Controls Bar (PRD Section 4 & 73) -->
@@ -349,13 +351,13 @@
                 <span>FIXED TOPOLOGY</span>
               </span>
               <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-              <button id="canvas-zoom-in" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom In">
+              <button onclick="LabWorkspace.zoomIn()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom In">
                 <span class="material-symbols-outlined text-base">zoom_in</span>
               </button>
-              <button id="canvas-zoom-out" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom Out">
+              <button onclick="LabWorkspace.zoomOut()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom Out">
                 <span class="material-symbols-outlined text-base">zoom_out</span>
               </button>
-              <button id="canvas-zoom-reset" class="px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-mono text-[11px] font-bold" title="Reset Zoom">
+              <button onclick="LabWorkspace.resetZoom()" class="zoom-display-val px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-mono text-[11px] font-bold" title="Reset Zoom">
                 100%
               </button>
             </div>

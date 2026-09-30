@@ -33,6 +33,7 @@ const LabWorkspace = (function() {
   let simTimer = null;
   let ws = null;
   let isWsConnected = false;
+  let currentZoom = 1.0;
   let openBatteryNodeId = null;
 
   // Real-Time System Telemetry State
@@ -2907,6 +2908,46 @@ const LabWorkspace = (function() {
     }, 3200);
   }
 
+  // ================= VIEWPORT ZOOM & FIT CONTROLS =================
+  function applyZoom(zoom) {
+    currentZoom = Math.max(0.5, Math.min(1.8, Math.round(zoom * 100) / 100));
+    const canvasViewport = document.getElementById('sim-canvas-viewport');
+    const canvasScaler = document.getElementById('sim-canvas-scaler');
+    if (canvasViewport) {
+      canvasViewport.style.transform = `scale(${currentZoom})`;
+      canvasViewport.style.transformOrigin = '0 0';
+    }
+    if (canvasScaler) {
+      canvasScaler.style.width = `${Math.max(1100, Math.round(1100 * currentZoom))}px`;
+      canvasScaler.style.height = `${Math.max(530, Math.round(530 * currentZoom))}px`;
+    }
+    document.querySelectorAll('.zoom-display-val').forEach(el => {
+      el.textContent = `${Math.round(currentZoom * 100)}%`;
+    });
+  }
+
+  function zoomIn() {
+    applyZoom(currentZoom + 0.1);
+  }
+
+  function zoomOut() {
+    applyZoom(currentZoom - 0.1);
+  }
+
+  function resetZoom() {
+    applyZoom(1.0);
+  }
+
+  function fitZoom() {
+    const container = document.getElementById('sim-canvas-container');
+    if (container) {
+      const availableWidth = container.clientWidth - 24;
+      const fitRatio = Math.max(0.6, Math.min(1.2, availableWidth / 1100));
+      applyZoom(fitRatio);
+      showToast(`Canvas fitted to ${Math.round(fitRatio * 100)}%`);
+    }
+  }
+
   // ================= 17. INITIALIZATION =================
   function init() {
     canvasContainer = document.getElementById('sim-canvas-container');
@@ -2927,36 +2968,19 @@ const LabWorkspace = (function() {
     if (btnHist) btnHist.onclick = () => setDataMode('HISTORICAL');
 
     // Viewport Zoom & Fit Controls
-    const canvasViewport = document.getElementById('sim-canvas-viewport');
-    const zoomInBtn = document.getElementById('canvas-zoom-in');
-    const zoomOutBtn = document.getElementById('canvas-zoom-out');
-    const zoomResetBtn = document.getElementById('canvas-zoom-reset');
-    const zoomFitBtn = document.getElementById('canvas-zoom-fit');
-    let currentZoom = 1.0;
-
-    function applyZoom(zoom) {
-      currentZoom = Math.max(0.55, Math.min(1.4, Math.round(zoom * 100) / 100));
-      if (canvasViewport) {
-        canvasViewport.style.transform = `scale(${currentZoom})`;
-        canvasViewport.style.transformOrigin = 'top left';
-      }
-      if (zoomResetBtn) zoomResetBtn.textContent = `${Math.round(currentZoom * 100)}%`;
-    }
-
-    if (zoomInBtn) zoomInBtn.onclick = () => applyZoom(currentZoom + 0.1);
-    if (zoomOutBtn) zoomOutBtn.onclick = () => applyZoom(currentZoom - 0.1);
-    if (zoomResetBtn) zoomResetBtn.onclick = () => applyZoom(1.0);
-    if (zoomFitBtn) {
-      zoomFitBtn.onclick = () => {
-        const container = document.getElementById('sim-canvas-container');
-        if (container) {
-          const availableWidth = container.clientWidth - 24;
-          const fitZoom = Math.max(0.6, Math.min(1.1, availableWidth / 1080));
-          applyZoom(fitZoom);
-          showToast(`Canvas fitted to ${Math.round(fitZoom * 100)}%`);
-        }
-      };
-    }
+    applyZoom(1.0);
+    document.querySelectorAll('#canvas-zoom-in, [onclick*="zoomIn"]').forEach(btn => {
+      btn.onclick = () => zoomIn();
+    });
+    document.querySelectorAll('#canvas-zoom-out, [onclick*="zoomOut"]').forEach(btn => {
+      btn.onclick = () => zoomOut();
+    });
+    document.querySelectorAll('#canvas-zoom-reset, [onclick*="resetZoom"]').forEach(btn => {
+      btn.onclick = () => resetZoom();
+    });
+    document.querySelectorAll('#canvas-zoom-fit, [onclick*="fitZoom"]').forEach(btn => {
+      btn.onclick = () => fitZoom();
+    });
 
     // Analytics Drawer Collapsible Toggle
     const toggleAnalyticsBtn = document.getElementById('toggle-analytics-btn');
@@ -3136,7 +3160,12 @@ const LabWorkspace = (function() {
     closeBatteryModal,
     openComparisonModal,
     closeComparisonModal,
-    validateAndConnect
+    validateAndConnect,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    fitZoom,
+    applyZoom
   };
 })();
 
