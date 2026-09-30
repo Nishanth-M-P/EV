@@ -14,3 +14,5 @@ env/
 *.db-wal
 .pytest_cache/
 .vercel/
+
+.vercel
