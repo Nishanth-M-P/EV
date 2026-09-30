@@ -135,7 +135,8 @@ const LabWorkspace = (function() {
       type: 'renewable_info', title: 'Renewable Generation', category: 'Generation Input',
       width: 280, height: 95,
       ports: [
-        { id: 'renew_out', name: 'PV/Wind Data Out', type: 'data', direction: 'output', side: 'right', x: 280, y: 47 }
+        { id: 'renew_out', name: 'PV/Wind Data Out', type: 'data', direction: 'output', side: 'right', x: 280, y: 47 },
+        { id: 'power_out', name: 'Generation Power Feed', type: 'power', direction: 'output', side: 'bottom', x: 80, y: 95 }
       ],
       defaultProps: { id: 'RENEW-RES', name: 'Renewable Generation', source: 'Live Grid Data', status: 'LIVE', solarGw: 1.99, windGw: 2.41, hydroGw: 0.62, totalGw: 5.02, sharePct: 36.5 }
     },
@@ -151,7 +152,8 @@ const LabWorkspace = (function() {
       type: 'ev_info', title: 'EV Information', category: 'Vehicle Telemetry',
       width: 280, height: 95,
       ports: [
-        { id: 'ev_info_out', name: 'EV State Out', type: 'data', direction: 'output', side: 'bottom', x: 140, y: 95 }
+        { id: 'ev_info_out', name: 'EV State Out', type: 'data', direction: 'output', side: 'bottom', x: 140, y: 95 },
+        { id: 'ev_telemetry_out', name: 'BMS Telemetry Out', type: 'data', direction: 'output', side: 'left', x: 0, y: 47 }
       ],
       defaultProps: { id: 'EV-INFO', name: 'EV Information', soc: 64.2, arrivalTime: '08:00', departureTime: '19:30', requiredSoc: 80.0, v2gEnabled: true, v2gReserve: 30.0 }
     },
@@ -162,8 +164,9 @@ const LabWorkspace = (function() {
         { id: 'price_in', name: 'Price In', type: 'data', direction: 'input', side: 'top', x: 140, y: 0 },
         { id: 'renew_in', name: 'Renew In', type: 'data', direction: 'input', side: 'left', x: 0, y: 30 },
         { id: 'grid_telemetry_in', name: 'Grid Telemetry In', type: 'data', direction: 'input', side: 'left', x: 0, y: 65 },
+        { id: 'ev_telemetry_in', name: 'EV BMS Telemetry In', type: 'data', direction: 'input', side: 'right', x: 280, y: 20 },
         { id: 'cmd_out', name: 'Power Command Out', type: 'command', direction: 'output', side: 'bottom', x: 140, y: 95 },
-        { id: 'decision_out', name: 'Decision Signal Out', type: 'control', direction: 'output', side: 'right', x: 280, y: 47 }
+        { id: 'decision_out', name: 'Decision Signal Out', type: 'control', direction: 'output', side: 'right', x: 280, y: 55 }
       ],
       defaultProps: { id: 'DRL-01', name: 'DRL CONTROLLER (Agent)', algorithm: 'PPO', action: 'CHARGE', powerKw: 8.4, reward: 0.84, urgencyPct: 42.0, meanReward: 14.82, modelStatus: 'TRAINED (EP 347)' }
     },
@@ -171,8 +174,9 @@ const LabWorkspace = (function() {
       type: 'decision_info', title: 'Outputs / Decision', category: 'Policy Output',
       width: 280, height: 95,
       ports: [
-        { id: 'decision_in', name: 'Policy In', type: 'control', direction: 'input', side: 'left', x: 0, y: 47 },
-        { id: 'ev_in', name: 'EV Telemetry In', type: 'data', direction: 'input', side: 'top', x: 140, y: 0 }
+        { id: 'decision_in', name: 'Policy In', type: 'control', direction: 'input', side: 'left', x: 0, y: 55 },
+        { id: 'ev_in', name: 'EV Telemetry In', type: 'data', direction: 'input', side: 'top', x: 140, y: 0 },
+        { id: 'bms_in', name: 'BMS Status In', type: 'data', direction: 'input', side: 'bottom', x: 140, y: 95 }
       ],
       defaultProps: { id: 'DEC-01', name: 'Outputs / Decision', action: 'CHARGE', powerKw: 8.4, reason: 'Departure protection active' }
     },
@@ -181,7 +185,8 @@ const LabWorkspace = (function() {
       width: 280, height: 125,
       ports: [
         { id: 'power_ac_out', name: '11kV AC Bus', type: 'power', direction: 'output', side: 'right', x: 280, y: 62 },
-        { id: 'telemetry_out', name: 'Grid Telemetry Out', type: 'data', direction: 'output', side: 'top', x: 140, y: 0 }
+        { id: 'telemetry_out', name: 'Grid Telemetry Out', type: 'data', direction: 'output', side: 'top', x: 140, y: 0 },
+        { id: 'renew_power_in', name: 'Renewable Feed In', type: 'power', direction: 'input', side: 'top', x: 80, y: 0 }
       ],
       defaultProps: { id: 'GRID-PHYS', name: 'Electrical Grid', baseDemandGw: 13.74, evImpactKw: 8.40, managedDemandGw: 13.7484 }
     },
@@ -199,7 +204,8 @@ const LabWorkspace = (function() {
       type: 'battery', title: 'EV Battery (Integrated Car)', category: 'Energy Storage',
       width: 280, height: 125,
       ports: [
-        { id: 'dc_inlet', name: 'DC Fast Charge Inlet', type: 'power', direction: 'input', side: 'left', x: 0, y: 62 }
+        { id: 'dc_inlet', name: 'DC Fast Charge Inlet', type: 'power', direction: 'input', side: 'left', x: 0, y: 62 },
+        { id: 'bms_telemetry_out', name: 'BMS Telemetry Out', type: 'data', direction: 'output', side: 'top', x: 140, y: 0 }
       ],
       defaultProps: { id: 'BATT-01', name: 'EV Battery (Tata Nexon EV)', soc: 64.2, capacityKwh: 72.0, energyStoredKwh: 46.22, minSoc: 20.0, maxSoc: 95.0, voltageV: 400.0, currentA: 21.0, powerKw: 8.4, sohPct: 99.4 }
     },
@@ -302,14 +308,14 @@ const LabWorkspace = (function() {
         svgHtml += `
           <g class="power-cable-group" id="conn-${conn.id}" data-conn-id="${conn.id}">
             <!-- Layer 1: Outer Heavy Shield Conduit (14px) -->
-            <path id="cable-sheath-${conn.id}" d="${pathD}" class="cable-outer-sheath pointer-events-none" />
+            <path id="cable-sheath-${conn.id}" d="${pathD}" stroke="#0f172a" stroke-width="14" stroke-linecap="round" fill="none" class="cable-outer-sheath pointer-events-none" />
             <!-- Layer 2: Rubber/XLPE Insulator Jacket (10px) -->
-            <path id="cable-insulator-${conn.id}" d="${pathD}" class="cable-insulator pointer-events-none" />
+            <path id="cable-insulator-${conn.id}" d="${pathD}" stroke="#334155" stroke-width="10" stroke-linecap="round" fill="none" class="cable-insulator pointer-events-none" />
             <!-- Layer 3: Solid Conductor Core (4px) -->
-            <path id="cable-core-${conn.id}" d="${pathD}" class="cable-core-idle pointer-events-none" />
+            <path id="cable-core-${conn.id}" d="${pathD}" stroke="#64748b" stroke-width="4" stroke-linecap="round" fill="none" class="cable-core-idle pointer-events-none" />
             <!-- Layer 4: Forward Particles (Charge: Grid -> Charger -> Battery) -->
             <g id="cable-fwd-${conn.id}" class="pointer-events-none" style="display: none;">
-              <path d="${pathD}" class="cable-pulse-charge" />
+              <path d="${pathD}" stroke="#34d399" stroke-width="5" stroke-dasharray="8 6" fill="none" class="cable-pulse-charge" />
               <circle r="4.5" fill="#34d399" filter="url(#glow-green)">
                 <animateMotion path="${pathD}" dur="1.0s" repeatCount="indefinite" />
               </circle>
@@ -325,7 +331,7 @@ const LabWorkspace = (function() {
             </g>
             <!-- Layer 5: Reverse Particles (V2G Discharge: Battery -> Charger -> Grid) -->
             <g id="cable-rev-${conn.id}" class="pointer-events-none" style="display: none;">
-              <path d="${pathD}" class="cable-pulse-v2g" />
+              <path d="${pathD}" stroke="#38bdf8" stroke-width="5" stroke-dasharray="8 6" fill="none" class="cable-pulse-v2g" />
               <circle r="4.5" fill="#38bdf8" filter="url(#glow-cyan)">
                 <animateMotion path="${reversePathD}" dur="1.0s" repeatCount="indefinite" />
               </circle>
@@ -348,6 +354,39 @@ const LabWorkspace = (function() {
             <text id="cable-lbl-${conn.id}" x="${midX}" y="${midY - 12}" fill="#94a3b8" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle" class="pointer-events-none select-none">${conn.label || ''}</text>
           </g>
         `;
+      } else if (conn.connectionType === 'power_renew') {
+        svgHtml += `
+          <g class="power-cable-group" id="conn-${conn.id}" data-conn-id="${conn.id}">
+            <!-- Layer 1: Outer Heavy Shield Conduit (12px) -->
+            <path id="cable-sheath-${conn.id}" d="${pathD}" stroke="#064e3b" stroke-width="12" stroke-linecap="round" fill="none" class="cable-outer-sheath pointer-events-none" />
+            <!-- Layer 2: Rubber/XLPE Insulator Jacket (8px) -->
+            <path id="cable-insulator-${conn.id}" d="${pathD}" stroke="#065f46" stroke-width="8" stroke-linecap="round" fill="none" class="cable-insulator pointer-events-none" />
+            <!-- Layer 3: Solid Conductor Core (3.5px) -->
+            <path id="cable-core-${conn.id}" d="${pathD}" stroke="#10b981" stroke-width="3.5" stroke-linecap="round" fill="none" filter="url(#glow-green)" class="pointer-events-none" />
+            <!-- Layer 4: Continuous Generation Flow Particles (Renewables -> Grid Substation) -->
+            <g id="cable-fwd-${conn.id}" class="pointer-events-none">
+              <circle r="4" fill="#34d399" filter="url(#glow-green)">
+                <animateMotion path="${pathD}" dur="1.2s" repeatCount="indefinite" />
+              </circle>
+              <circle r="2.5" fill="#ffffff">
+                <animateMotion path="${pathD}" dur="1.2s" repeatCount="indefinite" />
+              </circle>
+              <circle r="4" fill="#34d399" filter="url(#glow-green)">
+                <animateMotion path="${pathD}" dur="1.2s" begin="0.6s" repeatCount="indefinite" />
+              </circle>
+              <circle r="2" fill="#ffffff">
+                <animateMotion path="${pathD}" dur="1.2s" begin="0.6s" repeatCount="indefinite" />
+              </circle>
+            </g>
+            <!-- Heavy-Duty Metallic Cable Glands -->
+            <circle cx="${p1.x}" cy="${p1.y}" r="6" fill="#1e293b" stroke="#10b981" stroke-width="2" class="pointer-events-none" />
+            <circle cx="${p1.x}" cy="${p1.y}" r="2.5" fill="#a7f3d0" class="pointer-events-none" />
+            <circle cx="${p2.x}" cy="${p2.y}" r="6" fill="#1e293b" stroke="#10b981" stroke-width="2" class="pointer-events-none" />
+            <circle cx="${p2.x}" cy="${p2.y}" r="2.5" fill="#a7f3d0" class="pointer-events-none" />
+            <!-- Technical Generation Label -->
+            <text id="cable-lbl-${conn.id}" x="${midX + 8}" y="${midY}" fill="#34d399" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="start" class="pointer-events-none select-none">${conn.label || ''}</text>
+          </g>
+        `;
       } else if (conn.connectionType === 'control' || conn.connectionType === 'control_bus') {
         svgHtml += `
           <g class="control-cable-group" id="conn-${conn.id}" data-conn-id="${conn.id}">
@@ -363,13 +402,21 @@ const LabWorkspace = (function() {
       } else if (conn.connectionType === 'measurement') {
         svgHtml += `
           <g class="meter-tap-group" id="conn-${conn.id}" data-conn-id="${conn.id}">
-            <path d="${pathD}" fill="none" stroke="#ec4899" stroke-width="2" stroke-dasharray="4 3" class="pointer-events-none meter-flow-pulse" />
-            <circle r="2.5" fill="#f472b6">
+            <!-- Sensor Tap Wire -->
+            <path d="${pathD}" fill="none" stroke="#ec4899" stroke-width="2.5" stroke-dasharray="4 3" class="pointer-events-none meter-flow-pulse" />
+            <!-- Measurement Flow Particles down to Meter -->
+            <circle r="3" fill="#f472b6" filter="url(#glow-purple)">
               <animateMotion path="${pathD}" dur="0.9s" repeatCount="indefinite" />
             </circle>
-            <circle cx="${p2.x}" cy="${p2.y}" r="6" fill="#1e293b" stroke="#ec4899" stroke-width="2" class="pointer-events-none" />
-            <circle cx="${p2.x}" cy="${p2.y}" r="2" fill="#f472b6" class="pointer-events-none" />
-            <text x="${p1.x + 35}" y="${(p1.y + p2.y) / 2}" fill="#f472b6" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="start" class="pointer-events-none select-none">${conn.label || ''}</text>
+            <!-- CT Clamp on the 11kV AC Bus Cable at (355, 322) -->
+            <circle cx="355" cy="322" r="7.5" fill="#1e293b" stroke="#ec4899" stroke-width="2.5" class="pointer-events-none" />
+            <circle cx="355" cy="322" r="3" fill="#f472b6" class="pointer-events-none" />
+            <rect x="349" y="318" width="12" height="8" rx="2" fill="none" stroke="#f472b6" stroke-width="1.5" class="pointer-events-none" />
+            <!-- Terminal Gland at Energy Meter (355, 415) -->
+            <circle cx="355" cy="415" r="5" fill="#1e293b" stroke="#ec4899" stroke-width="2" class="pointer-events-none" />
+            <circle cx="355" cy="415" r="2" fill="#f472b6" class="pointer-events-none" />
+            <!-- Technical Measurement Label -->
+            <text x="365" y="372" fill="#f472b6" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="start" class="pointer-events-none select-none">${conn.label || 'CT/PT SENSE TAP'}</text>
           </g>
         `;
       } else {
@@ -387,6 +434,7 @@ const LabWorkspace = (function() {
             </circle>
             <circle cx="${p1.x}" cy="${p1.y}" r="3" fill="${strokeColor}" class="pointer-events-none" />
             <circle cx="${p2.x}" cy="${p2.y}" r="3" fill="${strokeColor}" class="pointer-events-none" />
+            ${conn.label ? `<text x="${midX}" y="${midY - 8}" fill="${strokeColor}" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle" class="pointer-events-none select-none">${conn.label}</text>` : ''}
           </g>
         `;
       }
@@ -408,6 +456,16 @@ const LabWorkspace = (function() {
 
       if (core) {
         core.setAttribute('class', isCharging ? 'cable-core-charging pointer-events-none' : (isDischarging ? 'cable-core-v2g pointer-events-none' : 'cable-core-idle pointer-events-none'));
+        if (isCharging) {
+          core.setAttribute('stroke', '#10b981');
+          core.setAttribute('stroke-width', '4.5');
+        } else if (isDischarging) {
+          core.setAttribute('stroke', '#38bdf8');
+          core.setAttribute('stroke-width', '4.5');
+        } else {
+          core.setAttribute('stroke', '#64748b');
+          core.setAttribute('stroke-width', '4');
+        }
       }
       if (fwd) {
         fwd.style.display = isCharging ? 'inline' : 'none';
@@ -431,6 +489,13 @@ const LabWorkspace = (function() {
         }
       }
     });
+
+    // Update dynamic Renewable feed label if present
+    const renLbl = document.getElementById('cable-lbl-renew_to_grid');
+    if (renLbl) {
+      const rTot = (telemetryState.renewableTotalGw || 5.02).toFixed(2);
+      renLbl.textContent = `GREEN FEED (${rTot} GW)`;
+    }
   }
 
   // ================= 4. AUTHENTIC 50/50 ENGINEERING COMPONENT CARDS =================
@@ -2341,7 +2406,15 @@ const LabWorkspace = (function() {
     const meter = addBlock('meter', 250, 415, 'meter_01');
 
     // ================= REALISTIC ENGINEERING CONNECTIONS (PRD Sections 1-6) =================
-    // 1. High-Voltage Heavy Power Cable: Grid (310, 322) -> Charger (400, 322)
+    // 1. Renewable Generation Feed: Renewables (110, 113) -> Grid Substation (110, 260)
+    ConnectionManager.create(renewInfo, renewInfo.ports[1], grid, grid.ports[2], {
+      id: 'renew_to_grid',
+      label: 'GREEN FEED (5.02 GW)',
+      type: 'power_renew',
+      customPath: () => 'M 110 113 L 110 260'
+    });
+
+    // 2. High-Voltage Heavy Power Cable: Grid (310, 322) -> Charger (400, 322)
     ConnectionManager.create(grid, grid.ports[0], charger, charger.ports[0], {
       id: 'grid_to_charger',
       label: '11 kV AC BUS',
@@ -2349,7 +2422,7 @@ const LabWorkspace = (function() {
       customPath: () => 'M 310 322 L 400 322'
     });
 
-    // 2. High-Voltage Heavy Power Cable: Charger (680, 322) -> Battery (770, 322)
+    // 3. High-Voltage Heavy Power Cable: Charger (680, 322) -> Battery (770, 322)
     ConnectionManager.create(charger, charger.ports[1], battery, battery.ports[0], {
       id: 'charger_to_battery',
       label: '400V DC POWER BUS',
@@ -2357,15 +2430,15 @@ const LabWorkspace = (function() {
       customPath: () => 'M 680 322 L 770 322'
     });
 
-    // 3. Dedicated Control Cable: DRL Controller (540, 230) -> Charger (540, 260) (Section 4B - No arrow)
-    ConnectionManager.create(drl, drl.ports[3], charger, charger.ports[2], {
+    // 4. Dedicated Control Cable: DRL Controller (540, 230) -> Charger (540, 260)
+    ConnectionManager.create(drl, drl.ports[4], charger, charger.ports[2], {
       id: 'controller_to_charger',
       label: 'POWER COMMAND',
       type: 'control',
       customPath: () => 'M 540 230 L 540 260'
     });
 
-    // 4. Data Observation: Electricity Price (540, 113) -> DRL Controller (540, 135)
+    // 5. Data Observation: Electricity Price (540, 113) -> DRL Controller (540, 135)
     ConnectionManager.create(priceInfo, priceInfo.ports[0], drl, drl.ports[0], {
       id: 'price_to_controller',
       label: 'Tariff Signal',
@@ -2373,7 +2446,7 @@ const LabWorkspace = (function() {
       customPath: () => 'M 540 113 L 540 135'
     });
 
-    // 5. Data Observation: Renewable Generation (310, 65) -> DRL Controller (400, 165)
+    // 6. Data Observation: Renewable Generation (310, 65) -> DRL Controller (400, 165)
     ConnectionManager.create(renewInfo, renewInfo.ports[0], drl, drl.ports[1], {
       id: 'renewable_to_controller',
       label: 'Renewable Feed',
@@ -2381,7 +2454,7 @@ const LabWorkspace = (function() {
       customPath: () => 'M 310 65 L 355 65 L 355 165 L 400 165'
     });
 
-    // 6. Data Observation: Grid Telemetry (170, 260) -> DRL Controller (400, 200)
+    // 7. Data Observation: Grid Telemetry (170, 260) -> DRL Controller (400, 200)
     ConnectionManager.create(grid, grid.ports[1], drl, drl.ports[2], {
       id: 'grid_to_controller',
       label: 'Grid Telemetry',
@@ -2389,28 +2462,44 @@ const LabWorkspace = (function() {
       customPath: () => 'M 170 260 L 170 200 L 400 200'
     });
 
-    // 7. Data Observation: EV Info (910, 113) -> Decision (910, 135)
+    // 8. Data Observation: EV BMS Telemetry (770, 65) -> DRL Controller (680, 155)
+    ConnectionManager.create(evInfo, evInfo.ports[1], drl, drl.ports[3], {
+      id: 'ev_to_drl',
+      label: 'BMS Telemetry',
+      type: 'data_ev',
+      customPath: () => 'M 770 65 L 725 65 L 725 155 L 680 155'
+    });
+
+    // 9. Data Observation: EV Info (910, 113) -> Decision (910, 135)
     ConnectionManager.create(evInfo, evInfo.ports[0], decInfo, decInfo.ports[1], {
       id: 'ev_to_decision',
-      label: 'EV State',
+      label: 'Target & Dep',
       type: 'data_ev',
       customPath: () => 'M 910 113 L 910 135'
     });
 
-    // 8. Control Bus: DRL Controller (680, 182) -> Decision Output (770, 182)
-    ConnectionManager.create(drl, drl.ports[4], decInfo, decInfo.ports[0], {
+    // 10. Control Bus: DRL Controller (680, 190) -> Decision Output (770, 190)
+    ConnectionManager.create(drl, drl.ports[5], decInfo, decInfo.ports[0], {
       id: 'controller_to_decision',
       label: 'POLICY SIGNAL',
       type: 'control_bus',
-      customPath: () => 'M 680 182 L 770 182'
+      customPath: () => 'M 680 190 L 770 190'
     });
 
-    // 9. Passive Metering Sense Tap: Meter (355, 415) -> Power Cable at (355, 322)
+    // 11. Data Observation: EV Battery BMS (910, 260) -> Decision Log (910, 230)
+    ConnectionManager.create(battery, battery.ports[1], decInfo, decInfo.ports[2], {
+      id: 'battery_to_decision',
+      label: 'BMS Feedback',
+      type: 'data_ev',
+      customPath: () => 'M 910 260 L 910 230'
+    });
+
+    // 12. Passive Metering Sense Tap: Meter (355, 415) -> AC Bus Cable at (355, 322)
     ConnectionManager.create(meter, meter.ports[0], charger, charger.ports[0], {
       id: 'meter_tap',
-      label: 'TRANSDUCER SENSE TAP',
+      label: 'CT/PT SENSE TAP',
       type: 'measurement',
-      customPath: () => 'M 355 415 L 355 322'
+      customPath: () => 'M 355 322 L 355 415'
     });
 
     selectedNodeId = 'drl_01';

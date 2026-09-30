@@ -498,6 +498,74 @@ input:focus, select:focus, textarea:focus {
   stroke-width: 4.5px;
 }
 
+/* Realistic Power Conduit & Industrial Cable Systems */
+.cable-outer-sheath {
+  stroke: #0f172a;
+  stroke-width: 14px;
+  stroke-linecap: round;
+  fill: none;
+}
+html.dark .cable-outer-sheath {
+  stroke: #090e1a;
+}
+.cable-insulator {
+  stroke: #334155;
+  stroke-width: 10px;
+  stroke-linecap: round;
+  fill: none;
+}
+html.dark .cable-insulator {
+  stroke: #1e293b;
+}
+.cable-core-idle {
+  stroke: #64748b;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  fill: none;
+}
+.cable-core-charging {
+  stroke: #10b981;
+  stroke-width: 4.5px;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.9));
+}
+.cable-core-v2g {
+  stroke: #38bdf8;
+  stroke-width: 4.5px;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.9));
+}
+.cable-pulse-charge {
+  stroke: #34d399;
+  stroke-width: 5px;
+  stroke-linecap: round;
+  stroke-dasharray: 8 6;
+  fill: none;
+  animation: wire-flow-forward 0.8s linear infinite;
+}
+.cable-pulse-v2g {
+  stroke: #38bdf8;
+  stroke-width: 5px;
+  stroke-linecap: round;
+  stroke-dasharray: 8 6;
+  fill: none;
+  animation: wire-flow-reverse 0.8s linear infinite;
+}
+.control-flow-pulse {
+  stroke-dasharray: 6 4;
+  animation: wire-flow-forward 1.2s linear infinite;
+}
+.meter-flow-pulse {
+  stroke-dasharray: 4 3;
+  animation: wire-flow-forward 0.9s linear infinite;
+}
+.data-flow-pulse {
+  stroke-dasharray: 4 4;
+  animation: wire-flow-forward 1.8s linear infinite;
+}
+
 /* Circuit Component Nodes */
 .sim-node {
   position: absolute;
