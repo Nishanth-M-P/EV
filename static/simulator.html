@@ -55,188 +55,210 @@
 </head>
 <body class="bg-slate-50 dark:bg-[#080d1a] text-slate-800 dark:text-slate-200 h-screen w-screen flex flex-col overflow-hidden font-sans select-none transition-colors">
 
-  <!-- ================= TOP TOOLBAR (PRD Section 24, 73, 74) ================= -->
-  <header class="h-14 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3.5 z-20 shrink-0 overflow-x-auto no-scrollbar shadow-lg shadow-black/10">
-    <!-- Left: Brand Logo & Mode Indicator -->
+  <!-- ================= TOP APPLICATION HEADER (64px) ================= -->
+  <header class="h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-30 shrink-0 shadow-sm">
+    <!-- Left: Brand Logo & Navigation -->
     <div class="flex items-center gap-3 shrink-0">
-      <a href="/" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 font-semibold text-xs border border-emerald-500/30 transition-all shadow-sm" title="Back to Platform Home">
+      <a href="/" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 font-semibold text-xs border border-emerald-500/30 transition-all shadow-sm" title="Back to Platform Home">
         <span class="material-symbols-outlined text-[16px]">arrow_back</span>
         <span class="hidden sm:inline">Platform Home</span>
       </a>
 
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shadow-sm">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold shadow-sm">
           <span class="material-symbols-outlined text-xl">electric_car</span>
         </div>
         <div>
           <div class="flex items-center gap-1.5">
             <span class="font-bold text-slate-900 dark:text-slate-100 tracking-tight text-sm">GridWise AI</span>
-            <span class="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-mono rounded-md font-bold">TWIN v2.5</span>
+            <span class="px-1.5 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-mono rounded font-bold">DIGITAL TWIN v2.5</span>
           </div>
-          <p class="text-[9px] text-slate-500 dark:text-slate-400 font-mono">Real-Time V2G Digital Twin</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Continuous Physics & DRL Orchestrator</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Authoritative Live Digital Twin Status & Sequence -->
+    <div class="hidden md:flex items-center gap-3">
+      <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono shadow-inner">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-bold text-emerald-600 dark:text-emerald-400 tracking-wide text-[11px]">CONTINUOUS LIVE</span>
+        </div>
+        <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 mx-1"></div>
+        <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-[11px]">
+          <span class="text-slate-400">TIME:</span>
+          <span id="tb-backend-time" class="font-bold text-amber-600 dark:text-amber-300">--:--:--</span>
+          <span class="text-slate-300 dark:text-slate-700">|</span>
+          <span class="text-slate-400">SEQ:</span>
+          <span id="tb-backend-seq" class="text-cyan-600 dark:text-cyan-300 font-bold">#0</span>
         </div>
       </div>
 
-      <div class="h-5 w-px bg-slate-800 mx-1"></div>
+      <div id="hdr-power-flow" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-[11px] font-mono shadow-inner">
+        <span class="text-slate-400 font-bold">POWER:</span>
+        <span id="hdr-power-val" class="font-bold text-emerald-600 dark:text-emerald-400">GRID → EV (+11.0 kW)</span>
+      </div>
+    </div>
 
-      <!-- Data Mode Selector (PRD Section 61, 62) -->
-      <div class="flex items-center gap-1 bg-slate-950/90 border border-slate-800 rounded-xl p-0.5 text-xs shadow-inner">
-        <button id="tb-mode-live" class="tb-mode-tab px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono font-bold text-[11px] border border-emerald-500/40 transition-all shadow-sm" title="External Real-Time Data (KPTCL / IEX)">LIVE</button>
-        <button id="tb-mode-hist" class="tb-mode-tab px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 font-mono text-[11px] transition-all" title="Recorded Historical Telemetry Profile">HISTORICAL</button>
+    <!-- Right: Theme Toggle & WebSocket Status -->
+    <div class="flex items-center gap-2.5 shrink-0">
+      <button id="tb-theme-toggle" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-300 font-mono text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-all shadow-sm" title="Toggle Light/Dark Theme">
+        <span id="theme-icon" class="material-symbols-outlined text-[16px]">light_mode</span>
+        <span id="theme-label">LIGHT</span>
+      </button>
+
+      <div id="ws-status-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+        <span>CONNECTING...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= DEDICATED SIMULATOR TOOLBAR (48px) ================= -->
+  <div class="h-12 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-20 shrink-0 overflow-x-auto no-scrollbar shadow-sm">
+    <!-- Left: Data Mode & Architecture Controls -->
+    <div class="flex items-center gap-2.5 shrink-0">
+      <div class="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-0.5 text-xs shadow-inner">
+        <button id="tb-mode-live" class="tb-mode-tab px-3 py-1 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[11px] border border-emerald-500/30 transition-all" title="Live External Stream">LIVE</button>
+        <button id="tb-mode-hist" class="tb-mode-tab px-3 py-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-mono text-[11px] transition-all" title="Recorded Historical Profile">HISTORICAL</button>
       </div>
 
-      <!-- Data Mode Live Indicator Badge -->
-      <div id="data-mode-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <div id="data-mode-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span id="data-mode-label">● LIVE</span>
       </div>
 
-      <div class="h-5 w-px bg-slate-800 mx-1"></div>
+      <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
 
-      <!-- Architecture Lock & Edit Mode Controls (PRD Section 14, 15, 17) -->
       <div id="arch-lock-container" class="flex items-center gap-1.5">
-        <span id="arch-locked-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-mono font-bold shadow-inner">
-          <span class="material-symbols-outlined text-[15px] text-amber-400">lock</span>
-          <span> ARCHITECTURE LOCKED</span>
+        <span id="arch-locked-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-xs font-mono font-bold shadow-inner">
+          <span class="material-symbols-outlined text-[15px] text-amber-500">lock</span>
+          <span>ARCHITECTURE LOCKED</span>
         </span>
-        <button id="tb-edit-btn" class="flex items-center gap-1 px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold transition-all shadow-sm" title="Edit parameters without breaking circuit topology.">
+        <button id="tb-edit-btn" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-xs font-mono font-bold transition-all shadow-sm" title="Edit component parameters">
           <span class="material-symbols-outlined text-[15px]">tune</span>
           <span>EDIT</span>
         </button>
       </div>
     </div>
 
-    <!-- Center: Architecture Label & Authoritative Live Backend Clock -->
-    <div class="flex items-center gap-2">
-      <!-- Static System Architecture Label (PRD Section 13) -->
-      <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1">
-        <span class="material-symbols-outlined text-purple-400 text-[16px]">account_tree</span>
-        <span class="text-xs text-slate-200 font-mono font-semibold">System Architecture</span>
-      </div>
-
-      <div class="h-5 w-px bg-slate-800 mx-1"></div>
-
-      <!-- Authoritative Live Digital Twin Status & Clock (PRD Section 1, 2, 3) -->
-      <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono shadow-inner">
-        <div class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="font-bold text-emerald-400 tracking-wide">CONTINUOUS LIVE</span>
-        </div>
-        <div class="h-4 w-px bg-slate-800 mx-1"></div>
-        <div class="flex items-center gap-2 text-slate-300">
-          <span class="text-slate-500">TIME:</span>
-          <span id="tb-backend-time" class="font-bold text-amber-300">--:--:--</span>
-          <span class="text-slate-600">|</span>
-          <span class="text-slate-500">SEQ:</span>
-          <span id="tb-backend-seq" class="text-cyan-300 font-bold">#0</span>
-        </div>
-      </div>
-
-      <!-- Live Power Flow Header (Section 43) -->
-      <div id="hdr-power-flow" class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs font-mono shadow-inner">
-        <span class="text-slate-500 font-bold">POWER:</span>
-        <span id="hdr-power-val" class="font-bold text-emerald-400">GRID → EV (+11.0 kW)</span>
-      </div>
-    </div>
-
-    <!-- Right: Strategy Selector & Compare -->
-    <div class="flex items-center gap-3">
-      <!-- Strategy Selector -->
-      <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1">
-        <span class="material-symbols-outlined text-purple-400 text-[16px]">neurology</span>
-        <select id="tb-strategy-select" class="bg-transparent text-xs text-slate-200 outline-none cursor-pointer font-medium">
+    <!-- Center: Strategy Selector & Compare -->
+    <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 shadow-inner">
+        <span class="material-symbols-outlined text-purple-500 text-[16px]">neurology</span>
+        <select id="tb-strategy-select" class="bg-transparent text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer font-medium">
           <option value="drl" selected>Strategy: DRL V2G (PPO Policy)</option>
           <option value="rule_based">Strategy: Rule-Based (S2)</option>
           <option value="uncontrolled">Strategy: Uncontrolled (S1 Baseline)</option>
         </select>
       </div>
 
-      <!-- Compare Button -->
-      <button id="tb-compare-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/40 text-cyan-300 font-semibold text-xs transition-all shadow-sm">
-        <span class="material-symbols-outlined text-[16px]">compare_arrows</span>
+      <button id="tb-compare-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-700 dark:text-cyan-300 font-semibold text-xs transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[15px]">compare_arrows</span>
         <span>COMPARE</span>
       </button>
-
-      <!-- Light / Dark Theme Toggle (PRD Section 37-41) -->
-      <button id="tb-theme-toggle" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-mono text-xs font-semibold border border-slate-700 transition-all shadow-sm" title="Toggle Light/Dark Theme">
-        <span id="theme-icon" class="material-symbols-outlined text-[16px]">light_mode</span>
-        <span id="theme-label">LIGHT</span>
-      </button>
-
-      <!-- WebSocket Live Badge -->
-      <div id="ws-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1">
-        <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> CONNECTING...
-      </div>
     </div>
-  </header>
+
+    <!-- Right: Viewport Controls & Analytics Drawer Toggle -->
+    <div class="flex items-center gap-2">
+      <!-- Zoom & Canvas Fit Controls -->
+      <div class="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-0.5 text-xs shadow-inner">
+        <button id="canvas-zoom-out" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300" title="Zoom Out">
+          <span class="material-symbols-outlined text-sm">zoom_out</span>
+        </button>
+        <button id="canvas-zoom-reset" class="px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 font-mono text-[11px] font-bold" title="Reset Zoom">
+          100%
+        </button>
+        <button id="canvas-zoom-in" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300" title="Zoom In">
+          <span class="material-symbols-outlined text-sm">zoom_in</span>
+        </button>
+        <div class="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
+        <button id="canvas-zoom-fit" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 flex items-center gap-0.5" title="Fit Canvas to Viewport">
+          <span class="material-symbols-outlined text-sm">fit_screen</span>
+          <span class="text-[10px] font-mono pr-0.5">FIT</span>
+        </button>
+      </div>
+
+      <!-- Analytics Drawer Toggle Button -->
+      <button id="toggle-analytics-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-semibold text-xs transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">monitoring</span>
+        <span>ANALYTICS DRAWER</span>
+        <span id="analytics-drawer-status-pill" class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">OPEN</span>
+      </button>
+    </div>
+  </div>
 
   <!-- ================= THREE-PANEL WORKSPACE ================= -->
   <div class="flex-1 flex overflow-hidden relative">
 
     <!-- 1. LEFT PANEL: SYSTEM STATUS (PRD Section 25, 41, 72) -->
-    <aside class="w-72 bg-slate-900/95 border-r border-slate-800 flex flex-col shrink-0 z-10 overflow-hidden">
-      <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
-        <div class="flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-emerald-400 text-base">sensors</span>
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-200">System Status</span>
+    <aside class="w-72 lg:w-80 bg-white/95 dark:bg-slate-900/95 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-10 overflow-hidden shadow-sm">
+      <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-950/40">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-base">sensors</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">System Status</span>
         </div>
-        <span id="sys-status-badge" class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded font-mono font-bold">ONLINE</span>
+        <span id="sys-status-badge" class="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-mono font-bold">ONLINE</span>
       </div>
 
       <div class="flex-1 overflow-y-auto p-3 space-y-3 font-mono">
         <!-- Live Data Feeds (PRD Section 25 & 41) -->
         <div class="space-y-2">
-          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Real-Time Data Feeds</span>
+          <div class="sidebar-section-header text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+            <span>Real-Time Data Feeds</span>
+            <span class="text-[9px] text-emerald-600 dark:text-emerald-400 font-normal">● 3 LIVE</span>
+          </div>
 
           <!-- 1. Grid Data -->
-          <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/70 hover:border-slate-700 transition-all text-xs">
+          <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 hover:border-slate-300 dark:hover:border-slate-700 transition-all text-xs">
             <div class="flex items-center justify-between mb-1">
-              <span class="font-semibold text-slate-200 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Grid Data
+              <span class="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Grid Data
               </span>
-              <span id="st-grid-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-bold">LIVE</span>
+              <span id="st-grid-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30">LIVE</span>
             </div>
-            <div class="text-[11px] text-slate-400 flex justify-between">
+            <div class="text-[11px] text-slate-600 dark:text-slate-400 flex justify-between">
               <span>KPTCL SLDC</span>
-              <span id="st-grid-val" class="text-amber-400 font-bold">13.74 GW</span>
+              <span id="st-grid-val" class="text-amber-600 dark:text-amber-400 font-bold">13.74 GW</span>
             </div>
-            <div class="text-[10px] text-slate-500 flex justify-between mt-0.5">
-              <span>Freq: <strong id="st-grid-freq" class="text-slate-300">49.96 Hz</strong></span>
-              <span>Margin: <strong id="st-grid-margin" class="text-slate-300">+0.46 GW</strong></span>
+            <div class="text-[10px] text-slate-500 flex justify-between mt-0.5 border-t border-slate-200 dark:border-slate-800/80 pt-1">
+              <span>Freq: <strong id="st-grid-freq" class="text-slate-700 dark:text-slate-300">49.96 Hz</strong></span>
+              <span>Margin: <strong id="st-grid-margin" class="text-slate-700 dark:text-slate-300">+0.46 GW</strong></span>
             </div>
           </div>
 
           <!-- 2. Market Price -->
-          <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/70 hover:border-slate-700 transition-all text-xs">
+          <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 hover:border-slate-300 dark:hover:border-slate-700 transition-all text-xs">
             <div class="flex items-center justify-between mb-1">
-              <span class="font-semibold text-slate-200 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Market Price
+              <span class="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Market Price
               </span>
-              <span id="st-price-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-bold">LIVE</span>
+              <span id="st-price-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30">LIVE</span>
             </div>
-            <div class="text-[11px] text-slate-400 flex justify-between">
+            <div class="text-[11px] text-slate-600 dark:text-slate-400 flex justify-between">
               <span>IEX RTM</span>
-              <span id="st-price-val" class="text-emerald-400 font-bold">Rs.8.20/kWh</span>
+              <span id="st-price-val" class="text-emerald-600 dark:text-emerald-400 font-bold">Rs.8.20/kWh</span>
             </div>
-            <div class="text-[10px] text-slate-500 flex justify-between mt-0.5">
-              <span>Block: <strong id="st-price-block" class="text-slate-300">18:45-19:00</strong></span>
-              <span id="st-price-state" class="text-rose-400 font-bold">HIGH</span>
+            <div class="text-[10px] text-slate-500 flex justify-between mt-0.5 border-t border-slate-200 dark:border-slate-800/80 pt-1">
+              <span>Block: <strong id="st-price-block" class="text-slate-700 dark:text-slate-300">18:45-19:00</strong></span>
+              <span id="st-price-state" class="text-rose-600 dark:text-rose-400 font-bold">HIGH</span>
             </div>
           </div>
 
           <!-- 3. Renewable Data -->
-          <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/70 hover:border-slate-700 transition-all text-xs">
+          <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 hover:border-slate-300 dark:hover:border-slate-700 transition-all text-xs">
             <div class="flex items-center justify-between mb-1">
-              <span class="font-semibold text-slate-200 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Renewable Data
+              <span class="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Renewable Data
               </span>
-              <span id="st-renew-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-bold">LIVE</span>
+              <span id="st-renew-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30">LIVE</span>
             </div>
-            <div class="text-[11px] text-slate-400 flex justify-between">
+            <div class="text-[11px] text-slate-600 dark:text-slate-400 flex justify-between">
               <span>Live Solar/Wind</span>
-              <span id="st-renew-val" class="text-cyan-400 font-bold">5.02 GW</span>
+              <span id="st-renew-val" class="text-teal-600 dark:text-cyan-400 font-bold">5.02 GW</span>
             </div>
-            <div class="text-[10px] text-slate-500 flex justify-between mt-0.5">
+            <div class="text-[10px] text-slate-500 flex justify-between mt-0.5 border-t border-slate-200 dark:border-slate-800/80 pt-1">
               <span>Solar: 1.99 GW</span>
               <span>Wind: 2.41 GW</span>
             </div>
@@ -244,70 +266,72 @@
         </div>
 
         <!-- Hardware & Controller Status (PRD Section 25) -->
-        <div class="space-y-2 pt-1 border-t border-slate-800/80">
-          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Physical Equipment</span>
+        <div class="space-y-2 pt-1 border-t border-slate-200 dark:border-slate-800/80">
+          <div class="sidebar-section-header text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+            <span>Physical Equipment</span>
+          </div>
 
-          <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/70 space-y-2 text-xs">
+          <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 space-y-2 text-xs">
             <div class="flex justify-between items-center">
-              <span class="text-slate-300 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-purple-400"></span>Controller
+              <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-purple-500"></span>Controller
               </span>
-              <span id="st-controller-status" class="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 font-bold">ACTIVE (PPO)</span>
+              <span id="st-controller-status" class="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/15 text-purple-700 dark:text-purple-300 font-bold border border-purple-500/30">ACTIVE (PPO)</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-slate-300 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>EV Battery
+              <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>EV Battery
               </span>
-              <span id="st-battery-status" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-bold">CONNECTED (64.2%)</span>
+              <span id="st-battery-status" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30">CONNECTED (64.2%)</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-slate-300 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>V2G Charger
+              <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-cyan-500"></span>V2G Charger
               </span>
-              <span id="st-charger-status" class="px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/20 text-cyan-300 font-bold">READY (22 kW)</span>
+              <span id="st-charger-status" class="px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 font-bold border border-cyan-500/30">READY (22 kW)</span>
             </div>
           </div>
         </div>
 
         <!-- Scientific Grid Demand vs Managed Simulated Impact (PRD Section 39, 40, 70, 71) -->
-        <div class="p-3 rounded-xl border border-indigo-500/30 bg-indigo-950/20 space-y-2 text-xs">
-          <div class="flex items-center gap-1.5 text-indigo-300 font-bold">
+        <div class="p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10 dark:bg-indigo-950/20 space-y-2 text-xs">
+          <div class="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 font-bold">
             <span class="material-symbols-outlined text-sm">balance</span>
             <span>Grid Impact Tracking</span>
           </div>
           <div class="flex justify-between text-[11px]">
-            <span class="text-slate-400">Live Grid Demand:</span>
-            <span id="st-live-demand" class="text-slate-200 font-bold">13.740 GW</span>
+            <span class="text-slate-600 dark:text-slate-400">Live Grid Demand:</span>
+            <span id="st-live-demand" class="text-slate-800 dark:text-slate-200 font-bold">13.740 GW</span>
           </div>
           <div class="flex justify-between text-[11px]">
-            <span class="text-slate-400">Simulated EV Impact:</span>
-            <span id="st-ev-impact" class="text-emerald-400 font-bold">+8.40 kW</span>
+            <span class="text-slate-600 dark:text-slate-400">Simulated EV Impact:</span>
+            <span id="st-ev-impact" class="text-emerald-600 dark:text-emerald-400 font-bold">+8.40 kW</span>
           </div>
           <div class="pt-1.5 border-t border-indigo-500/20 flex justify-between text-[11px]">
-            <span class="text-indigo-200 font-bold">Managed Sim Load:</span>
-            <span id="st-managed-load" class="text-amber-400 font-bold">13.748 GW</span>
+            <span class="text-indigo-800 dark:text-indigo-200 font-bold">Managed Sim Load:</span>
+            <span id="st-managed-load" class="text-amber-600 dark:text-amber-400 font-bold">13.748 GW</span>
           </div>
         </div>
 
         <!-- Source Health & Heartbeat (PRD Section 79) -->
-        <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/40 text-[10px] text-slate-500 space-y-1">
+        <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 text-[10px] text-slate-500 space-y-1">
           <div class="flex justify-between">
             <span>Data Health:</span>
-            <span class="text-emerald-400 font-bold">100% HEALTHY</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-bold">100% HEALTHY</span>
           </div>
           <div class="flex justify-between">
             <span>Telemetry Stream:</span>
-            <span id="st-heartbeat" class="text-slate-400">Active WebSocket</span>
+            <span id="st-heartbeat" class="text-slate-600 dark:text-slate-400">Active WebSocket</span>
           </div>
         </div>
       </div>
     </aside>
 
     <!-- 2. CENTER PANEL: Fixed Simulation Canvas + Live Status Strip + Full Responsive Analytics -->
-    <main class="flex-1 flex flex-col bg-[#080d1a] relative overflow-y-auto overflow-x-hidden select-none">
+    <main class="flex-1 flex flex-col bg-slate-100/50 dark:bg-[#080d1a] relative overflow-y-auto overflow-x-hidden select-none">
       
       <!-- FIXED SIMULATION WORKBENCH (PRD Section 3) -->
-      <div class="relative w-full shrink-0 border-b border-slate-800 bg-[#080d1a]">
+      <div class="relative w-full shrink-0 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#080d1a]">
         <div id="sim-canvas-container" class="sim-canvas-grid relative h-[530px] w-full overflow-auto cursor-default">
           <div id="sim-canvas-viewport" class="relative min-w-[1080px] h-[530px] w-full">
             <!-- SVG Layer for Connection Wires & Flow Particles -->
@@ -319,19 +343,19 @@
 
           <!-- Canvas Floating Controls Bar (PRD Section 4 & 73) -->
           <div class="absolute top-3 left-3 flex items-center gap-2 z-20">
-            <div class="flex items-center gap-1 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-lg p-1 text-xs shadow-lg">
-              <span class="px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono text-[11px] font-bold flex items-center gap-1">
+            <div class="flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-slate-200 dark:border-slate-800 rounded-lg p-1 text-xs shadow-md">
+              <span class="px-2 py-1 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-mono text-[11px] font-bold flex items-center gap-1">
                 <span class="material-symbols-outlined text-sm">lock</span>
-                <span>FIXED ARCHITECTURE</span>
+                <span>FIXED TOPOLOGY</span>
               </span>
-              <div class="h-4 w-px bg-slate-700 mx-1"></div>
-              <button id="canvas-zoom-in" class="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white" title="Zoom In">
+              <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+              <button id="canvas-zoom-in" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom In">
                 <span class="material-symbols-outlined text-base">zoom_in</span>
               </button>
-              <button id="canvas-zoom-out" class="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white" title="Zoom Out">
+              <button id="canvas-zoom-out" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom Out">
                 <span class="material-symbols-outlined text-base">zoom_out</span>
               </button>
-              <button id="canvas-zoom-reset" class="px-1.5 py-0.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white font-mono text-[11px]" title="Reset Zoom">
+              <button id="canvas-zoom-reset" class="px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-mono text-[11px] font-bold" title="Reset Zoom">
                 100%
               </button>
             </div>
@@ -339,137 +363,139 @@
 
           <!-- Canvas Floating Flow Legend -->
           <div class="absolute top-3 right-3 flex items-center gap-2 pointer-events-none z-20">
-            <span class="px-2.5 py-1 rounded-lg bg-slate-900/90 backdrop-blur border border-slate-800 text-[10px] font-mono text-slate-300 shadow-md">
-              FLOW: <span class="text-amber-400 font-bold">11kV AC</span> | <span class="text-emerald-400 font-bold">G2V CHARGE</span> | <span class="text-cyan-400 font-bold">V2G DISCHARGE</span> | <span class="text-purple-400 font-bold">DRL CONTROL</span> | <span class="text-pink-400 font-bold">METER MONITOR</span>
+            <span class="px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-700 dark:text-slate-300 shadow-md">
+              FLOW: <span class="text-amber-500 dark:text-amber-400 font-bold">11kV AC</span> | <span class="text-emerald-600 dark:text-emerald-400 font-bold">G2V CHARGE</span> | <span class="text-cyan-600 dark:text-cyan-400 font-bold">V2G DISCHARGE</span> | <span class="text-purple-600 dark:text-purple-400 font-bold">DRL CONTROL</span> | <span class="text-pink-600 dark:text-pink-400 font-bold">METER MONITOR</span>
             </span>
           </div>
-
-
         </div>
 
         <!-- Dedicated Passive Energy Meter Readout Bar (PRD Section 14, 35, 62, 69) -->
-        <div class="px-4 py-2 border-t border-slate-800 bg-slate-950/90 flex flex-wrap items-center justify-between text-xs font-mono shrink-0">
+        <div class="px-4 py-2 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 flex flex-wrap items-center justify-between text-xs font-mono shrink-0 shadow-sm">
           <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-pink-400 text-base">speed</span>
-            <span class="font-bold text-slate-200">ENERGY METER (Passive Observation Layer):</span>
+            <span class="material-symbols-outlined text-pink-500 dark:text-pink-400 text-base">speed</span>
+            <span class="font-bold text-slate-800 dark:text-slate-200">ENERGY METER (Passive Observation Layer):</span>
           </div>
           <div class="flex flex-wrap items-center gap-5 text-[11px]">
-            <div>Import: <strong id="meter-bar-import" class="text-emerald-400">+8.40 kW</strong></div>
-            <div>Export: <strong id="meter-bar-export" class="text-cyan-400">0.00 kW</strong></div>
-            <div>Net Power: <strong id="meter-bar-net" class="text-amber-400">+8.40 kW</strong></div>
-            <div>Direction: <span id="meter-bar-dir" class="px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400">GRID -> EV</span></div>
-            <div>Total Imported: <strong id="meter-bar-imp-kwh" class="text-slate-300">14.82 kWh</strong></div>
-            <div>Total Exported: <strong id="meter-bar-exp-kwh" class="text-slate-300">0.00 kWh</strong></div>
+            <div>Import: <strong id="meter-bar-import" class="text-emerald-600 dark:text-emerald-400">+8.40 kW</strong></div>
+            <div>Export: <strong id="meter-bar-export" class="text-cyan-600 dark:text-cyan-400">0.00 kW</strong></div>
+            <div>Net Power: <strong id="meter-bar-net" class="text-amber-600 dark:text-amber-400">+8.40 kW</strong></div>
+            <div>Direction: <span id="meter-bar-dir" class="px-2 py-0.5 rounded font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">GRID -> EV</span></div>
+            <div>Total Imported: <strong id="meter-bar-imp-kwh" class="text-slate-700 dark:text-slate-300">14.82 kWh</strong></div>
+            <div>Total Exported: <strong id="meter-bar-exp-kwh" class="text-slate-700 dark:text-slate-300">0.00 kWh</strong></div>
           </div>
         </div>
       </div>
 
       <!-- ================= PROMINENT LIVE STATUS STRIP (PRD Section 3 & 42-46) ================= -->
-      <section class="p-3.5 bg-slate-900/90 border-b border-slate-800 shrink-0 shadow-md">
+      <section class="p-3 bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 shrink-0 shadow-sm">
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 text-xs font-mono">
           <!-- 1. Live Digital Twin Clock & Sequence -->
-          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-amber-400 flex flex-col justify-between shadow-sm">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
+          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-gradient-to-b dark:from-slate-950/80 dark:to-slate-950/95 border border-slate-200 dark:border-slate-800 border-t-2 border-t-amber-500 dark:border-t-amber-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between font-bold">
               <span>LIVE CLOCK</span>
-              <span id="strip-sim-status" class="text-emerald-400 text-[9px] font-bold flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> CONTINUOUS
+              <span id="strip-sim-status" class="text-emerald-600 dark:text-emerald-400 text-[9px] font-bold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> CONTINUOUS
               </span>
             </div>
-            <div id="strip-sim-time" class="text-lg font-black text-amber-300 py-0.5">--:--:--</div>
-            <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-800/80 pt-1">
-              <span>Seq: <strong id="strip-seq" class="text-slate-300 font-mono">#0</strong></span>
-              <span id="strip-data-health" class="text-emerald-400 font-bold">100% HEALTHY</span>
+            <div id="strip-sim-time" class="text-lg font-black text-amber-600 dark:text-amber-300 py-0.5">--:--:--</div>
+            <div class="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-200 dark:border-slate-800/80 pt-1">
+              <span>Seq: <strong id="strip-seq" class="text-slate-700 dark:text-slate-300 font-mono">#0</strong></span>
+              <span id="strip-data-health" class="text-emerald-600 dark:text-emerald-400 font-bold">100% HEALTHY</span>
             </div>
           </div>
 
           <!-- 2. Battery SOC & Stored Energy -->
-          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-emerald-400 flex flex-col justify-between shadow-sm">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
+          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-gradient-to-b dark:from-slate-950/80 dark:to-slate-950/95 border border-slate-200 dark:border-slate-800 border-t-2 border-t-emerald-500 dark:border-t-emerald-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between font-bold">
               <span>BATTERY SOC</span>
-              <span id="strip-batt-state" class="text-emerald-400 text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 border border-emerald-500/30">CHARGING</span>
+              <span id="strip-batt-state" class="text-emerald-700 dark:text-emerald-400 text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 border border-emerald-500/30">CHARGING</span>
             </div>
             <div class="flex items-baseline gap-1.5 py-0.5">
-              <span id="strip-batt-soc" class="text-lg font-black text-emerald-400">64.2%</span>
-              <span class="text-[10px] text-slate-400 font-medium">/ <span id="strip-batt-target">80%</span></span>
+              <span id="strip-batt-soc" class="text-lg font-black text-emerald-600 dark:text-emerald-400">64.2%</span>
+              <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">/ <span id="strip-batt-target">80%</span></span>
             </div>
-            <div class="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1">Energy: <span id="strip-batt-energy" class="text-slate-300 font-bold">46.2</span> / <span id="strip-batt-cap">72 kWh</span></div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-200 dark:border-slate-800/80 pt-1">Energy: <span id="strip-batt-energy" class="text-slate-700 dark:text-slate-300 font-bold">46.2</span> / <span id="strip-batt-cap">72 kWh</span></div>
           </div>
 
           <!-- 3. Battery Power Flow -->
-          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-teal-400 flex flex-col justify-between shadow-sm">
-            <div class="text-[10px] text-slate-400 font-bold">POWER FLOW</div>
-            <div id="strip-batt-power" class="text-lg font-black text-emerald-400 py-0.5">+8.4 kW</div>
-            <div class="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1">Eff: <span id="strip-chg-eff" class="text-slate-300 font-bold">95%</span> (<span id="strip-eff-power" class="text-teal-400">7.98 kW net</span>)</div>
+          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-gradient-to-b dark:from-slate-950/80 dark:to-slate-950/95 border border-slate-200 dark:border-slate-800 border-t-2 border-t-teal-500 dark:border-t-teal-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 font-bold">POWER FLOW</div>
+            <div id="strip-batt-power" class="text-lg font-black text-emerald-600 dark:text-emerald-400 py-0.5">+8.4 kW</div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-200 dark:border-slate-800/80 pt-1">Eff: <span id="strip-chg-eff" class="text-slate-700 dark:text-slate-300 font-bold">95%</span> (<span id="strip-eff-power" class="text-teal-600 dark:text-teal-400">7.98 kW net</span>)</div>
           </div>
 
           <!-- 4. Dynamic Time to Target & Full -->
-          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-cyan-400 flex flex-col justify-between shadow-sm">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
+          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-gradient-to-b dark:from-slate-950/80 dark:to-slate-950/95 border border-slate-200 dark:border-slate-800 border-t-2 border-t-cyan-500 dark:border-t-cyan-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between font-bold">
               <span>TIME TO TARGET</span>
-              <span id="strip-dep-badge" class="text-[9px] text-emerald-400 font-bold">FEASIBLE</span>
+              <span id="strip-dep-badge" class="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold">FEASIBLE</span>
             </div>
-            <div id="strip-time-target" class="text-lg font-black text-cyan-300 py-0.5">01:27:35</div>
-            <div class="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1">Full in: <span id="strip-time-full" class="text-slate-300 font-bold">02:37:30</span> (Est: <span id="strip-est-time">21:20</span>)</div>
+            <div id="strip-time-target" class="text-lg font-black text-cyan-600 dark:text-cyan-300 py-0.5">01:27:35</div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-200 dark:border-slate-800/80 pt-1">Full in: <span id="strip-time-full" class="text-slate-700 dark:text-slate-300 font-bold">02:37:30</span> (Est: <span id="strip-est-time">21:20</span>)</div>
           </div>
 
           <!-- 5. Grid Telemetry -->
-          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-sky-400 flex flex-col justify-between shadow-sm">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
+          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-gradient-to-b dark:from-slate-950/80 dark:to-slate-950/95 border border-slate-200 dark:border-slate-800 border-t-2 border-t-sky-500 dark:border-t-sky-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between font-bold">
               <span>GRID (KPTCL)</span>
-              <span id="strip-grid-state" class="text-emerald-400 text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10">NORMAL</span>
+              <span id="strip-grid-state" class="text-emerald-700 dark:text-emerald-400 text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15">NORMAL</span>
             </div>
-            <div id="strip-grid-demand" class="text-base font-black text-slate-200 py-0.5">13.74 GW <span class="text-[10px] text-slate-400 font-normal">live</span></div>
-            <div class="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1">Margin: <span id="strip-grid-margin" class="text-slate-300 font-bold">+0.46 GW</span> | <span id="strip-grid-freq" class="text-cyan-400">49.96Hz</span></div>
+            <div id="strip-grid-demand" class="text-base font-black text-slate-800 dark:text-slate-200 py-0.5">13.74 GW <span class="text-[10px] text-slate-400 font-normal">live</span></div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-200 dark:border-slate-800/80 pt-1">Margin: <span id="strip-grid-margin" class="text-slate-700 dark:text-slate-300 font-bold">+0.46 GW</span> | <span id="strip-grid-freq" class="text-cyan-600 dark:text-cyan-400">49.96Hz</span></div>
           </div>
 
           <!-- 6. Price & Controller -->
-          <div class="p-3 rounded-2xl bg-gradient-to-b from-slate-950/80 to-slate-950/95 border border-slate-800 border-t-2 border-t-purple-400 flex flex-col justify-between shadow-sm">
-            <div class="text-[10px] text-slate-400 flex items-center justify-between font-bold">
+          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-gradient-to-b dark:from-slate-950/80 dark:to-slate-950/95 border border-slate-200 dark:border-slate-800 border-t-2 border-t-purple-500 dark:border-t-purple-400 flex flex-col justify-between shadow-sm">
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between font-bold">
               <span>CONTROLLER</span>
-              <span id="strip-next-eval" class="text-cyan-400 text-[10px] font-mono font-bold">NEXT: 00:10</span>
+              <span id="strip-next-eval" class="text-cyan-600 dark:text-cyan-400 text-[10px] font-mono font-bold">NEXT: 00:10</span>
             </div>
-            <div id="strip-ctrl-action" class="text-sm font-black text-emerald-400 py-0.5 truncate">CHARGING (+11.0 kW)</div>
-            <div id="strip-ctrl-reason" class="text-[10px] text-slate-400 truncate border-t border-slate-800/80 pt-1" title="EV SOC below target; normal charging active">EV SOC below target</div>
+            <div id="strip-ctrl-action" class="text-sm font-black text-emerald-600 dark:text-emerald-400 py-0.5 truncate">CHARGING (+11.0 kW)</div>
+            <div id="strip-ctrl-reason" class="text-[10px] text-slate-500 dark:text-slate-400 truncate border-t border-slate-200 dark:border-slate-800/80 pt-1" title="EV SOC below target; normal charging active">EV SOC below target</div>
           </div>
         </div>
       </section>
 
       <!-- ================= RESPONSIVE ANALYTICS SECTION (PRD Section 4, 5, 6, 63) ================= -->
-      <section class="p-4 space-y-4">
+      <section id="analytics-drawer" class="analytics-drawer border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 p-4 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-emerald-400 text-lg">monitoring</span>
-            <h2 class="text-sm font-bold text-slate-100 uppercase tracking-wider">Real-Time V2G Telemetry & Time-Series Analytics</h2>
+            <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-lg">monitoring</span>
+            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">Real-Time V2G Telemetry & Time-Series Analytics</h2>
           </div>
           <!-- Global Chart Filter Toolbar -->
           <div class="flex items-center gap-2 text-xs font-mono">
-            <span class="text-slate-400 text-[11px]">WINDOW:</span>
-            <div class="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-0.5">
-              <button class="chart-window-btn px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/40 text-[11px]" data-window="live">LIVE</button>
-              <button class="chart-window-btn px-2 py-1 rounded text-slate-400 hover:text-slate-200 text-[11px]" data-window="3600">1H</button>
-              <button class="chart-window-btn px-2 py-1 rounded text-slate-400 hover:text-slate-200 text-[11px]" data-window="21600">6H</button>
-              <button class="chart-window-btn px-2 py-1 rounded text-slate-400 hover:text-slate-200 text-[11px]" data-window="86400">24H</button>
+            <span class="text-slate-500 dark:text-slate-400 text-[11px]">WINDOW:</span>
+            <div class="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-0.5 shadow-inner">
+              <button class="chart-window-btn px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30 text-[11px]" data-window="live">LIVE</button>
+              <button class="chart-window-btn px-2 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-[11px]" data-window="3600">1H</button>
+              <button class="chart-window-btn px-2 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-[11px]" data-window="21600">6H</button>
+              <button class="chart-window-btn px-2 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-[11px]" data-window="86400">24H</button>
             </div>
-            <button id="chart-follow-toggle" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-mono">
+            <button id="chart-follow-toggle" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 text-[11px] font-mono shadow-sm">
               <span id="chart-follow-icon" class="material-symbols-outlined text-sm">pause</span>
               <span id="chart-follow-label">PAUSE FOLLOW</span>
+            </button>
+            <button id="drawer-collapse-btn" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 text-[11px] font-mono shadow-sm" title="Toggle Drawer">
+              <span id="drawer-collapse-icon" class="material-symbols-outlined text-sm">expand_more</span>
+              <span id="drawer-collapse-label">COLLAPSE</span>
             </button>
           </div>
         </div>
 
         <!-- Telemetry Data Debug Inspector (Section 47) -->
-        <div id="telemetry-debug-panel" class="mb-3 p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 font-mono text-[11px] grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 select-none shadow-sm">
-          <div class="flex flex-col"><span class="text-slate-500 text-[9px] uppercase">Last Sequence</span><span id="dbg-seq" class="text-cyan-400 font-bold">#--</span></div>
-          <div class="flex flex-col"><span class="text-slate-500 text-[9px] uppercase">Sim Time</span><span id="dbg-time" class="text-slate-200">--:--:--</span></div>
-          <div class="flex flex-col"><span class="text-slate-500 text-[9px] uppercase">Delta / Status</span><span id="dbg-dt" class="text-sky-400 font-bold">1.000s (LIVE)</span></div>
-          <div class="flex flex-col"><span class="text-slate-500 text-[9px] uppercase">Data Age / Status</span><span id="dbg-age" class="text-emerald-400 font-bold">0.0s (LIVE)</span></div>
-          <div class="flex flex-col"><span class="text-slate-500 text-[9px] uppercase">Battery SOC / Energy</span><span id="dbg-bat" class="text-emerald-300 font-bold">--% / -- kWh</span></div>
-          <div class="flex flex-col"><span class="text-slate-500 text-[9px] uppercase">Meter Net / Dir</span><span id="dbg-meter" class="text-pink-300 font-bold">0.0 kW (IDLE)</span></div>
-          <div class="flex flex-col"><span class="text-slate-500 text-[9px] uppercase">Grid Stress / Trigger</span>
+        <div id="telemetry-debug-panel" class="mb-3 p-2.5 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 font-mono text-[11px] grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 select-none shadow-sm">
+          <div class="flex flex-col"><span class="text-slate-400 dark:text-slate-500 text-[9px] uppercase">Last Sequence</span><span id="dbg-seq" class="text-cyan-600 dark:text-cyan-400 font-bold">#--</span></div>
+          <div class="flex flex-col"><span class="text-slate-400 dark:text-slate-500 text-[9px] uppercase">Sim Time</span><span id="dbg-time" class="text-slate-800 dark:text-slate-200">--:--:--</span></div>
+          <div class="flex flex-col"><span class="text-slate-400 dark:text-slate-500 text-[9px] uppercase">Delta / Status</span><span id="dbg-dt" class="text-sky-600 dark:text-sky-400 font-bold">1.000s (LIVE)</span></div>
+          <div class="flex flex-col"><span class="text-slate-400 dark:text-slate-500 text-[9px] uppercase">Data Age / Status</span><span id="dbg-age" class="text-emerald-600 dark:text-emerald-400 font-bold">0.0s (LIVE)</span></div>
+          <div class="flex flex-col"><span class="text-slate-400 dark:text-slate-500 text-[9px] uppercase">Battery SOC / Energy</span><span id="dbg-bat" class="text-emerald-600 dark:text-emerald-300 font-bold">--% / -- kWh</span></div>
+          <div class="flex flex-col"><span class="text-slate-400 dark:text-slate-500 text-[9px] uppercase">Meter Net / Dir</span><span id="dbg-meter" class="text-pink-600 dark:text-pink-300 font-bold">0.0 kW (IDLE)</span></div>
+          <div class="flex flex-col"><span class="text-slate-400 dark:text-slate-500 text-[9px] uppercase">Grid Stress / Trigger</span>
             <div class="flex items-center gap-1.5 mt-0.5">
-              <span id="dbg-stress" class="text-amber-400 font-bold">42/100</span>
-              <button id="btn-scen-normal" class="px-1.5 py-0.5 rounded text-[9px] bg-emerald-950 hover:bg-emerald-800 text-emerald-300 border border-emerald-600/50" title="Normal Peak (Stress 42)">NORMAL</button>
-              <button id="btn-scen-highload" class="px-1.5 py-0.5 rounded text-[9px] bg-rose-950 hover:bg-rose-800 text-rose-300 border border-rose-600/50" title="Trigger High Load (Stress >= 75)">HIGH LOAD</button>
+              <span id="dbg-stress" class="text-amber-600 dark:text-amber-400 font-bold">42/100</span>
+              <button id="btn-scen-normal" class="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40" title="Normal Peak (Stress 42)">NORMAL</button>
+              <button id="btn-scen-highload" class="px-1.5 py-0.5 rounded text-[9px] bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/40" title="Trigger High Load (Stress >= 75)">HIGH LOAD</button>
             </div>
           </div>
         </div>
@@ -622,10 +648,13 @@
     </main>
 
     <!-- 3. RIGHT PANEL: Property Inspector -->
-    <aside class="w-80 bg-slate-900/95 border-l border-slate-800 flex flex-col shrink-0 z-10">
-      <div class="p-3 border-b border-slate-800 flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Engineering Inspector</span>
-        <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono">DIGITAL TWIN</span>
+    <aside class="w-80 lg:w-96 bg-white/95 dark:bg-slate-900/95 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-10 shadow-sm overflow-hidden">
+      <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-950/40">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-purple-600 dark:text-purple-400 text-base">architecture</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Engineering Inspector</span>
+        </div>
+        <span class="text-[10px] bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded font-mono font-bold">DIGITAL TWIN</span>
       </div>
 
       <!-- Inspector Dynamic Content -->

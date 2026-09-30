@@ -640,3 +640,74 @@ html.dark .cable-insulator {
   line-height: 1.5;
   color: #94a3b8;
 }
+
+/* =====================================================================
+   8. Professional Engineering Inspector & Digital Twin Layout Additions
+   ===================================================================== */
+.insp-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.insp-tab-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+
+.insp-tab-btn.active {
+  color: var(--brand-primary);
+  background-color: var(--brand-light);
+  border-color: var(--brand-border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Authentic Engineering 50/50 Cards */
+.arch-card-50-50 {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+html.light .arch-card-50-50 {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+html.dark .arch-card-50-50 {
+  background-color: #0b1329;
+  color: #f8fafc;
+}
+
+/* Sidebar Accordion Headers */
+.sidebar-section-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: color 0.15s ease;
+}
+
+.sidebar-section-header:hover {
+  color: var(--text-primary);
+}
+
+/* Analytics Drawer Animation */
+.analytics-drawer {
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}

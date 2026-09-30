@@ -938,7 +938,7 @@ const LabWorkspace = (function() {
     // Build Tab Navigation Header
     const tabs = ['overview', 'parameters', 'telemetry', 'connections', 'source'];
     let tabNavHtml = `
-      <div class="flex border-b border-slate-800 bg-slate-950/60 overflow-x-auto">
+      <div class="flex items-center gap-1 p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-950/60 overflow-x-auto no-scrollbar">
         ${tabs.map(t => `
           <button onclick="LabWorkspace.setInspectorTab('${t}')" class="insp-tab-btn capitalize ${activeInspectorTab === t ? 'active' : ''}">
             ${t}
@@ -964,12 +964,12 @@ const LabWorkspace = (function() {
     inspectorContent.innerHTML = `
       <div class="flex flex-col h-full font-mono">
         <!-- Component Header -->
-        <div class="p-3.5 border-b border-slate-800 bg-slate-950/40 flex items-start justify-between">
+        <div class="p-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-start justify-between">
           <div>
-            <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-400">${meta.category}</span>
-            <h3 class="text-sm font-bold text-slate-100">${props.name || meta.title}</h3>
+            <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">${meta.category}</span>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">${props.name || meta.title}</h3>
           </div>
-          <span class="px-2 py-0.5 rounded text-[9px] bg-slate-800 text-slate-300 border border-slate-700 font-bold">${props.id}</span>
+          <span class="px-2 py-0.5 rounded text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-bold">${props.id}</span>
         </div>
 
         <!-- 5 Tabs Bar -->
@@ -1031,32 +1031,42 @@ const LabWorkspace = (function() {
         </div>
       `;
     } else if (node.type === 'drl' || node.type === 'decision_info') {
-      const modeColor = telemetryState.chargerMode === 'V2G' ? 'text-cyan-400' : (telemetryState.chargerMode === 'CHARGING' ? 'text-emerald-400' : 'text-slate-400');
+      const modeColor = telemetryState.chargerMode === 'V2G' ? 'text-cyan-600 dark:text-cyan-400' : (telemetryState.chargerMode === 'CHARGING' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400');
       const isConfirmed = telemetryState.isHighLoadConfirmed;
       return `
         <div class="space-y-3 text-xs">
-          <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex justify-between"><span class="text-slate-400">Policy:</span><span class="text-purple-300 font-bold">PPO + Deterministic Safety Gating</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Current Mode:</span><span class="${modeColor} font-bold">${telemetryState.chargerMode || 'CHARGING'}</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Active Power:</span><span class="text-amber-300 font-bold">${telemetryState.chargerPowerKw >= 0 ? '+' : ''}${telemetryState.chargerPowerKw.toFixed(1)} kW</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Decision Reason:</span><span class="text-slate-200 truncate" title="${telemetryState.decisionReason || ''}">${telemetryState.decisionReason || 'EV SOC below target; normal charging active'}</span></div>
+          <div class="p-3 bg-white dark:bg-slate-950/70 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 shadow-sm">
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Policy:</span><span class="text-purple-600 dark:text-purple-300 font-bold">PPO + Safety Layer</span></div>
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Current Mode:</span><span class="${modeColor} font-bold">${telemetryState.chargerMode || 'CHARGING'}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Active Power:</span><span class="text-amber-600 dark:text-amber-300 font-bold">${telemetryState.chargerPowerKw >= 0 ? '+' : ''}${telemetryState.chargerPowerKw.toFixed(1)} kW</span></div>
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Decision Reason:</span><span class="text-slate-700 dark:text-slate-200 truncate" title="${telemetryState.decisionReason || ''}">${telemetryState.decisionReason || 'EV SOC below target; normal charging active'}</span></div>
           </div>
 
-          <!-- Section 57: Control Diagnostics Panel -->
-          <div class="p-3 bg-slate-900/90 rounded-xl border border-purple-500/30 space-y-2 text-[11px]">
-            <div class="flex items-center justify-between border-b border-purple-500/20 pb-1">
-              <span class="font-bold text-purple-300 flex items-center gap-1">
+          <!-- Section 57: Control Diagnostics Panel (2-column layout) -->
+          <div class="p-3 bg-white dark:bg-slate-900/90 rounded-xl border border-purple-500/30 space-y-2 text-[11px] shadow-sm">
+            <div class="flex items-center justify-between border-b border-purple-500/20 pb-1.5">
+              <span class="font-bold text-purple-600 dark:text-purple-300 flex items-center gap-1">
                 <span class="material-symbols-outlined text-sm">tune</span>
                 CONTROL DIAGNOSTICS
               </span>
-              <span class="text-[9px] text-cyan-400 font-bold font-mono">NEXT EVAL: ${telemetryState.nextControlEvalSec || 10}s</span>
+              <span class="text-[9px] text-cyan-600 dark:text-cyan-400 font-bold font-mono">NEXT EVAL: ${telemetryState.nextControlEvalSec || 10}s</span>
             </div>
-            <div class="flex justify-between"><span class="text-slate-400">Current Grid Stress:</span><span class="font-bold ${(telemetryState.gridStressScore || 42) >= 75 ? 'text-rose-400' : 'text-emerald-400'}">${Math.round(telemetryState.gridStressScore || 42)} / 100</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">V2G Entry Threshold:</span><span class="text-amber-400 font-bold">>= ${telemetryState.v2gEntryStress || 75}</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">V2G Exit Threshold:</span><span class="text-cyan-400 font-bold"><= ${telemetryState.v2gExitStress || 60}</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">High Load Confirmation:</span><span class="${isConfirmed ? 'text-rose-400 font-bold' : 'text-slate-300'}">${isConfirmed ? 'check CONFIRMED (30s)' : `${Math.round(telemetryState.highLoadCandidateSec || 0)} / 30 sec`}</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Minimum Mode Hold:</span><span class="text-slate-300">${telemetryState.modeDwellStr || '05:00'}</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Departure Urgency:</span><span class="${(telemetryState.drlUrgencyPct || 42) >= 65 ? 'text-rose-400 font-bold' : 'text-slate-200'}">${(telemetryState.drlUrgencyPct || 42).toFixed(0)}%</span></div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <span class="text-slate-500 dark:text-slate-400 text-[10px] block">Grid Stress</span>
+                <span class="font-bold ${(telemetryState.gridStressScore || 42) >= 75 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'} text-xs">${Math.round(telemetryState.gridStressScore || 42)} / 100</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <span class="text-slate-500 dark:text-slate-400 text-[10px] block">Departure Urgency</span>
+                <span class="font-bold ${(telemetryState.drlUrgencyPct || 42) >= 65 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-200'} text-xs">${(telemetryState.drlUrgencyPct || 42).toFixed(0)}%</span>
+              </div>
+            </div>
+            <div class="space-y-1.5 pt-1 text-[11px]">
+              <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">V2G Entry Threshold:</span><span class="text-amber-600 dark:text-amber-400 font-bold">>= ${telemetryState.v2gEntryStress || 75}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">V2G Exit Threshold:</span><span class="text-cyan-600 dark:text-cyan-400 font-bold"><= ${telemetryState.v2gExitStress || 60}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">High Load Gating:</span><span class="${isConfirmed ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-600 dark:text-slate-300'}">${isConfirmed ? 'CONFIRMED (30s)' : `${Math.round(telemetryState.highLoadCandidateSec || 0)} / 30s`}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Minimum Mode Hold:</span><span class="text-slate-600 dark:text-slate-300">${telemetryState.modeDwellStr || '05:00'}</span></div>
+            </div>
           </div>
         </div>
       `;
@@ -2916,29 +2926,85 @@ const LabWorkspace = (function() {
     if (btnLive) btnLive.onclick = () => setDataMode('LIVE');
     if (btnHist) btnHist.onclick = () => setDataMode('HISTORICAL');
 
-    // Zoom Controls
+    // Viewport Zoom & Fit Controls
+    const canvasViewport = document.getElementById('sim-canvas-viewport');
     const zoomInBtn = document.getElementById('canvas-zoom-in');
     const zoomOutBtn = document.getElementById('canvas-zoom-out');
     const zoomResetBtn = document.getElementById('canvas-zoom-reset');
+    const zoomFitBtn = document.getElementById('canvas-zoom-fit');
     let currentZoom = 1.0;
-    if (zoomInBtn) zoomInBtn.onclick = () => {
-      currentZoom = Math.min(1.4, currentZoom + 0.1);
-      if (nodesContainer) nodesContainer.style.transform = `scale(${currentZoom})`;
-      if (canvasSvg) canvasSvg.style.transform = `scale(${currentZoom})`;
+
+    function applyZoom(zoom) {
+      currentZoom = Math.max(0.55, Math.min(1.4, Math.round(zoom * 100) / 100));
+      if (canvasViewport) {
+        canvasViewport.style.transform = `scale(${currentZoom})`;
+        canvasViewport.style.transformOrigin = 'top left';
+      }
       if (zoomResetBtn) zoomResetBtn.textContent = `${Math.round(currentZoom * 100)}%`;
-    };
-    if (zoomOutBtn) zoomOutBtn.onclick = () => {
-      currentZoom = Math.max(0.65, currentZoom - 0.1);
-      if (nodesContainer) nodesContainer.style.transform = `scale(${currentZoom})`;
-      if (canvasSvg) canvasSvg.style.transform = `scale(${currentZoom})`;
-      if (zoomResetBtn) zoomResetBtn.textContent = `${Math.round(currentZoom * 100)}%`;
-    };
-    if (zoomResetBtn) zoomResetBtn.onclick = () => {
-      currentZoom = 1.0;
-      if (nodesContainer) nodesContainer.style.transform = `scale(1.0)`;
-      if (canvasSvg) canvasSvg.style.transform = `scale(1.0)`;
-      zoomResetBtn.textContent = '100%';
-    };
+    }
+
+    if (zoomInBtn) zoomInBtn.onclick = () => applyZoom(currentZoom + 0.1);
+    if (zoomOutBtn) zoomOutBtn.onclick = () => applyZoom(currentZoom - 0.1);
+    if (zoomResetBtn) zoomResetBtn.onclick = () => applyZoom(1.0);
+    if (zoomFitBtn) {
+      zoomFitBtn.onclick = () => {
+        const container = document.getElementById('sim-canvas-container');
+        if (container) {
+          const availableWidth = container.clientWidth - 24;
+          const fitZoom = Math.max(0.6, Math.min(1.1, availableWidth / 1080));
+          applyZoom(fitZoom);
+          showToast(`Canvas fitted to ${Math.round(fitZoom * 100)}%`);
+        }
+      };
+    }
+
+    // Analytics Drawer Collapsible Toggle
+    const toggleAnalyticsBtn = document.getElementById('toggle-analytics-btn');
+    const drawerCollapseBtn = document.getElementById('drawer-collapse-btn');
+    const analyticsDrawer = document.getElementById('analytics-drawer');
+    const drawerStatusPill = document.getElementById('analytics-drawer-status-pill');
+    const drawerCollapseIcon = document.getElementById('drawer-collapse-icon');
+    const drawerCollapseLabel = document.getElementById('drawer-collapse-label');
+    let isDrawerOpen = true;
+
+    function toggleAnalyticsDrawer() {
+      isDrawerOpen = !isDrawerOpen;
+      if (analyticsDrawer) {
+        if (isDrawerOpen) {
+          analyticsDrawer.classList.remove('hidden');
+          if (drawerStatusPill) {
+            drawerStatusPill.textContent = 'OPEN';
+            drawerStatusPill.className = 'px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400';
+          }
+          if (drawerCollapseIcon) drawerCollapseIcon.textContent = 'expand_more';
+          if (drawerCollapseLabel) drawerCollapseLabel.textContent = 'COLLAPSE';
+          setTimeout(() => {
+            Object.values(chartInstances).forEach(c => { if (c && typeof c.resize === 'function') c.resize(); });
+          }, 150);
+        } else {
+          analyticsDrawer.classList.add('hidden');
+          if (drawerStatusPill) {
+            drawerStatusPill.textContent = 'CLOSED';
+            drawerStatusPill.className = 'px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
+          }
+          if (drawerCollapseIcon) drawerCollapseIcon.textContent = 'expand_less';
+          if (drawerCollapseLabel) drawerCollapseLabel.textContent = 'EXPAND';
+        }
+      }
+    }
+
+    if (toggleAnalyticsBtn) toggleAnalyticsBtn.onclick = toggleAnalyticsDrawer;
+    if (drawerCollapseBtn) drawerCollapseBtn.onclick = toggleAnalyticsDrawer;
+
+    // Sidebar Accordions
+    document.querySelectorAll('.sidebar-section-header').forEach(hdr => {
+      hdr.onclick = () => {
+        const nextElem = hdr.nextElementSibling;
+        if (nextElem) {
+          nextElem.classList.toggle('hidden');
+        }
+      };
+    });
 
     // Strategy Selector
     const stratSelect = document.getElementById('tb-strategy-select');
