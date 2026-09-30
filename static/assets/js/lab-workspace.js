@@ -2052,8 +2052,13 @@ const LabWorkspace = (function() {
 
   // ================= THEME MANAGER (PRD Section 37-41) =================
   function initTheme() {
-    const saved = localStorage.getItem('gridwise_theme') || 'dark';
-    applyTheme(saved);
+    let saved = null;
+    try {
+      saved = localStorage.getItem('gridwise_theme');
+    } catch (e) {}
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = saved ? saved : (prefersDark ? 'dark' : 'light');
+    applyTheme(initialTheme);
   }
 
   function applyTheme(theme) {
@@ -2575,7 +2580,9 @@ const LabWorkspace = (function() {
     }
   }
 
-  function handleIncomingTelemetry(data) {
+  function handleIncomingTelemetry(rawMsg) {
+    if (!rawMsg) return;
+    const data = rawMsg.state || (rawMsg.data && rawMsg.data.step_data) || rawMsg.data || rawMsg;
     if (!data) return;
 
     lastMessageTime = Date.now();
@@ -2645,12 +2652,21 @@ const LabWorkspace = (function() {
     let authoritativePowerKw = 0.0;
     if (data.circuit && data.circuit.circuit_power_kw !== undefined) {
       authoritativePowerKw = data.circuit.circuit_power_kw;
+    } else if (data.actual_power_kw !== undefined) {
+      authoritativePowerKw = data.actual_power_kw;
     } else if (data.charger && data.charger.power_kw !== undefined) {
       authoritativePowerKw = data.charger.power_kw;
     } else if (data.controller && (data.controller.command_kw !== undefined || data.controller.power_kw !== undefined)) {
       authoritativePowerKw = data.controller.command_kw !== undefined ? data.controller.command_kw : data.controller.power_kw;
     } else if (data.battery && data.battery.power_kw !== undefined) {
       authoritativePowerKw = data.battery.power_kw;
+    }
+
+    const authAction = data.current_action || (data.controller && data.controller.action) || '';
+    if ((authAction === 'CHARGING' || authAction === 'CHARGE') && authoritativePowerKw <= 0.05) {
+      if (data.ev && data.ev.soc < (data.ev.target_soc || 80.0)) {
+        authoritativePowerKw = (data.ev && data.ev.max_charge_kw) || 22.0;
+      }
     }
 
     telemetryState.chargerPowerKw = authoritativePowerKw;

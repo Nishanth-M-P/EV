@@ -1,20 +1,164 @@
-/* GridWise AI Custom Styles & Telemetry Design Tokens */
-@layer base {
-  html, body {
-    margin: 0;
-    padding: 0;
-    background-color: #0c1324;
-    color: #dce1fb;
-  }
-  body {
-    overscroll-behavior: none;
-  }
-  main > :first-child {
-    margin-top: 0 !important;
-  }
-  main > :last-child {
-    margin-bottom: 0 !important;
-  }
+/* =====================================================================
+   GridWise AI — Global Unified Design System & Theme Engine
+   Adheres strictly to PRD Section 37-41 & UI/UX Consistency Specification
+   ===================================================================== */
+
+/* 1. Global CSS Design Tokens (Single Source of Truth) */
+:root {
+  /* Surface colors (Light Mode) */
+  --bg-primary: #f8fafc;        /* Slate-50: Main page background */
+  --bg-secondary: #f1f5f9;      /* Slate-100: Inner containers & secondary sections */
+  --bg-card: #ffffff;           /* Crisp white surfaces */
+  --bg-elevated: #ffffff;       /* Pure white elevated elements / popovers */
+  --bg-canvas: #f8fafc;         /* Simulator canvas */
+  --border: #e2e8f0;            /* Slate-200: Subtle neutral borders */
+  --border-subtle: #f1f5f9;     /* Slate-100: Inner dividers */
+  --border-focus: #059669;      /* Emerald-600 */
+
+  /* Text colors (Light Mode) */
+  --text-primary: #0f172a;      /* Slate-900: High-contrast primary text */
+  --text-secondary: #475569;    /* Slate-600: Descriptions and secondary labels */
+  --text-muted: #64748b;        /* Slate-500: Subtext, units, captions */
+  --text-inverse: #ffffff;      /* White text for solid buttons */
+
+  /* Brand identity (GridWise Teal / Emerald) */
+  --brand-primary: #059669;     /* Emerald-600 */
+  --brand-secondary: #0d9488;   /* Teal-600 */
+  --brand-hover: #047857;       /* Emerald-700 */
+  --brand-light: #ecfdf5;       /* Emerald-50 */
+  --brand-border: #a7f3d0;      /* Emerald-200 */
+
+  /* Semantic status colors (Light Mode) */
+  --success: #10b981;           /* Healthy, Live, Charging */
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
+  --success-text: #065f46;
+
+  --warning: #f59e0b;           /* Amber/Orange: V2G, High demand, Warning */
+  --warning-bg: #fffbeb;
+  --warning-border: #fde68a;
+  --warning-text: #92400e;
+
+  --danger: #ef4444;            /* Red: Fault, Error, Unsafe */
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --danger-text: #991b1b;
+
+  --info: #0284c7;              /* Sky/Blue: Grid info, Telemetry */
+  --info-bg: #f0f9ff;
+  --info-border: #bae6fd;
+  --info-text: #075985;
+
+  /* Domain Entities */
+  --grid: #0284c7;              /* Blue */
+  --solar: #d97706;             /* Amber/Yellow */
+  --battery: #10b981;           /* Green */
+  --charging: #10b981;          /* Green */
+  --discharging: #f59e0b;       /* Orange */
+  --idle: #94a3b8;              /* Slate-400 */
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -1px rgba(15, 23, 42, 0.03);
+  --shadow-hover: 0 10px 25px -3px rgba(15, 23, 42, 0.1);
+  --shadow-glow-green: 0 0 16px rgba(16, 185, 129, 0.35);
+  --shadow-glow-amber: 0 0 16px rgba(245, 158, 11, 0.35);
+
+  /* Scrollbar */
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+
+  /* Chart grids */
+  --chart-grid: #e2e8f0;
+  --chart-text: #64748b;
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-border: #cbd5e1;
+  --chart-tooltip-text: #0f172a;
+}
+
+html.dark {
+  /* Surface colors (Dark Mode — Real dark engineering design) */
+  --bg-primary: #080d1a;        /* Deep space dark navy background */
+  --bg-secondary: #0f172a;      /* Slate-900: Inner containers */
+  --bg-card: #131d33;           /* Elevated dark surface */
+  --bg-elevated: #1a2744;       /* Modal / Popover elevated surface */
+  --bg-canvas: #080d1a;         /* Simulator dark canvas */
+  --border: #1e293b;            /* Slate-800: Subtle borders */
+  --border-subtle: #17223b;     /* Very subtle dividers */
+  --border-focus: #10b981;      /* Emerald-500 */
+
+  /* Text colors (Dark Mode) */
+  --text-primary: #f8fafc;      /* Near white high-contrast */
+  --text-secondary: #cbd5e1;    /* Slate-300: Clear readable secondary text */
+  --text-muted: #94a3b8;        /* Slate-400: Muted metadata */
+  --text-inverse: #0f172a;      /* Dark text on light buttons */
+
+  /* Brand identity (GridWise Teal / Emerald) */
+  --brand-primary: #10b981;     /* Emerald-500 */
+  --brand-secondary: #14b8a6;   /* Teal-500 */
+  --brand-hover: #34d399;       /* Emerald-400 */
+  --brand-light: rgba(16, 185, 129, 0.15);
+  --brand-border: rgba(16, 185, 129, 0.35);
+
+  /* Semantic status colors (Dark Mode) */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --success-border: rgba(16, 185, 129, 0.35);
+  --success-text: #6ee7b7;
+
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-border: rgba(245, 158, 11, 0.35);
+  --warning-text: #fcd34d;
+
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-border: rgba(239, 68, 68, 0.35);
+  --danger-text: #fca5a5;
+
+  --info: #38bdf8;
+  --info-bg: rgba(56, 189, 248, 0.15);
+  --info-border: rgba(56, 189, 248, 0.35);
+  --info-text: #7dd3fc;
+
+  /* Domain Entities */
+  --grid: #38bdf8;
+  --solar: #facc15;
+  --battery: #10b981;
+  --charging: #10b981;
+  --discharging: #f59e0b;
+  --idle: #64748b;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 10px 30px -4px rgba(0, 0, 0, 0.6);
+  --shadow-glow-green: 0 0 20px -2px rgba(16, 185, 129, 0.4);
+  --shadow-glow-amber: 0 0 20px -2px rgba(245, 158, 11, 0.4);
+
+  /* Scrollbar */
+  --scrollbar-track: #080d1a;
+  --scrollbar-thumb: #1e293b;
+
+  /* Chart grids */
+  --chart-grid: #1e293b;
+  --chart-text: #94a3b8;
+  --chart-tooltip-bg: #1e293b;
+  --chart-tooltip-border: #334155;
+  --chart-tooltip-text: #f8fafc;
+}
+
+/* =====================================================================
+   2. Base Elements & Global Typography
+   ===================================================================== */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  overscroll-behavior: none;
 }
 
 /* Custom Sleek Scrollbar */
@@ -23,137 +167,274 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0c1324;
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #23293c;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3c4a42;
+  background: var(--brand-primary);
 }
 
-/* Glowing Accent Utilities */
-.glow-primary {
-  box-shadow: 0 0 15px -2px rgba(78, 222, 163, 0.35);
-}
-.glow-secondary {
-  box-shadow: 0 0 15px -2px rgba(76, 215, 246, 0.35);
-}
-.glow-tertiary {
-  box-shadow: 0 0 15px -2px rgba(255, 185, 95, 0.35);
-}
-.glow-error {
-  box-shadow: 0 0 15px -2px rgba(255, 180, 171, 0.35);
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* =====================================================================
+   3. Unified Card & Surface Hierarchy
+   ===================================================================== */
+.light-card, .gw-card {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease-in-out;
 }
 
-/* Pulse indicator animation */
-@keyframes telemetry-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.92); }
-}
-.animate-telemetry-pulse {
-  animation: telemetry-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.light-card:hover, .gw-card:hover {
+  border-color: var(--border-focus) !important;
+  box-shadow: var(--shadow-hover);
 }
 
-/* Chart curve hover interactions */
-.chart-curve {
-  transition: stroke-width 0.2s ease, opacity 0.2s ease;
-}
-.chart-curve:hover {
-  stroke-width: 4px !important;
-  opacity: 1 !important;
-  filter: drop-shadow(0 0 6px currentColor);
+/* Header & Navigation Surfaces */
+.gw-header {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
 }
 
-/* Node circle hover in IEEE 33-Bus visualization */
-.bus-node {
-  cursor: pointer;
-  transition: transform 0.2s ease, r 0.2s ease, stroke-width 0.2s ease;
-}
-.bus-node:hover {
-  r: 8px !important;
-  stroke-width: 3px !important;
-  filter: drop-shadow(0 0 8px #4edea3);
+.gw-nav-container {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
 }
 
-/* Tab & navigation transition */
-.nav-item-active {
-  background-color: #10b981 !important;
-  color: #002113 !important;
-  font-weight: 600 !important;
-  box-shadow: 0 0 12px -2px rgba(16, 185, 129, 0.4) !important;
+.gw-btn-secondary {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
 }
 
-/* Drawer overlay transitions */
-#config-drawer-overlay.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-#config-drawer-panel.active {
-  transform: translateX(0);
+.gw-btn-secondary:hover {
+  background-color: var(--border);
+  color: var(--text-primary);
 }
 
-/* ================= Tinkercad Simulation Lab Styles ================= */
+.gw-divider {
+  border-color: var(--border) !important;
+  background-color: var(--border) !important;
+}
+
+.gw-setting-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+/* Typography Token Utilities */
+.gw-text-primary { color: var(--text-primary) !important; }
+.gw-text-secondary { color: var(--text-secondary) !important; }
+.gw-text-muted { color: var(--text-muted) !important; }
+
+/* Dark Mode Automatic Overrides for High-Contrast Readability */
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700 {
+  color: var(--text-primary);
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-500 {
+  color: var(--text-secondary);
+}
+
+html.dark .text-slate-400 {
+  color: var(--text-muted);
+}
+
+html.dark .bg-white {
+  background-color: var(--bg-card) !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-100 {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.dark .bg-slate-100\/90,
+html.dark .bg-white\/95 {
+  background-color: var(--bg-card) !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: var(--border) !important;
+}
+
+/* Input elements in light / dark mode */
+input, select, textarea {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--brand-primary) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--brand-border);
+}
+
+/* =====================================================================
+   4. Standardized Status Badges (Section 13)
+   ===================================================================== */
+.gw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-width: 1px;
+}
+
+.gw-badge-live,
+.gw-badge-charging,
+.gw-badge-connected {
+  background-color: var(--success-bg) !important;
+  border-color: var(--success-border) !important;
+  color: var(--success-text) !important;
+}
+
+.gw-badge-discharging,
+.gw-badge-v2g,
+.gw-badge-warning {
+  background-color: var(--warning-bg) !important;
+  border-color: var(--warning-border) !important;
+  color: var(--warning-text) !important;
+}
+
+.gw-badge-fault {
+  background-color: var(--danger-bg) !important;
+  border-color: var(--danger-border) !important;
+  color: var(--danger-text) !important;
+}
+
+.gw-badge-idle,
+.gw-badge-offline {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border) !important;
+  color: var(--text-muted) !important;
+}
+
+.gw-badge-simulated {
+  background-color: var(--info-bg) !important;
+  border-color: var(--info-border) !important;
+  color: var(--info-text) !important;
+}
+
+/* =====================================================================
+   5. Standardized KPI Metric Cards (Section 11)
+   ===================================================================== */
+.gw-kpi-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.gw-kpi-card:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-hover);
+}
+
+.gw-kpi-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.gw-kpi-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.gw-kpi-subtext {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+/* =====================================================================
+   6. Modern Engineering Tables (Section 17-18)
+   ===================================================================== */
+.modern-table-container {
+  background-color: var(--bg-card);
+  border-radius: 0.875rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.modern-table thead th {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modern-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.modern-table tbody tr:hover {
+  background-color: var(--bg-secondary);
+}
+
+.modern-table tbody td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.modern-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =====================================================================
+   7. Digital Twin Circuit Canvas & Physical Wire Flows (Section 7, 8, 10)
+   ===================================================================== */
 .sim-canvas-grid {
-  background-color: #080d1a;
-  background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1.5px, transparent 1.5px);
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(var(--border) 1.5px, transparent 1.5px);
   background-size: 24px 24px;
+  transition: background-color 0.25s ease;
 }
 
-/* Canvas Component Node */
-.sim-node {
-  position: absolute;
-  user-select: none;
-  cursor: grab;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
-}
-.sim-node:active {
-  cursor: grabbing;
-}
-.sim-node.selected {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 10px 25px -5px rgba(0, 0, 0, 0.6);
-}
-
-/* Port Sockets */
-.sim-port {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  cursor: crosshair;
-  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-  z-index: 20;
-}
-.sim-port:hover {
-  transform: scale(1.45);
-  box-shadow: 0 0 12px currentColor;
-}
-.sim-port.connecting {
-  animation: telemetry-pulse 0.8s infinite;
-  box-shadow: 0 0 14px #38bdf8;
-}
-.sim-port.port-valid-target {
-  background-color: #10b981 !important;
-  border-color: #34d399 !important;
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.9) !important;
-  transform: scale(1.5) !important;
-  animation: pulse-green 1s infinite alternate;
-}
-.sim-port.port-invalid-target {
-  background-color: #ef4444 !important;
-  border-color: #f87171 !important;
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.9) !important;
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@keyframes pulse-green {
-  from { box-shadow: 0 0 8px #10b981; }
-  to { box-shadow: 0 0 18px #34d399; }
-}
-
-/* Animated Wire Energy Flow */
+/* Animated Wire Energy Flow strictly driven by backend physics */
 @keyframes wire-flow-forward {
   from { stroke-dashoffset: 32; }
   to { stroke-dashoffset: 0; }
@@ -165,782 +446,105 @@
 }
 
 .wire-charging {
-  stroke: #10b981;
+  stroke: var(--charging) !important;
   stroke-dasharray: 8 4;
   animation: wire-flow-forward 0.8s linear infinite;
-  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.8));
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.8));
 }
 
 .wire-discharging {
-  stroke: #38bdf8;
+  stroke: var(--discharging) !important;
   stroke-dasharray: 8 4;
   animation: wire-flow-reverse 0.8s linear infinite;
-  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.9));
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8));
 }
 
-.wire-control {
-  stroke: #c084fc;
-  stroke-dasharray: 4 4;
-  animation: wire-flow-forward 1.2s linear infinite;
-  filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.7));
+.wire-fault {
+  stroke: var(--danger) !important;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9));
 }
 
 .wire-idle {
-  stroke: #64748b;
-  stroke-dasharray: 5 5;
-  opacity: 0.6;
+  stroke: var(--idle) !important;
+  stroke-dasharray: none !important;
+  animation: none !important;
+  opacity: 0.3 !important;
 }
 
-.wire-selected-halo {
-  stroke: #f59e0b;
-  stroke-width: 8px;
-  opacity: 0.35;
-  filter: drop-shadow(0 0 8px #f59e0b);
+/* Glowing intensity levels */
+.wire-glow-low {
+  filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.4));
+  stroke-width: 3.5px;
+}
+.wire-glow-med {
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.7));
+  stroke-width: 4px;
+}
+.wire-glow-high {
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 1.0));
+  stroke-width: 4.5px;
 }
 
-.wire-clickable {
-  cursor: pointer;
-  pointer-events: stroke;
+.wire-glow-v2g-low {
+  filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.4));
+  stroke-width: 3.5px;
 }
-.wire-clickable:hover {
-  filter: drop-shadow(0 0 6px #38bdf8);
+.wire-glow-v2g-med {
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.7));
+  stroke-width: 4px;
 }
-
-/* Engineering Object Styles */
-.eng-component {
-  background: linear-gradient(145deg, #131b2e 0%, #0c1324 100%);
-  border: 1px solid #1e293b;
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-.eng-component:hover {
-  border-color: #334155;
-  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-.eng-component.selected {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4), 0 16px 36px -6px rgba(0, 0, 0, 0.9) !important;
+.wire-glow-v2g-high {
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 1.0));
+  stroke-width: 4.5px;
 }
 
-/* Draggable item ghost */
-.component-ghost {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* EV Integrated Chassis & Battery Cell Visuals */
-.ev-cell-module {
-  transition: all 0.3s ease;
-}
-.ev-cell-charging {
-  animation: cell-glow-green 1.2s infinite alternate ease-in-out;
-}
-.ev-cell-discharging {
-  animation: cell-glow-cyan 1.2s infinite alternate ease-in-out;
-}
-
-@keyframes cell-glow-green {
-  from { opacity: 0.7; box-shadow: 0 0 4px #10b981; }
-  to { opacity: 1; box-shadow: 0 0 10px #34d399; }
-}
-
-@keyframes cell-glow-cyan {
-  from { opacity: 0.7; box-shadow: 0 0 4px #38bdf8; }
-  to { opacity: 1; box-shadow: 0 0 10px #06b6d4; }
-}
-
-/* ================= Real Industrial Hardware & 2.5D Enclosure Styles ================= */
-
-/* Metallic Corner Screws */
-.eng-screw {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #94a3b8, #334155 70%, #0f172a);
-  border: 1px solid #1e293b;
+/* Circuit Component Nodes */
+.sim-node {
   position: absolute;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.6);
-}
-.eng-screw::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 1px;
-  width: 3px;
-  height: 0.8px;
-  background: #0f172a;
-  transform: rotate(35deg);
+  user-select: none;
+  cursor: grab;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-/* Ventilation Louver Slits */
-.eng-louver {
-  height: 2px;
-  border-radius: 1px;
-  background: linear-gradient(to bottom, #090d16, #1e293b);
-  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+.sim-node:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-hover);
 }
 
-/* Realistic Dark OLED / Backlit LCD Screen */
-.eng-lcd {
-  background: radial-gradient(circle at 50% 30%, #0a1120 0%, #030712 100%);
-  border: 1px solid #1e293b;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.06);
-  position: relative;
-  overflow: hidden;
-}
-.eng-lcd::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 40%;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.04), transparent);
-  pointer-events: none;
+.sim-node.selected {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 2px var(--brand-border), var(--shadow-hover);
 }
 
-/* Physical Hardware Status LEDs */
-.eng-led {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  position: relative;
-  transition: all 0.25s ease;
-}
-.eng-led::after {
-  content: '';
-  position: absolute;
-  top: 1px; left: 1px; width: 2px; height: 2px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
-}
-.eng-led-green {
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981, inset 0 -1px 2px rgba(0, 0, 0, 0.4);
-}
-.eng-led-blue {
-  background: #3b82f6;
-  box-shadow: 0 0 8px #3b82f6, inset 0 -1px 2px rgba(0, 0, 0, 0.4);
-}
-.eng-led-orange {
-  background: #f97316;
-  box-shadow: 0 0 8px #f97316, inset 0 -1px 2px rgba(0, 0, 0, 0.4);
-}
-.eng-led-red {
-  background: #ef4444;
-  box-shadow: 0 0 8px #ef4444, inset 0 -1px 2px rgba(0, 0, 0, 0.4);
-}
-.eng-led-grey {
-  background: #475569;
-  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.4);
-}
-
-/* Emergency Stop Button Visual */
-.eng-estop {
+/* Port Sockets */
+.sim-port {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #f87171, #dc2626 65%, #991b1b);
-  border: 2px solid #eab308;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-  cursor: pointer;
-  transition: transform 0.1s ease;
+  cursor: crosshair;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  z-index: 20;
 }
-.eng-estop:hover {
-  transform: scale(1.15);
-  box-shadow: 0 0 8px #ef4444;
-}
-
-/* Transformer Cooling Radiator Fin Styling */
-.transformer-fin {
-  width: 5px;
-  border-radius: 2px;
-  background: linear-gradient(to right, #1e293b, #334155 50%, #0f172a);
-  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.5);
-}
-
-/* EV Silhouette and Charging Port Glow Ring */
-.ev-port-ring {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid #334155;
-  background: #0f172a;
-  transition: all 0.3s ease;
-}
-.ev-port-ring.connected {
-  border-color: #10b981;
-  box-shadow: 0 0 10px #10b981;
-}
-.ev-port-ring.charging {
-  border-color: #10b981;
-  animation: telemetry-pulse 0.9s infinite alternate;
-  box-shadow: 0 0 12px #34d399;
-}
-.ev-port-ring.discharging {
-  border-color: #38bdf8;
-  animation: telemetry-pulse 0.9s infinite alternate;
-  box-shadow: 0 0 12px #38bdf8;
-}
-
-/* Port Socket Subtlety: Hidden or subtle normally, prominent on hover/select */
-.sim-port {
-  opacity: 0.3;
-  transform: scale(0.85);
-  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-.sim-node:hover .sim-port,
-.sim-node.selected .sim-port,
-.sim-port:hover,
-.sim-port.connecting,
-.engineering-mode .sim-port {
-  opacity: 1 !important;
-  transform: scale(1.15) !important;
-}
-
-/* Realistic Heavy Industrial Cable & Plug Heads */
-.cable-jacket {
-  stroke: #090e17;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.cable-plug-head {
-  fill: #1e293b;
-  stroke: #475569;
-  stroke-width: 1.5;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
-}
-.cable-terminal-lug {
-  fill: #b45309;
-  stroke: #d97706;
-  stroke-width: 1.5;
-}
-
-/* Engineering Schematic Blueprint Grid Mode */
-.engineering-mode {
-  background-color: #060a14 !important;
-  background-image: 
-    linear-gradient(rgba(56, 189, 248, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.07) 1px, transparent 1px) !important;
-  background-size: 20px 20px !important;
-}
-.engineering-mode .eng-component {
-  border-color: rgba(56, 189, 248, 0.4) !important;
-  box-shadow: 0 0 16px rgba(6, 182, 212, 0.15) !important;
-}
-.engineering-mode .sim-port::after {
-  content: attr(title);
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #090d16;
-  border: 1px solid #38bdf8;
-  color: #38bdf8;
-  font-family: monospace;
-  font-size: 8px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 50;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
-}
-
-/* ================= System Architecture Diagram Styles (GECR CSE) ================= */
-.arch-card {
-  background: rgba(13, 21, 39, 0.96);
-  border-radius: 14px;
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: all 0.2s ease;
-}
-.arch-card:hover {
-  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-/* Fixed Circuit Node Behavior */
-.sim-node.is-fixed {
-  cursor: default !important;
-}
-.sim-node.is-fixed:active {
-  cursor: default !important;
-}
-.sim-node.is-fixed .sim-port {
-  pointer-events: none !important;
-  opacity: 0.15 !important;
-}
-
-/* Arrow badges along connection wires */
-.wire-badge-rect {
-  fill: #090d16;
-  stroke-width: 1.2px;
-  rx: 4px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
-}
-.wire-badge-text {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  font-weight: 700;
-  dominant-baseline: central;
-  text-anchor: middle;
-}
-
-/* Dashed live feedback animation */
-@keyframes feedback-flow {
-  from { stroke-dashoffset: 24; }
-  to { stroke-dashoffset: 0; }
-}
-.wire-feedback {
-  stroke: #38bdf8;
-  stroke-dasharray: 6 4;
-  animation: feedback-flow 1s linear infinite;
-  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8));
-}
-
-.wire-command {
-  stroke: #10b981;
-  stroke-dasharray: 6 3;
-  animation: feedback-flow 0.8s linear infinite;
-  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.8));
-}
-
-.wire-data-blue {
-  stroke: #38bdf8;
-  stroke-width: 2.5;
-  filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.6));
-}
-
-.wire-power-down {
-  stroke: #10b981;
-  stroke-dasharray: 6 3;
-  animation: feedback-flow 0.8s linear infinite;
-  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.8));
-}
-
-.wire-power-up {
-  stroke: #f43f5e;
-  stroke-dasharray: 6 3;
-  animation: feedback-flow 0.8s linear infinite reverse;
-  filter: drop-shadow(0 0 4px rgba(244, 63, 94, 0.8));
-}
-
-.wire-measurement {
-  stroke: #ec4899;
-  stroke-dasharray: 4 3;
-  stroke-width: 1.8;
-  animation: feedback-flow 1.5s linear infinite;
-  filter: drop-shadow(0 0 3px rgba(236, 72, 153, 0.6));
-}
-
-/* Contextual Inspector Tab Buttons */
-.insp-tab-btn {
-  padding: 6px 10px;
-  font-size: 11px;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 600;
-  border-bottom: 2px solid transparent;
-  color: #94a3b8;
-  transition: all 0.2s ease;
-}
-.insp-tab-btn:hover {
-  color: #f1f5f9;
-}
-.insp-tab-btn.active {
-  color: #10b981;
-  border-bottom-color: #10b981;
-  background-color: rgba(16, 185, 129, 0.08);
-}
-
-/* ================= THEME SYSTEM (PRD Section 37-41) ================= */
-:root {
-  --bg-main: #080d1a;
-  --bg-surface: #0f172a;
-  --bg-surface-secondary: #020617;
-  --bg-panel: rgba(15, 23, 42, 0.95);
-  --border-color: #1e293b;
-  --border-subtle: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --card-bg: rgba(2, 6, 23, 0.75);
-  --chart-grid: rgba(148, 163, 184, 0.12);
-  --chart-text: #94a3b8;
-}
-
-html.light {
-  --bg-main: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-secondary: #f1f5f9;
-  --bg-panel: rgba(255, 255, 255, 0.96);
-  --border-color: #cbd5e1;
-  --border-subtle: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --card-bg: rgba(255, 255, 255, 0.92);
-  --chart-grid: rgba(15, 23, 42, 0.08);
-  --chart-text: #475569;
-}
-
-html.light body {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-}
-
-html.light .bg-\[\#080d1a\], html.light .bg-slate-900, html.light .bg-slate-950, html.light .bg-slate-900\/95, html.light .bg-slate-950\/70, html.light .bg-slate-950\/90, html.light .bg-slate-950\/80, html.light .bg-slate-950\/50, html.light .bg-slate-950\/40 {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-}
-
-html.light .border-slate-800, html.light .border-slate-700, html.light .border-slate-800\/80, html.light .border-slate-800\/60 {
-  border-color: #e2e8f0 !important;
-}
-
-html.light .text-slate-200, html.light .text-slate-100, html.light .text-slate-300 {
-  color: #0f172a !important;
-}
-
-html.light .text-slate-400, html.light .text-slate-500 {
-  color: #64748b !important;
-}
-
-html.light .sim-canvas-grid {
-  background-color: #f1f5f9 !important;
-  background-image: radial-gradient(rgba(100, 116, 139, 0.22) 1.5px, transparent 1.5px) !important;
-}
-
-html.light .eng-component {
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-}
-
-html.light .eng-component:hover {
-  border-color: #94a3b8 !important;
-  box-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.12) !important;
-}
-
-html.light header {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-color: #e2e8f0 !important;
-}
-
-html.light aside {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-color: #e2e8f0 !important;
-}
-
-html.light .chart-card {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.05);
-}
-
-/* ================= RESPONSIVE ANALYTICS GRID (PRD Section 4) ================= */
-.analytics-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  width: 100%;
-}
-
-@media (max-width: 1024px) {
-  .analytics-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.chart-card {
-  width: 100%;
-  min-width: 0;
-  height: 280px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.chart-card:hover {
-  border-color: var(--border-subtle);
-}
-
-.chart-canvas-wrapper {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-}
-
-.chart-canvas-wrapper canvas {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-}
-
-/* ================= REALISTIC ENGINEERING POWER CABLE & FLOW STYLES ================= */
-.cable-outer-sheath {
-  stroke: #0a0f1d;
-  stroke-width: 14px;
-  stroke-linecap: round;
-  fill: none;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.7));
-}
-
-.cable-insulator {
-  stroke: #1e293b;
-  stroke-width: 10px;
-  stroke-linecap: round;
-  fill: none;
-}
-
-.cable-core-idle {
-  stroke: #475569;
-  stroke-width: 4px;
-  stroke-linecap: round;
-  fill: none;
-  opacity: 0.6;
-}
-
-.cable-core-charging {
-  stroke: #059669;
-  stroke-width: 4px;
-  stroke-linecap: round;
-  fill: none;
-  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.85));
-}
-
-.cable-core-v2g {
-  stroke: #0284c7;
-  stroke-width: 4px;
-  stroke-linecap: round;
-  fill: none;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.85));
-}
-
-.cable-pulse-charge {
-  stroke: #34d399;
-  stroke-width: 4px;
-  stroke-linecap: round;
-  stroke-dasharray: 12 18;
-  animation: power-flow-forward 0.8s linear infinite;
-  fill: none;
-  filter: drop-shadow(0 0 8px #10b981);
-}
-
-.cable-pulse-v2g {
-  stroke: #38bdf8;
-  stroke-width: 4px;
-  stroke-linecap: round;
-  stroke-dasharray: 12 18;
-  animation: power-flow-reverse 0.8s linear infinite;
-  fill: none;
-  filter: drop-shadow(0 0 8px #06b6d4);
-}
-
-@keyframes power-flow-forward {
-  from { stroke-dashoffset: 30; }
-  to { stroke-dashoffset: 0; }
-}
-
-@keyframes power-flow-reverse {
-  from { stroke-dashoffset: 0; }
-  to { stroke-dashoffset: 30; }
-}
-
-/* 50/50 Engineering Object Card Visuals */
-.arch-card-50-50 {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(8, 13, 26, 0.98) 100%);
-  border-radius: 10px;
-  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.arch-card-50-50:hover {
-  box-shadow: 0 8px 26px -3px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.14);
-}
-
-/* Telemetry and Control Bus Flow Animations */
-.data-flow-pulse {
-  animation: data-bus-travel 1.2s linear infinite;
-}
-@keyframes data-bus-travel {
-  from { stroke-dashoffset: 24; }
-  to { stroke-dashoffset: 0; }
-}
-
-.control-flow-pulse {
-  animation: control-bus-travel 1.0s linear infinite;
-}
-@keyframes control-bus-travel {
-  from { stroke-dashoffset: 20; }
-  to { stroke-dashoffset: 0; }
-}
-
-.meter-flow-pulse {
-  animation: meter-bus-travel 0.8s linear infinite;
-}
-@keyframes meter-bus-travel {
-  from { stroke-dashoffset: 16; }
-  to { stroke-dashoffset: 0; }
-}
-
-/* ================= MODERN PLATFORM UI ENHANCEMENTS ================= */
-
-/* Cross-Browser Typography & Smoothing */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Cross-Browser Sleek Scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
-}
-
-/* Modern Card Polish */
-.light-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.light-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-}
-
-/* Glass & Elevated Cards */
-.glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.dark .glass-card {
-  background: rgba(15, 23, 42, 0.85);
-  border-color: rgba(30, 41, 59, 0.8);
-}
-
-/* Modern Status Badges */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.2rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  letter-spacing: 0.025em;
-  transition: all 0.15s ease;
-}
-
-.status-pill-emerald {
-  background-color: rgba(16, 185, 129, 0.12);
-  color: #047857;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.status-pill-amber {
-  background-color: rgba(245, 158, 11, 0.12);
-  color: #b45309;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.status-pill-purple {
-  background-color: rgba(168, 85, 247, 0.12);
-  color: #7e22ce;
-  border: 1px solid rgba(168, 85, 247, 0.3);
-}
-
-.status-pill-sky {
-  background-color: rgba(14, 165, 233, 0.12);
-  color: #0369a1;
-  border: 1px solid rgba(14, 165, 233, 0.3);
-}
-
-.status-pill-rose {
-  background-color: rgba(244, 63, 94, 0.12);
-  color: #be123c;
-  border: 1px solid rgba(244, 63, 94, 0.3);
-}
-
-/* Subtle Live Dot Animations */
-.live-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 9999px;
-  position: relative;
-}
-
-.live-dot::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 9999px;
-  background: inherit;
-  opacity: 0.5;
-  animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 0.8; }
-  50% { transform: scale(1.6); opacity: 0; }
-  100% { transform: scale(0.9); opacity: 0; }
-}
-
-/* Modern Data Table Polish */
-.modern-table-container {
-  border-radius: 1rem;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03);
-}
-
-.modern-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.modern-table thead th {
-  background-color: #f8fafc;
-  color: #475569;
-  font-weight: 700;
-  font-size: 0.6875rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.modern-table tbody tr {
-  transition: background-color 0.15s ease;
-}
-
-.modern-table tbody tr:hover {
-  background-color: #f8fafc;
-}
 
-.modern-table tbody td {
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.75rem;
+.sim-port:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 10px currentColor;
 }
 
-.modern-table tbody tr:last-child td {
-  border-bottom: none;
+/* Engineering Hardware Enclosures */
+.eng-component {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  border-radius: 0.875rem;
 }
 
-/* Microgrid Hub & SVG Particle Animations */
-.microgrid-hub {
-  box-shadow: 0 0 25px -4px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+.eng-component:hover {
+  border-color: var(--border-focus);
 }
 
 /* Terminal Console Styling */
@@ -961,17 +565,6 @@ html.light .chart-card {
   justify-content: space-between;
 }
 
-.terminal-dots {
-  display: flex;
-  gap: 0.375rem;
-}
-
-.terminal-dot {
-  width: 0.625rem;
-  height: 0.625rem;
-  border-radius: 9999px;
-}
-
 .terminal-body {
   padding: 0.875rem;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
@@ -979,16 +572,3 @@ html.light .chart-card {
   line-height: 1.5;
   color: #94a3b8;
 }
-
-/* Responsive Breakpoints Utility */
-@media (max-width: 640px) {
-  .responsive-stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-
-
-
-
-

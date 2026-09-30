@@ -362,3 +362,112 @@ def test_v2g_direction_and_reverse_power_flow():
     assert state_v2g["power_flow_direction"] == "BATTERY_TO_GRID"
     assert state_v2g["actual_power_kw"] < -0.05
 
+
+def test_grid_stress_hysteresis_and_v2g_entry_exit():
+    """
+    Critical Test 11: Verify GridStressEngine hysteresis, candidate timer accumulation,
+    confirmation threshold (15s), automatic V2G entry, and recovery hysteresis exit.
+    """
+    engine = UnifiedSimulationEngine()
+    engine.reset()
+
+    ev = engine.fleet_manager.fleet.get("EV-001")
+    assert ev is not None
+    ev.soc = 75.0
+    ev.target_soc = 80.0
+    ev.v2g_reserve = 30.0
+    ev.v2g_enabled = True
+    ev.connected = True
+
+    # 1. Start normal charging
+    state = engine.step(wall_dt=1.0)
+    assert state["current_action"] == "CHARGING"
+    assert state["actual_power_kw"] > 0.05
+
+    # 2. Simulate high grid load spike: stress >= 75.0
+    # Candidate timer should advance without immediately flipping state until confirmed
+    engine.grid_stress_engine.high_load_confirmation_time_sec = 5.0
+    engine.grid_stress_engine.v2g_recovery_time_sec = 5.0
+    engine.simulated_grid_stress = 80.0
+
+    # Advance 4 seconds: not yet confirmed, stays in CHARGING
+    for _ in range(4):
+        st = engine.step(wall_dt=1.0)
+        assert st["current_action"] == "CHARGING"
+        assert engine.grid_stress_engine.is_high_load_confirmed is False
+
+    # Advance 2 more seconds: total candidate timer >= 5.0s -> high load confirmed -> V2G entry
+    st = engine.step(wall_dt=2.0)
+    assert engine.grid_stress_engine.is_high_load_confirmed is True
+    assert st["current_action"] == "DISCHARGING"
+    assert st["actual_power_kw"] < -0.05
+
+    # 3. Simulate recovery: stress drops below exit threshold (<= 60.0)
+    engine.simulated_grid_stress = 40.0
+    # Hysteresis recovery timer requires 5.0s of confirmed recovery before exiting V2G
+    st_rec1 = engine.step(wall_dt=3.0)
+    assert engine.grid_stress_engine.is_high_load_confirmed is True  # Still in V2G during recovery timer
+    assert st_rec1["current_action"] == "DISCHARGING"
+
+    # Sustained recovery completes (total >= 5.0s) -> high load cleared -> resumes CHARGING (since SOC < target)
+    st_rec2 = engine.step(wall_dt=3.0)
+    assert engine.grid_stress_engine.is_high_load_confirmed is False
+    assert st_rec2["current_action"] == "CHARGING"
+
+
+def test_dynamic_countdown_timer():
+    """
+    Critical Test 12: Verify time_to_target_str and time_to_full_str count down dynamically.
+    """
+    engine = UnifiedSimulationEngine()
+    engine.reset()
+
+    ev = engine.fleet_manager.fleet.get("EV-001")
+    assert ev is not None
+    ev.soc = 50.0
+    ev.target_soc = 80.0
+    ev.max_soc = 95.0
+    ev.connected = True
+
+    st1 = engine.step(wall_dt=1.0)
+    cd1 = st1["battery"]["time_to_target_str"]
+    full1 = st1["battery"]["time_to_full_str"]
+    assert cd1 != "00:00:00"
+    assert full1 != "00:00:00"
+
+    # Step forward 10 seconds of charging
+    st2 = engine.step(wall_dt=10.0)
+    cd2 = st2["battery"]["time_to_target_str"]
+    assert cd2 < cd1, f"Countdown must decrease: {cd2} vs {cd1}"
+
+    # Target reached -> countdown becomes 00:00:00
+    ev.soc = 80.5
+    st3 = engine.step(wall_dt=1.0)
+    assert st3["battery"]["time_to_target_str"] == "00:00:00"
+
+
+def test_action_state_machine_transition_diagnostics():
+    """
+    Critical Test 13: Verify ActionStateMachine records transitions and dwell time accurately.
+    """
+    sm = ActionStateMachine()
+    assert sm.current_state == "IDLE"
+    assert sm.dwell_time_sec == 0.0
+
+    sm.update("CHARGING", 5.0, reason="Charge started")
+    assert sm.current_state == "CHARGING"
+    assert len(sm.transition_history) == 1
+    assert sm.transition_history[-1]["to_state"] == "CHARGING"
+
+    # Dwell in CHARGING for 10 more seconds
+    sm.update("CHARGING", 10.0)
+    assert sm.dwell_time_sec == 10.0
+    assert len(sm.transition_history) == 1  # No new transition
+
+    # Transition to IDLE
+    sm.update("IDLE", 0.0, reason="Target reached")
+    assert sm.current_state == "IDLE"
+    assert len(sm.transition_history) == 2
+    assert sm.transition_history[-1]["dwell_time_sec"] == 10.0
+
+

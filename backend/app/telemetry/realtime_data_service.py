@@ -93,19 +93,27 @@ class PriceProvider(BaseDataProvider):
 
     def get_current_data(self) -> Dict[str, Any]:
         age = self.get_age_seconds()
-        is_live = self._status == "LIVE" and age < 300.0
-        status_str = "LIVE" if is_live else "UNAVAILABLE"
+        if self.api_key:
+            if self._status == "LIVE" and age < 180.0:
+                status_str = "LIVE"
+            elif self._status == "LIVE" and age < 300.0:
+                status_str = "STALE"
+            else:
+                status_str = "UNAVAILABLE"
+        else:
+            status_str = "SIMULATED_DIGITAL_TWIN"
 
         return {
             "source": self.provider_name,
             "currency": self.currency,
+            "value": self._current_price_inr,
             "electricity_price": self._current_price_inr,
             "current_price": self._current_price_inr,
             "current_block": self._current_block,
             "price_state": self._price_state,
             "volume_mwh": self._volume_mwh,
             "status": status_str,
-            "status_message": "LIVE" if is_live else "LIVE DATA UNAVAILABLE",
+            "status_message": status_str,
             "age_seconds": round(age, 1),
             "age_label": f"DATA AGE: {int(age)} seconds",
             "timestamp": self._last_update_iso
@@ -120,7 +128,9 @@ class PriceProvider(BaseDataProvider):
         }
 
     def get_status(self) -> str:
-        return "LIVE" if (self._status == "LIVE" and self.get_age_seconds() < 300.0) else "UNAVAILABLE"
+        if self.api_key:
+            return "LIVE" if (self._status == "LIVE" and self.get_age_seconds() < 300.0) else "UNAVAILABLE"
+        return "SIMULATED_DIGITAL_TWIN"
 
     def get_last_updated(self) -> str:
         return self._last_update_iso
@@ -160,17 +170,25 @@ class WeatherProvider(BaseDataProvider):
 
     def get_current_data(self) -> Dict[str, Any]:
         age = self.get_age_seconds()
-        is_live = self._status == "LIVE" and age < 600.0
-        status_str = "LIVE" if is_live else "UNAVAILABLE"
+        if self.api_key:
+            if self._status == "LIVE" and age < 300.0:
+                status_str = "LIVE"
+            elif self._status == "LIVE" and age < 600.0:
+                status_str = "STALE"
+            else:
+                status_str = "UNAVAILABLE"
+        else:
+            status_str = "SIMULATED_DIGITAL_TWIN"
 
         return {
             "source": self.provider_name,
+            "value": self._temperature_c,
             "temperature_c": self._temperature_c,
             "solar_irradiance_wm2": self._irradiance_wm2,
             "humidity_pct": self._humidity_pct,
             "cloud_cover_pct": self._cloud_cover_pct,
             "status": status_str,
-            "status_message": "LIVE" if is_live else "LIVE DATA UNAVAILABLE",
+            "status_message": status_str,
             "age_seconds": round(age, 1),
             "age_label": f"DATA AGE: {int(age)} seconds",
             "timestamp": self._last_update_iso
@@ -184,7 +202,9 @@ class WeatherProvider(BaseDataProvider):
         }
 
     def get_status(self) -> str:
-        return "LIVE" if (self._status == "LIVE" and self.get_age_seconds() < 600.0) else "UNAVAILABLE"
+        if self.api_key:
+            return "LIVE" if (self._status == "LIVE" and self.get_age_seconds() < 600.0) else "UNAVAILABLE"
+        return "SIMULATED_DIGITAL_TWIN"
 
     def get_last_updated(self) -> str:
         return self._last_update_iso
@@ -224,11 +244,19 @@ class SolarProvider(BaseDataProvider):
 
     def get_current_data(self) -> Dict[str, Any]:
         age = self.get_age_seconds()
-        is_live = self._status == "LIVE" and age < 300.0
-        status_str = "LIVE" if is_live else "UNAVAILABLE"
+        if self.api_key:
+            if self._status == "LIVE" and age < 300.0:
+                status_str = "LIVE"
+            elif self._status == "LIVE" and age < 600.0:
+                status_str = "STALE"
+            else:
+                status_str = "UNAVAILABLE"
+        else:
+            status_str = "SIMULATED_DIGITAL_TWIN"
 
         return {
             "source": self.provider_name,
+            "value": self._generation_kw,
             "installed_capacity_kw": self.installed_capacity_kw,
             "generation_kw": self._generation_kw,
             "solar_generation_kw": self._generation_kw,
@@ -236,7 +264,7 @@ class SolarProvider(BaseDataProvider):
             "solar_availability": self._availability_factor,
             "surplus_kw": max(0.0, self._generation_kw),
             "status": status_str,
-            "status_message": "LIVE" if is_live else "LIVE DATA UNAVAILABLE",
+            "status_message": status_str,
             "age_seconds": round(age, 1),
             "age_label": f"DATA AGE: {int(age)} seconds",
             "timestamp": self._last_update_iso
@@ -249,7 +277,9 @@ class SolarProvider(BaseDataProvider):
         }
 
     def get_status(self) -> str:
-        return "LIVE" if (self._status == "LIVE" and self.get_age_seconds() < 300.0) else "UNAVAILABLE"
+        if self.api_key:
+            return "LIVE" if (self._status == "LIVE" and self.get_age_seconds() < 300.0) else "UNAVAILABLE"
+        return "SIMULATED_DIGITAL_TWIN"
 
     def get_last_updated(self) -> str:
         return self._last_update_iso
@@ -303,12 +333,21 @@ class GridProvider(BaseDataProvider):
 
     def get_current_data(self) -> Dict[str, Any]:
         age = self.get_age_seconds()
-        is_live = self._status == "LIVE" and age < 120.0
-        status_str = "LIVE" if is_live else "UNAVAILABLE"
+        if self.api_key:
+            if self._status == "LIVE" and age < 120.0:
+                status_str = "LIVE"
+            elif self._status == "LIVE" and age < 300.0:
+                status_str = "STALE"
+            else:
+                status_str = "UNAVAILABLE"
+        else:
+            status_str = "SIMULATED_DIGITAL_TWIN"
+
         util_pct = round((self._grid_load_kw / max(1.0, self.feeder_capacity_kw)) * 100.0, 1)
 
         return {
             "source": self.provider_name,
+            "value": self._grid_load_kw,
             "feeder_capacity_kw": self.feeder_capacity_kw,
             "capacity_kw": self.feeder_capacity_kw,
             "grid_load_kw": self._grid_load_kw,
@@ -322,7 +361,7 @@ class GridProvider(BaseDataProvider):
             "supply_gw": self._supply_gw,
             "grid_state": self._grid_state,
             "status": status_str,
-            "status_message": "LIVE" if is_live else "LIVE DATA UNAVAILABLE",
+            "status_message": status_str,
             "age_seconds": round(age, 1),
             "age_label": f"DATA AGE: {int(age)} seconds",
             "timestamp": self._last_update_iso
@@ -336,7 +375,9 @@ class GridProvider(BaseDataProvider):
         }
 
     def get_status(self) -> str:
-        return "LIVE" if (self._status == "LIVE" and self.get_age_seconds() < 120.0) else "UNAVAILABLE"
+        if self.api_key:
+            return "LIVE" if (self._status == "LIVE" and self.get_age_seconds() < 120.0) else "UNAVAILABLE"
+        return "SIMULATED_DIGITAL_TWIN"
 
     def get_last_updated(self) -> str:
         return self._last_update_iso
@@ -389,14 +430,22 @@ class RealTimeDataService:
         solar = self.solar_provider.get_current_data()
         grid = self.grid_provider.get_current_data()
 
-        all_live = (
-            price["status"] == "LIVE" and
-            weather["status"] == "LIVE" and
-            solar["status"] == "LIVE" and
-            grid["status"] == "LIVE"
-        )
+        providers = [price, weather, solar, grid]
+        all_live = all(p["status"] == "LIVE" for p in providers)
+        has_unavailable = any(p["status"] == "UNAVAILABLE" for p in providers)
+        has_stale = any(p["status"] == "STALE" for p in providers)
+        has_simulated = any(p["status"] == "SIMULATED_DIGITAL_TWIN" for p in providers)
 
-        overall_status = "LIVE" if all_live else "DEGRADED"
+        if all_live:
+            overall_status = "LIVE"
+        elif has_unavailable:
+            overall_status = "DEGRADED"
+        elif has_stale:
+            overall_status = "STALE"
+        elif has_simulated:
+            overall_status = "SIMULATED_DIGITAL_TWIN"
+        else:
+            overall_status = "LIVE"
 
         snapshot = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -432,10 +481,11 @@ class RealTimeDataService:
         Fail-safe check per Section 32:
         If critical grid or price telemetry is UNAVAILABLE, autonomous charging
         must fall back to safe IDLE mode.
+        Accepts LIVE or SIMULATED_DIGITAL_TWIN as operational.
         """
         grid_status = self.grid_provider.get_status()
         price_status = self.price_provider.get_status()
-        return grid_status == "LIVE" and price_status == "LIVE"
+        return grid_status in ("LIVE", "SIMULATED_DIGITAL_TWIN") and price_status in ("LIVE", "SIMULATED_DIGITAL_TWIN")
 
 
 # Global singleton instance

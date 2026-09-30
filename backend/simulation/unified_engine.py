@@ -32,6 +32,7 @@ from backend.data_sources.kptcl_sldc import KPTCLSLDCSource
 from backend.data_sources.iex_rtm import IEXRTMPriceSource
 from backend.data_sources.renewable import RenewableGenerationSource
 from backend.app.telemetry.realtime_data_service import default_realtime_data_service
+from backend.grid.demand import GridStressEngine
 from backend.app.ai.state_space import StateSpaceModule
 from backend.app.ai.ppo_model import PPOActorCritic
 from backend.app.ai.reward import RewardFunction
@@ -55,11 +56,13 @@ class SimulationClock:
 
     def __init__(self, initial_sim_time_sec: Optional[float] = None):
         now = datetime.now()
-        # Default start at current local time or 18:30:00 (evening peak)
-        self.sim_clock_seconds: float = (
-            initial_sim_time_sec if initial_sim_time_sec is not None
-            else float(now.hour * 3600 + now.minute * 60 + now.second)
-        )
+        # Default start at current local time during operational hours (07:00-19:20) or 18:30:00 (evening peak)
+        if initial_sim_time_sec is not None:
+            self.sim_clock_seconds = float(initial_sim_time_sec)
+        elif 7 <= now.hour < 19 or (now.hour == 19 and now.minute <= 20):
+            self.sim_clock_seconds = float(now.hour * 3600 + now.minute * 60 + now.second)
+        else:
+            self.sim_clock_seconds = float(18 * 3600 + 30 * 60)
         self.speed_multiplier: float = 1.0
         self.is_running: bool = True
         self.is_paused: bool = False
@@ -465,7 +468,7 @@ class CircuitTopologyManager:
             c.active = c.current_a > 0.05
             c.glow_intensity = round(min(1.0, max(0.2, c.current_a / 15.0)), 3) if c.active else 0.0
             c.direction = "FORWARD" if is_charging else ("REVERSE" if is_v2g else "IDLE")
-            c.power_flow_direction = "SOURCE_TO_BATTERY" if is_charging else ("BATTERY_TO_GRID" if is_v2g else "IDLE")
+            c.power_flow_direction = "GRID_TO_CHARGER" if is_charging else ("CHARGER_TO_GRID" if is_v2g else "IDLE")
             c.energy_kwh += abs(active_pwr) * dt_hours
             c.losses_kw = round((c.current_a ** 2) * 0.08 / 1000.0, 4) if c.active else 0.0
 
@@ -512,7 +515,7 @@ class CircuitTopologyManager:
             c.active = c.current_a > 0.05
             c.glow_intensity = round(min(1.0, max(0.2, c.current_a / 40.0)), 3) if c.active else 0.0
             c.direction = "FORWARD" if c.active else "IDLE"
-            c.power_flow_direction = "SOURCE_TO_BATTERY" if c.active else "IDLE"
+            c.power_flow_direction = "SOLAR_TO_BUS" if c.active else "IDLE"
             c.energy_kwh += sol_pwr * dt_hours
 
         # 4. Update 400V AC Facility Aux / Load Connection
@@ -525,7 +528,7 @@ class CircuitTopologyManager:
             c.active = c.current_a > 0.05
             c.glow_intensity = round(min(1.0, max(0.2, c.current_a / 20.0)), 3) if c.active else 0.0
             c.direction = "FORWARD" if c.active else "IDLE"
-            c.power_flow_direction = "SOURCE_TO_BATTERY" if c.active else "IDLE"
+            c.power_flow_direction = "SOURCE_TO_LOAD" if c.active else "IDLE"
             c.energy_kwh += aux_pwr * dt_hours
 
         # 5. Update Control and Meter Connections
@@ -535,7 +538,7 @@ class CircuitTopologyManager:
             c.power_kw = 0.024  # 24V * 1A signal bus
             c.current_a = 1.0
             c.direction = "FORWARD"
-            c.power_flow_direction = "SOURCE_TO_BATTERY"
+            c.power_flow_direction = "SOURCE_TO_LOAD"
             c.glow_intensity = 0.5
 
         if "meter_tap" in self.connections:
@@ -544,7 +547,7 @@ class CircuitTopologyManager:
             c.power_kw = 0.005  # Transducer burden 5W
             c.current_a = 0.05 if c.active else 0.0
             c.direction = "FORWARD" if c.active else "IDLE"
-            c.power_flow_direction = "SOURCE_TO_BATTERY" if c.active else "IDLE"
+            c.power_flow_direction = "SOURCE_TO_LOAD" if c.active else "IDLE"
             c.glow_intensity = 0.4 if c.active else 0.0
 
         # Telemetry buses are active when system is alive
@@ -552,7 +555,7 @@ class CircuitTopologyManager:
             if bus_id in self.connections:
                 self.connections[bus_id].active = True
                 self.connections[bus_id].direction = "FORWARD"
-                self.connections[bus_id].power_flow_direction = "SOURCE_TO_BATTERY"
+                self.connections[bus_id].power_flow_direction = "SOURCE_TO_LOAD"
                 self.connections[bus_id].glow_intensity = 0.3
 
     def get_circuit_wires(self) -> Dict[str, Dict[str, Any]]:
@@ -577,6 +580,7 @@ class CircuitTopologyManager:
                 "power_kw": round(c_grid.power_kw, 2) if c_grid else 0.0,
                 "voltage_v": c_grid.voltage_v if c_grid else 11000.0,
                 "direction": c_grid.direction if c_grid else "IDLE",
+                "power_flow_direction": c_grid.power_flow_direction if c_grid else "IDLE",
                 "active": c_grid.active if c_grid else False,
                 "glowing": c_grid.active if c_grid else False,
                 "glow_intensity": _glow_level(c_grid.glow_intensity) if c_grid else "none"
@@ -586,6 +590,7 @@ class CircuitTopologyManager:
                 "power_kw": round(c_solar.power_kw, 2) if c_solar else 0.0,
                 "voltage_v": c_solar.voltage_v if c_solar else 600.0,
                 "direction": c_solar.direction if c_solar else "IDLE",
+                "power_flow_direction": c_solar.power_flow_direction if c_solar else "IDLE",
                 "active": c_solar.active if c_solar else False,
                 "glowing": c_solar.active if c_solar else False,
                 "glow_intensity": _glow_level(c_solar.glow_intensity) if c_solar else "none"
@@ -595,6 +600,7 @@ class CircuitTopologyManager:
                 "power_kw": round(c_ev.power_kw, 2) if c_ev else 0.0,
                 "voltage_v": c_ev.voltage_v if c_ev else 400.0,
                 "direction": c_ev.direction if c_ev else "IDLE",
+                "power_flow_direction": c_ev.power_flow_direction if c_ev else "IDLE",
                 "active": c_ev.active if c_ev else False,
                 "glowing": c_ev.active if c_ev else False,
                 "glow_intensity": _glow_level(c_ev.glow_intensity) if c_ev else "none"
@@ -604,6 +610,7 @@ class CircuitTopologyManager:
                 "power_kw": round(c_aux.power_kw, 2) if c_aux else 6.5,
                 "voltage_v": c_aux.voltage_v if c_aux else 400.0,
                 "direction": c_aux.direction if c_aux else "FORWARD",
+                "power_flow_direction": c_aux.power_flow_direction if c_aux else "SOURCE_TO_LOAD",
                 "active": c_aux.active if c_aux else True,
                 "glowing": c_aux.active if c_aux else True,
                 "glow_intensity": _glow_level(c_aux.glow_intensity) if c_aux else "low"
@@ -649,30 +656,26 @@ class EVBatteryModel:
     v2g_enabled: bool = True
     charging_state: str = "CHARGING"  # CHARGING, DISCHARGING, IDLE, FULL
 
-    def __post_init__(self):
-        if isinstance(self.departure_time, str):
-            if ":" in self.departure_time:
-                h, m = self.departure_time.split(":")
-                self.departure_time = float(h) + float(m) / 60.0
-            else:
+    @staticmethod
+    def _parse_time_to_hours(t_val: Any, default: float = 0.0) -> float:
+        if isinstance(t_val, (int, float)):
+            return float(t_val)
+        if isinstance(t_val, str):
+            if ":" in t_val:
                 try:
-                    self.departure_time = float(self.departure_time)
+                    parts = t_val.split(":")
+                    return float(parts[0]) + float(parts[1]) / 60.0
                 except Exception:
-                    self.departure_time = 18.0
-        else:
-            self.departure_time = float(self.departure_time)
+                    return default
+            try:
+                return float(t_val)
+            except Exception:
+                return default
+        return default
 
-        if isinstance(self.arrival_time, str):
-            if ":" in self.arrival_time:
-                h, m = self.arrival_time.split(":")
-                self.arrival_time = float(h) + float(m) / 60.0
-            else:
-                try:
-                    self.arrival_time = float(self.arrival_time)
-                except Exception:
-                    self.arrival_time = 8.0
-        else:
-            self.arrival_time = float(self.arrival_time)
+    def __post_init__(self):
+        self.departure_time = self._parse_time_to_hours(self.departure_time, 24.0)
+        self.arrival_time = self._parse_time_to_hours(self.arrival_time, 0.0)
 
     @property
     def current_soc(self) -> float:
@@ -739,6 +742,54 @@ class EVBatteryModel:
         self.connected = bool(val)
 
     @property
+    def arrival_time_str(self) -> str:
+        return f"{int(self.arrival_time):02d}:{int(round((self.arrival_time % 1) * 60)):02d}"
+
+    @property
+    def departure_time_str(self) -> str:
+        dep_h = self._parse_time_to_hours(self.departure_time, 24.0)
+        return f"{int(dep_h):02d}:{int(round((dep_h % 1) * 60)):02d}"
+
+    @property
+    def arrival_time_str(self) -> str:
+        arr_h = self._parse_time_to_hours(self.arrival_time, 0.0)
+        return f"{int(arr_h):02d}:{int(round((arr_h % 1) * 60)):02d}"
+
+    def update_connection_state(self, current_hour: float) -> str:
+        """
+        Simulation-clock departure state machine (Section 4):
+        IF current_hour < arrival_time: NOT_CONNECTED
+        IF arrival_time <= current_hour < departure_time: CONNECTED
+        IF current_hour >= departure_time: DEPARTED
+        """
+        arr_h = self._parse_time_to_hours(self.arrival_time, 0.0)
+        dep_h = self._parse_time_to_hours(self.departure_time, 24.0)
+
+        if dep_h >= 24.0 and arr_h <= 0.0:
+            self.connected = True
+            if self.charging_state in ["NOT_CONNECTED", "DISCONNECTED", "DEPARTED"]:
+                self.charging_state = "IDLE"
+            return "CONNECTED"
+
+        if current_hour < arr_h:
+            self.connected = False
+            self.charging_state = "NOT_CONNECTED"
+            self.power_kw = 0.0
+            self.current_a = 0.0
+            return "NOT_CONNECTED"
+        elif arr_h <= current_hour < dep_h:
+            self.connected = True
+            if self.charging_state in ["NOT_CONNECTED", "DISCONNECTED", "DEPARTED"]:
+                self.charging_state = "IDLE"
+            return "CONNECTED"
+        else:
+            self.connected = False
+            self.charging_state = "DISCONNECTED"
+            self.power_kw = 0.0
+            self.current_a = 0.0
+            return "DEPARTED"
+
+    @property
     def energy_kwh(self) -> float:
         return (self.soc / 100.0) * self.capacity_kwh
 
@@ -746,21 +797,24 @@ class EVBatteryModel:
         """
         Executes exact gradual differential physics over dt_seconds.
         Never allows instant SOC jumps.
+        Departed or disconnected vehicles cannot consume or produce power.
         """
         if not self.connected or dt_seconds <= 0.0:
             self.power_kw = 0.0
             self.current_a = 0.0
-            self.charging_state = "IDLE" if self.connected else "DISCONNECTED"
+            if self.charging_state not in ["NOT_CONNECTED", "DEPARTED"]:
+                self.charging_state = "DISCONNECTED"
             return {"delta_kwh": 0.0, "power_kw": 0.0, "soc": self.soc}
 
         dt_hours = dt_seconds / 3600.0
         bounded_power = applied_power_kw
 
-        # Enforce physical battery boundaries
+        # Enforce physical battery boundaries & target limits
         if bounded_power > 0:  # Charging
-            if self.soc >= self.max_soc:
+            target_ceiling = min(self.max_soc, self.target_soc)
+            if self.soc >= target_ceiling:
                 bounded_power = 0.0
-                self.charging_state = "FULL"
+                self.charging_state = "IDLE" if self.soc < self.max_soc else "FULL"
             else:
                 bounded_power = min(bounded_power, self.max_charge_kw)
                 self.charging_state = "CHARGING"
@@ -778,13 +832,11 @@ class EVBatteryModel:
         self.power_kw = bounded_power
 
         # Calculate Voltage based on Open Circuit Voltage curve (OCV) + IR drop
-        # Approximation of Lithium NMC OCV curve: 3.2V to 4.2V per cell (approx 360V to 430V pack)
         ocv_pack = 350.0 + (self.soc / 100.0) * 75.0
 
         # Calculate current: P = V * I => I = P * 1000 / V
         if abs(bounded_power) > 0.01:
-            # Iterative solution for I with internal resistance: V = OCV + I*R, P = V*I
-            self.current_a = (bounded_power * 1000.0) / max(300.0, ocv_pack)
+            self.current_a = round((bounded_power * 1000.0) / max(300.0, ocv_pack), 2)
             self.voltage_v = round(ocv_pack + (self.current_a * self.internal_resistance_ohm), 1)
         else:
             self.current_a = 0.0
@@ -806,7 +858,7 @@ class EVBatteryModel:
 
         # Thermal dynamics: Joule heating = I^2 * R, cooling to ambient
         joule_heat_w = (self.current_a ** 2) * self.internal_resistance_ohm
-        temp_rise_rate = joule_heat_w / 25000.0  # Thermal mass factor
+        temp_rise_rate = joule_heat_w / 25000.0
         cooling_rate = (self.temperature_c - self.ambient_temp_c) * 0.001
         self.temperature_c = max(self.ambient_temp_c, min(65.0, self.temperature_c + (temp_rise_rate - cooling_rate) * dt_seconds))
 
@@ -819,9 +871,16 @@ class EVBatteryModel:
             "temperature_c": round(self.temperature_c, 1)
         }
 
-    def to_dict(self) -> Dict[str, Any]:
-        dep_str = f"{int(self.departure_time):02d}:{int(round((self.departure_time % 1) * 60)):02d}"
-        arr_str = f"{int(self.arrival_time):02d}:{int(round((self.arrival_time % 1) * 60)):02d}"
+    def to_dict(self, current_hour: Optional[float] = None) -> Dict[str, Any]:
+        dep_h = self._parse_time_to_hours(self.departure_time, 24.0)
+        arr_h = self._parse_time_to_hours(self.arrival_time, 0.0)
+        dep_str = f"{int(dep_h):02d}:{int(round((dep_h % 1) * 60)):02d}"
+        arr_str = f"{int(arr_h):02d}:{int(round((arr_h % 1) * 60)):02d}"
+        cur_h = current_hour if current_hour is not None else 18.0
+        time_to_dep = max(0.0, dep_h - cur_h) if (self.connected and cur_h < dep_h) else 0.0
+        status_label = "DEPARTED" if (cur_h >= dep_h and not self.connected) else (
+            "NOT_CONNECTED" if (cur_h < arr_h and not self.connected) else self.charging_state
+        )
         return {
             "id": self.ev_id,
             "ev_id": self.ev_id,
@@ -854,9 +913,11 @@ class EVBatteryModel:
             "arrival_time": arr_str,
             "departure_time": dep_str,
             "connected": self.connected,
+            "is_connected": self.connected,
+            "time_until_departure_hours": round(time_to_dep, 2),
             "v2g_enabled": self.v2g_enabled,
-            "charging_state": self.charging_state,
-            "status": self.charging_state
+            "charging_state": status_label,
+            "status": status_label
         }
 
 
@@ -936,29 +997,33 @@ class EVFleetManager:
         logger.info(f"Automatically created EV {ev_id} with integrated battery twin ({cap} kWh, {max_chg} kW)")
         return ev
 
-    def step_fleet(self, primary_power_kw: float, dt_seconds: float) -> Dict[str, Any]:
-        """Steps all EVs in the fleet."""
+    def update_fleet_schedules(self, current_hour: float):
+        """Updates connection and departure states across the entire fleet."""
+        for ev in self.fleet.values():
+            ev.update_connection_state(current_hour)
+
+    def step_fleet(self, powers: Any, dt_seconds: float) -> Dict[str, Any]:
+        """
+        Steps all EVs in the fleet using their exact validated PPO / safety commanded power.
+        Zero uncommanded background heuristics.
+        """
         results = {}
         total_chg_kw = 0.0
         total_v2g_kw = 0.0
 
         for eid, ev in self.fleet.items():
-            if eid == "EV-001":
-                # Primary EV follows circuit engine power
-                res = ev.step_physics(primary_power_kw, dt_seconds)
+            if isinstance(powers, dict):
+                pwr = float(powers.get(eid, 0.0))
+            elif eid == "EV-001":
+                pwr = float(powers)
             else:
-                # Fleet vehicles: smart charging dispatch when connected
-                # Charge if SOC < target_soc, idle if target reached
-                if ev.connected and ev.soc < ev.target_soc:
-                    fleet_pwr = min(ev.max_charge_kw * 0.5, 7.4)
-                else:
-                    fleet_pwr = 0.0
-                res = ev.step_physics(fleet_pwr, dt_seconds)
+                pwr = 0.0
 
+            res = ev.step_physics(pwr, dt_seconds)
             results[eid] = res
-            if ev.power_kw > 0:
+            if ev.power_kw > 0.001:
                 total_chg_kw += ev.power_kw
-            elif ev.power_kw < 0:
+            elif ev.power_kw < -0.001:
                 total_v2g_kw += abs(ev.power_kw)
 
         return {
@@ -968,8 +1033,8 @@ class EVFleetManager:
             "active_ev_count": len([e for e in self.fleet.values() if e.connected])
         }
 
-    def get_fleet_summary(self) -> List[Dict[str, Any]]:
-        return [ev.to_dict() for ev in self.fleet.values()]
+    def get_fleet_summary(self, current_hour: Optional[float] = None) -> List[Dict[str, Any]]:
+        return [ev.to_dict(current_hour=current_hour) for ev in self.fleet.values()]
 
 
 # =====================================================================
@@ -1255,6 +1320,9 @@ class ActionStateMachine:
     def update(self, target_state: str, dt_seconds: float, reason: str = "") -> str:
         if target_state == self.current_state:
             self.dwell_time_sec += dt_seconds
+            logger.debug(
+                f"[STATE PERSIST] State: {self.current_state} | Dwell: {self.dwell_time_sec:.1f}s | Reason: {reason or self.last_transition_reason}"
+            )
             return self.current_state
 
         now_iso = datetime.now(timezone.utc).isoformat()
@@ -1270,7 +1338,7 @@ class ActionStateMachine:
             self.transition_history.pop(0)
 
         logger.info(
-            f"ActionStateMachine transition: {self.current_state} -> {target_state} "
+            f"[STATE TRANSITION] {self.current_state} -> {target_state} "
             f"(Dwell was {self.dwell_time_sec:.1f}s, Reason: {record['reason']})"
         )
 
@@ -1279,6 +1347,97 @@ class ActionStateMachine:
         self.last_transition_time = now_iso
         self.last_transition_reason = record["reason"]
         return self.current_state
+
+    def evaluate_transition(
+        self,
+        requested_action: str,
+        ev: Optional[Any],
+        circuit_valid: bool,
+        is_high_load_confirmed: bool,
+        grid_stress_score: float,
+        feeder_headroom_kw: float,
+        safety_decision: Optional[Any] = None,
+        manual_override: Optional[str] = None
+    ) -> Tuple[str, str]:
+        """
+        Determines authoritative next state following physical / grid transition rules:
+        - FAULT: circuit_valid is False
+        - IDLE: ev is None or disconnected, or (charging and soc >= target_soc or max_soc), or (discharging and soc <= v2g_reserve or min_soc)
+        - Transition away from CHARGING ONLY occurs on:
+            1. Target SOC reached (soc >= target_soc)
+            2. Max SOC reached (soc >= max_soc)
+            3. EV departure / disconnected
+            4. Feeder overload / insufficient headroom (headroom <= 0.0)
+            5. Confirmed High Grid Load (is_high_load_confirmed and grid_stress_score >= 75.0)
+            6. Manual override requesting IDLE or DISCHARGE
+        - Transition to DISCHARGING (V2G) ONLY occurs on:
+            1. Confirmed High Grid Load (is_high_load_confirmed and grid_stress_score >= 75.0) with soc > v2g_reserve
+            2. Manual override DISCHARGE with soc > v2g_reserve
+        - Exit from DISCHARGING:
+            1. Hysteresis: sustained recovery (not is_high_load_confirmed and grid_stress_score <= 60.0)
+            2. V2G reserve reached (soc <= v2g_reserve)
+        """
+        if not circuit_valid:
+            return self.FAULT, "Circuit topology validation failure"
+
+        if not ev or not getattr(ev, "connected", False):
+            return self.IDLE, "EV disconnected or departed"
+
+        soc = getattr(ev, "soc", 50.0)
+        target_soc = getattr(ev, "target_soc", 80.0)
+        max_soc = getattr(ev, "max_soc", 95.0)
+        v2g_reserve = getattr(ev, "v2g_reserve", 30.0)
+        min_soc = getattr(ev, "min_soc", 20.0)
+        eff_reserve = v2g_reserve if getattr(ev, "v2g_enabled", True) else min_soc
+
+        # 1. Manual Overrides take precedence if present
+        if manual_override:
+            if manual_override == "CHARGE":
+                if soc < target_soc and feeder_headroom_kw > 0.5:
+                    return self.CHARGING, "Manual override: CHARGE"
+                else:
+                    return self.IDLE, "Manual override CHARGE halted: target reached or no feeder headroom"
+            elif manual_override == "DISCHARGE":
+                if soc > eff_reserve:
+                    return self.DISCHARGING, "Manual override: DISCHARGE"
+                else:
+                    return self.IDLE, "Manual override DISCHARGE halted: reserve floor reached"
+            elif manual_override == "IDLE":
+                return self.IDLE, "Manual override: IDLE"
+
+        # 2. State-dependent transitions
+        if self.current_state == self.CHARGING:
+            # Check exit conditions
+            if soc >= target_soc or soc >= max_soc:
+                return self.IDLE, f"Target SOC reached ({soc:.1f}% >= {target_soc:.1f}%)"
+            if feeder_headroom_kw <= 0.0:
+                return self.IDLE, f"Feeder capacity overload (headroom: {feeder_headroom_kw:.1f} kW)"
+            if is_high_load_confirmed and grid_stress_score >= 75.0 and soc > eff_reserve:
+                return self.DISCHARGING, f"Confirmed high grid load ({grid_stress_score:.1f}); switching to V2G support"
+            # Otherwise PERSIST in CHARGING
+            return self.CHARGING, "Charging active: battery below target SOC"
+
+        elif self.current_state == self.DISCHARGING:
+            # Check exit conditions
+            if soc <= eff_reserve:
+                return self.IDLE, f"V2G reserve floor reached ({soc:.1f}% <= {eff_reserve:.1f}%)"
+            # Hysteresis exit: confirmed recovery (not is_high_load_confirmed and stress <= 60.0)
+            if not is_high_load_confirmed and grid_stress_score <= 60.0:
+                if soc < target_soc and feeder_headroom_kw > 0.5:
+                    return self.CHARGING, f"Grid stress recovered ({grid_stress_score:.1f} <= 60.0); resuming charge"
+                return self.IDLE, f"Grid stress recovered ({grid_stress_score:.1f} <= 60.0); entering standby"
+            # Otherwise PERSIST in DISCHARGING
+            return self.DISCHARGING, "V2G grid support active: high grid stress confirmed"
+
+        else: # IDLE or FAULT
+            # Check entry to DISCHARGING (requires confirmed high load and reserve)
+            if is_high_load_confirmed and grid_stress_score >= 75.0 and soc > eff_reserve:
+                return self.DISCHARGING, f"Confirmed high grid load ({grid_stress_score:.1f}); initiating V2G support"
+            # Check entry to CHARGING
+            req_act = (requested_action or "").upper()
+            if (req_act == "CHARGE" or (safety_decision and safety_decision.final_action == "CHARGE")) and soc < target_soc and feeder_headroom_kw > 0.5:
+                return self.CHARGING, "Starting charge session (PPO / safety approved)"
+            return self.IDLE, "Standby idle"
 
     def force_fault(self, reason: str):
         self.update(self.FAULT, 0.0, reason=reason)
@@ -1333,6 +1492,13 @@ class UnifiedSimulationEngine:
         self.last_action_idx: int = 0
         self.last_reward: float = 0.0
         self.last_reward_breakdown: Dict[str, Any] = {}
+        self.grid_stress_engine = GridStressEngine(
+            v2g_entry_stress=75.0,
+            v2g_exit_stress=60.0,
+            supply_margin_threshold_pct=5.0,
+            high_load_confirmation_time_sec=15.0,
+            v2g_recovery_time_sec=15.0
+        )
 
         # 3. Live External Data Providers
         self.kptcl_source = KPTCLSLDCSource()
@@ -1349,6 +1515,8 @@ class UnifiedSimulationEngine:
         self.persisted_action_probs: Dict[str, float] = {"IDLE": 1.0, "CHARGE": 0.0, "DISCHARGE": 0.0}
         self.persisted_confidence: float = 1.0
         self.persisted_state_val: float = 0.0
+        self.fleet_persisted_decisions: Dict[str, Dict[str, Any]] = {}
+        self.fleet_last_action_indices: Dict[str, int] = {}
         self.circuit_errors: List[Dict[str, Any]] = []
 
         # 5. State & History Buffers
@@ -1445,6 +1613,13 @@ class UnifiedSimulationEngine:
             self.last_reward = 0.0
             self.last_reward_breakdown.clear()
             self.action_state_machine = ActionStateMachine()
+            self.grid_stress_engine = GridStressEngine(
+                v2g_entry_stress=75.0,
+                v2g_exit_stress=60.0,
+                supply_margin_threshold_pct=5.0,
+                high_load_confirmation_time_sec=15.0,
+                v2g_recovery_time_sec=15.0
+            )
             self.time_since_last_control_eval_sec = 10.0
             self.persisted_proposed_action = "IDLE"
             self.persisted_proposed_kw = 0.0
@@ -1499,6 +1674,9 @@ class UnifiedSimulationEngine:
             circuit_valid, circuit_errors = self.circuit.validate_circuit()
             self.circuit_errors = circuit_errors
 
+            # 1b. Update fleet connection & departure schedules based on simulation time
+            self.fleet_manager.update_fleet_schedules(cur_hour)
+
             # 2. Fetch live external telemetry via RealTimeDataService or report UNAVAILABLE
             rt_snapshot = default_realtime_data_service.fetch_all()
             grid_telemetry = rt_snapshot["grid"]
@@ -1510,6 +1688,20 @@ class UnifiedSimulationEngine:
 
             # 3. Solar generation: Physical solar model
             solar_res = self.solar_model.calculate_generation(cur_hour)
+
+            # 3b. Evaluate High-Load & Grid Stress with Hysteresis
+            ext_stress = getattr(self, "simulated_grid_stress", None) or grid_telemetry.get("stress_score")
+            stress_res = self.grid_stress_engine.update(
+                dt_seconds=sim_dt,
+                demand_mw=grid_telemetry.get("demand_mw", 13740.0),
+                supply_mw=grid_telemetry.get("supply_mw", 14200.0),
+                frequency_hz=grid_telemetry.get("frequency_hz", 49.96),
+                is_v2g_active=(self.action_state_machine.current_state == "DISCHARGING"),
+                external_stress_score=ext_stress
+            )
+            grid_stress_score = self.grid_stress_engine.stress_score
+            grid_condition = self.grid_stress_engine.grid_condition
+            is_high_load_confirmed = self.grid_stress_engine.is_high_load_confirmed
 
             # 4. Inspect Primary EV and check Event-Driven Early Interrupt Conditions
             primary_ev = self.fleet_manager.fleet.get("EV-001") or (next(iter(self.fleet_manager.fleet.values())) if self.fleet_manager.fleet else None)
@@ -1529,154 +1721,236 @@ class UnifiedSimulationEngine:
             elif self.action_state_machine.current_state == "DISCHARGING" and (primary_ev.soc <= primary_ev.v2g_reserve or primary_ev.soc <= primary_ev.min_soc):
                 early_interrupt = True
                 interrupt_reason = "V2G reserve floor reached"
-
-            # Check departure urgency for potential override
-            dep_urgency = 0.42
-            if primary_ev and primary_ev.connected:
-                hours_left = max(0.0, primary_ev.departure_time - cur_hour)
-                req_kwh = max(0.0, (primary_ev.target_soc - primary_ev.soc) / 100.0 * primary_ev.capacity_kwh)
-                needed_hours = req_kwh / max(1.0, primary_ev.max_charge_kw * primary_ev.charge_efficiency)
-                if hours_left > 0.05:
-                    dep_urgency = round(min(1.0, max(0.0, needed_hours / hours_left)), 3)
-                else:
-                    dep_urgency = 1.0 if req_kwh > 0.1 else 0.0
-
-            if self.action_state_machine.current_state == "DISCHARGING" and dep_urgency >= 0.70 and primary_ev and primary_ev.soc < primary_ev.target_soc:
+            elif self.action_state_machine.current_state == "CHARGING" and is_high_load_confirmed:
                 early_interrupt = True
-                interrupt_reason = "Departure urgency override"
+                interrupt_reason = "High grid load confirmed; interrupting charge for V2G support"
+            elif self.action_state_machine.current_state == "DISCHARGING" and (not is_high_load_confirmed and grid_stress_score <= 60.0):
+                early_interrupt = True
+                interrupt_reason = "Grid stress recovered; exiting V2G support"
 
-            # 5. Dual-Rate Control Evaluation (Decoupled from 1.0s Physics Tick)
             time_for_eval = (self.time_since_last_control_eval_sec >= self.control_interval_sec) or early_interrupt
-
-            obs_19d, obs_raw = StateSpaceModule.build_state(
-                ev=primary_ev,
-                grid_data=grid_telemetry,
-                price_data=price_telemetry,
-                solar_data=solar_res,
-                building_load_kw=self.building_base_load_kw,
-                current_hour=cur_hour,
-                previous_action=self.last_action_idx
-            )
 
             if time_for_eval:
                 self.time_since_last_control_eval_sec = 0.0
-                if not circuit_valid:
-                    self.persisted_proposed_action = "FAULT"
-                    self.persisted_proposed_kw = 0.0
-                    self.persisted_action_idx = 0
-                elif not safe_autonomous or not primary_ev or not primary_ev.connected:
-                    self.persisted_proposed_action = "IDLE"
-                    self.persisted_proposed_kw = 0.0
-                    self.persisted_action_idx = 0
-                elif self.ppo_model is not None:
-                    try:
-                        if hasattr(self.ppo_model, "predict_decision"):
-                            decision = self.ppo_model.predict_decision(
-                                obs_19d,
-                                max_charge_kw=primary_ev.max_charge_kw,
-                                max_discharge_kw=primary_ev.max_discharge_kw,
-                                deterministic=True
-                            )
-                            self.persisted_proposed_action = decision["mode"]
-                            self.persisted_proposed_kw = decision["power_kw"]
-                            self.persisted_action_idx = decision["action_index"]
-                            self.persisted_action_probs = decision["probabilities"]
-                            self.persisted_confidence = decision["confidence"]
-                            self.persisted_state_val = decision["state_value"]
-                        else:
-                            act, _ = self.ppo_model.predict(obs_19d, deterministic=True)
-                            act_val = float(act[0] if isinstance(act, (np.ndarray, list)) else act)
-                            if act_val > 0.05:
-                                self.persisted_proposed_kw = act_val * primary_ev.max_charge_kw
-                                self.persisted_proposed_action = "CHARGE"
-                                self.persisted_action_idx = 1
-                            elif act_val < -0.05:
-                                self.persisted_proposed_kw = act_val * primary_ev.max_discharge_kw
-                                self.persisted_proposed_action = "DISCHARGE"
-                                self.persisted_action_idx = 2
-                            else:
-                                self.persisted_proposed_kw = 0.0
-                                self.persisted_proposed_action = "IDLE"
-                                self.persisted_action_idx = 0
-                    except Exception as ppo_err:
-                        logger.warning(f"PPO inference warning: {ppo_err}")
-                        self.persisted_proposed_action = "IDLE"
-                        self.persisted_proposed_kw = 0.0
-                        self.persisted_action_idx = 0
 
-            # Use persisted control action (stable between decision intervals)
-            proposed_action = self.persisted_proposed_action
-            proposed_kw = self.persisted_proposed_kw
-            action_idx = self.persisted_action_idx
-            action_probs = self.persisted_action_probs
-            confidence = self.persisted_confidence
-            state_val = self.persisted_state_val
-
-            # 6. SAFETY ENGINE VALIDATION: AI Proposal -> Safety Validator -> Approved/Corrected
+            # 5. Evaluate PPO & SafetyValidator for EVERY vehicle in the fleet
             feeder_headroom = max(0.0, self.power_flow_engine.feeder_capacity_kw - self.building_base_load_kw)
-            grid_stress_score = 40.0
-            grid_condition = "NORMAL"
 
-            if not circuit_valid:
-                cause_str = circuit_errors[0]["cause"] if circuit_errors else "Circuit topology fault"
-                safety_decision = SafetyDecision(
-                    approved=False,
-                    raw_action=proposed_action,
-                    final_action="FAULT",
-                    power_kw=0.0,
-                    reason_code="CIRCUIT_FAULT",
-                    reason=cause_str,
-                    corrective_action="Halted power flow due to circuit fault."
-                )
-            else:
-                safety_decision = self.safety_validator.validate_action(
-                    proposed_action=proposed_action,
-                    proposed_power_kw=proposed_kw,
-                    ev=primary_ev,
-                    feeder_import_headroom_kw=feeder_headroom,
-                    grid_stress_score=grid_stress_score,
-                    departure_urgency=dep_urgency,
-                    grid_condition=grid_condition
-                )
+            for ev_id, ev in self.fleet_manager.fleet.items():
+                if not ev.connected or not circuit_valid or not safe_autonomous:
+                    # Vehicle is disconnected/departed, circuit is faulted, or external telemetry is down
+                    if not circuit_valid:
+                        raw_act = "FAULT"
+                        f_act = "FAULT"
+                        reason = "Circuit topology validation failure"
+                        code = "CIRCUIT_FAULT"
+                    elif not safe_autonomous:
+                        raw_act = "IDLE"
+                        f_act = "IDLE"
+                        reason = "External telemetry unavailable; safe autonomous fallback"
+                        code = "SAFE_FALLBACK"
+                    else:
+                        raw_act = "IDLE"
+                        f_act = "IDLE"
+                        reason = f"{ev_id} is {ev.charging_state} (Schedule: {ev.arrival_time_str}-{ev.departure_time_str})"
+                        code = "VEHICLE_DISCONNECTED" if ev.charging_state == "NOT_CONNECTED" else "DEPARTED"
 
-            # Check manual overrides
-            if primary_ev and primary_ev.ev_id in self.manual_overrides:
-                override = self.manual_overrides[primary_ev.ev_id]
-                if override == "CHARGE":
-                    safety_decision.approved = True
-                    safety_decision.final_action = "CHARGE"
-                    safety_decision.power_kw = primary_ev.max_charge_kw
-                    safety_decision.reason = "Manual override: CHARGE"
-                elif override == "DISCHARGE":
-                    safety_decision.approved = True
-                    safety_decision.final_action = "DISCHARGE"
-                    safety_decision.power_kw = -primary_ev.max_discharge_kw
-                    safety_decision.reason = "Manual override: DISCHARGE"
+                    s_dec = SafetyDecision(
+                        approved=True if raw_act == "IDLE" else False,
+                        raw_action=raw_act,
+                        final_action=f_act,
+                        power_kw=0.0,
+                        reason_code=code,
+                        reason=reason,
+                        corrective_action="None"
+                    )
+                    self.fleet_persisted_decisions[ev_id] = {
+                        "proposed_action": raw_act,
+                        "proposed_kw": 0.0,
+                        "action_index": 0,
+                        "probabilities": {"IDLE": 1.0, "CHARGE": 0.0, "DISCHARGE": 0.0},
+                        "confidence": 1.0,
+                        "state_value": 0.0,
+                        "safety_decision": s_dec,
+                        "validated_power_kw": 0.0,
+                        "obs_19d": np.zeros(19, dtype=np.float32),
+                        "obs_raw": {}
+                    }
+                    self.fleet_last_action_indices[ev_id] = 0
+                elif time_for_eval or (ev_id not in self.fleet_persisted_decisions):
+                    # Canonical 19D state observation for this vehicle
+                    hours_left = max(0.0, ev.departure_time - cur_hour)
+                    req_kwh = max(0.0, (ev.target_soc - ev.soc) / 100.0 * ev.capacity_kwh)
+                    needed_hours = req_kwh / max(1.0, ev.max_charge_kw * ev.charge_efficiency)
+                    v_dep_urgency = round(min(1.0, max(0.0, needed_hours / hours_left)), 3) if hours_left > 0.05 else (1.0 if req_kwh > 0.1 else 0.0)
+
+                    obs_19d_v, obs_raw_v = StateSpaceModule.build_state(
+                        ev=ev,
+                        grid_data=grid_telemetry,
+                        price_data=price_telemetry,
+                        solar_data=solar_res,
+                        building_load_kw=self.building_base_load_kw,
+                        current_hour=cur_hour,
+                        previous_action=self.fleet_last_action_indices.get(ev_id, 0)
+                    )
+
+                    if self.ppo_model is not None and hasattr(self.ppo_model, "predict_decision"):
+                        dec_v = self.ppo_model.predict_decision(
+                            obs_19d_v,
+                            max_charge_kw=ev.max_charge_kw,
+                            max_discharge_kw=ev.max_discharge_kw,
+                            deterministic=True
+                        )
+                    else:
+                        dec_v = {
+                            "action_index": 0,
+                            "mode": "IDLE",
+                            "power_kw": 0.0,
+                            "probabilities": {"IDLE": 1.0, "CHARGE": 0.0, "DISCHARGE": 0.0},
+                            "confidence": 1.0,
+                            "state_value": 0.0
+                        }
+
+                    # Validate proposal through hierarchical safety validator
+                    s_dec_v = self.safety_validator.validate_action(
+                        proposed_action=dec_v["mode"],
+                        proposed_power_kw=dec_v["power_kw"],
+                        ev=ev,
+                        feeder_import_headroom_kw=feeder_headroom,
+                        grid_stress_score=grid_stress_score,
+                        departure_urgency=v_dep_urgency,
+                        grid_condition=grid_condition
+                    )
+
+                    # Manual override handling per vehicle
+                    if ev_id in self.manual_overrides:
+                        ov = self.manual_overrides[ev_id]
+                        if ov == "CHARGE":
+                            s_dec_v.approved = True
+                            s_dec_v.raw_action = "CHARGE"
+                            s_dec_v.final_action = "CHARGE"
+                            s_dec_v.power_kw = ev.max_charge_kw
+                            s_dec_v.reason = "Manual override: CHARGE"
+                            dec_v["mode"] = "CHARGE"
+                            dec_v["power_kw"] = ev.max_charge_kw
+                            dec_v["action_index"] = 1
+                            dec_v["probabilities"] = {"CHARGE": 1.0, "IDLE": 0.0, "DISCHARGE": 0.0}
+                        elif ov == "DISCHARGE":
+                            s_dec_v.approved = True
+                            s_dec_v.raw_action = "DISCHARGE"
+                            s_dec_v.final_action = "DISCHARGE"
+                            s_dec_v.power_kw = -ev.max_discharge_kw
+                            s_dec_v.reason = "Manual override: DISCHARGE"
+                            dec_v["mode"] = "DISCHARGE"
+                            dec_v["power_kw"] = -ev.max_discharge_kw
+                            dec_v["action_index"] = 2
+                            dec_v["probabilities"] = {"DISCHARGE": 1.0, "CHARGE": 0.0, "IDLE": 0.0}
+                        else:
+                            s_dec_v.approved = True
+                            s_dec_v.raw_action = "IDLE"
+                            s_dec_v.final_action = "IDLE"
+                            s_dec_v.power_kw = 0.0
+                            s_dec_v.reason = "Manual override: IDLE"
+                            dec_v["mode"] = "IDLE"
+                            dec_v["power_kw"] = 0.0
+                            dec_v["action_index"] = 0
+                            dec_v["probabilities"] = {"IDLE": 1.0, "CHARGE": 0.0, "DISCHARGE": 0.0}
+
+                    self.fleet_persisted_decisions[ev_id] = {
+                        "proposed_action": dec_v["mode"],
+                        "proposed_kw": dec_v["power_kw"],
+                        "action_index": dec_v["action_index"],
+                        "probabilities": dec_v["probabilities"],
+                        "confidence": dec_v["confidence"],
+                        "state_value": dec_v["state_value"],
+                        "safety_decision": s_dec_v,
+                        "validated_power_kw": s_dec_v.power_kw,
+                        "obs_19d": obs_19d_v,
+                        "obs_raw": obs_raw_v
+                    }
+                    self.fleet_last_action_indices[ev_id] = dec_v["action_index"]
                 else:
-                    safety_decision.approved = True
-                    safety_decision.final_action = "IDLE"
-                    safety_decision.power_kw = 0.0
-                    safety_decision.reason = "Manual override: IDLE"
+                    # Vehicle connected, maintain persistent action with boundary enforcement
+                    prev_entry = self.fleet_persisted_decisions[ev_id]
+                    s_dec_v = prev_entry["safety_decision"]
+                    if s_dec_v.final_action == "CHARGE" and (ev.soc >= ev.target_soc or ev.soc >= ev.max_soc):
+                        s_dec_v.final_action = "IDLE"
+                        s_dec_v.power_kw = 0.0
+                        s_dec_v.reason = "Target SOC reached; stopping charge"
+                        prev_entry["validated_power_kw"] = 0.0
+                    elif s_dec_v.final_action in ("DISCHARGE", "V2G") and (ev.soc <= ev.v2g_reserve or ev.soc <= ev.min_soc):
+                        s_dec_v.final_action = "IDLE"
+                        s_dec_v.power_kw = 0.0
+                        s_dec_v.reason = "V2G reserve floor reached; stopping discharge"
+                        prev_entry["validated_power_kw"] = 0.0
+
+            # 6. Extract primary vehicle decision for UI and ActionStateMachine
+            primary_entry = self.fleet_persisted_decisions.get("EV-001")
+            if primary_entry:
+                self.persisted_proposed_action = primary_entry["proposed_action"]
+                self.persisted_proposed_kw = primary_entry["proposed_kw"]
+                self.persisted_action_idx = primary_entry["action_index"]
+                self.persisted_action_probs = primary_entry["probabilities"]
+                self.persisted_confidence = primary_entry["confidence"]
+                self.persisted_state_val = primary_entry["state_value"]
+                safety_decision = primary_entry["safety_decision"]
+                obs_19d = primary_entry["obs_19d"]
+                obs_raw = primary_entry["obs_raw"]
+            else:
+                self.persisted_proposed_action = "IDLE"
+                self.persisted_proposed_kw = 0.0
+                self.persisted_action_idx = 0
+                self.persisted_action_probs = {"IDLE": 1.0, "CHARGE": 0.0, "DISCHARGE": 0.0}
+                self.persisted_confidence = 1.0
+                self.persisted_state_val = 0.0
+                safety_decision = SafetyDecision(approved=True, raw_action="IDLE", final_action="IDLE", power_kw=0.0, reason_code="NORMAL", reason="EV-001 idle", corrective_action="None")
+                obs_19d = np.zeros(19, dtype=np.float32)
+                obs_raw = {}
 
             self.latest_ai_decision = safety_decision
 
             # 7. Update Action State Machine (Continuous Operation)
-            if not circuit_valid:
-                target_state = "FAULT"
-            elif safety_decision.power_kw > 0.05:
-                target_state = "CHARGING"
-            elif safety_decision.power_kw < -0.05:
-                target_state = "DISCHARGING"
-            else:
-                target_state = "IDLE"
+            manual_ov = self.manual_overrides.get("EV-001")
+            target_state, trans_reason = self.action_state_machine.evaluate_transition(
+                requested_action=safety_decision.final_action if safety_decision else "IDLE",
+                ev=primary_ev,
+                circuit_valid=circuit_valid,
+                is_high_load_confirmed=is_high_load_confirmed,
+                grid_stress_score=grid_stress_score,
+                feeder_headroom_kw=feeder_headroom,
+                safety_decision=safety_decision,
+                manual_override=manual_ov
+            )
+            self.action_state_machine.update(target_state, sim_dt, reason=trans_reason)
 
-            self.action_state_machine.update(target_state, sim_dt, reason=safety_decision.reason)
+            # Ensure primary vehicle command aligns with authoritative state machine
+            if primary_entry and primary_ev and primary_ev.connected and circuit_valid:
+                if target_state == "CHARGING":
+                    if safety_decision.power_kw <= 0.05:
+                        chg_pwr = min(primary_ev.max_charge_kw, max(0.0, feeder_headroom))
+                        if chg_pwr > 0.05:
+                            safety_decision.final_action = "CHARGE"
+                            safety_decision.power_kw = chg_pwr
+                            primary_entry["validated_power_kw"] = chg_pwr
+                elif target_state == "DISCHARGING":
+                    if safety_decision.power_kw >= -0.05:
+                        safety_decision.final_action = "DISCHARGE"
+                        safety_decision.power_kw = -primary_ev.max_discharge_kw
+                        primary_entry["validated_power_kw"] = -primary_ev.max_discharge_kw
+                elif target_state in ("IDLE", "FAULT"):
+                    safety_decision.final_action = target_state
+                    safety_decision.power_kw = 0.0
+                    primary_entry["validated_power_kw"] = 0.0
 
-            # 8. Execute Approved Power in Physical Battery Twin & Fleet
-            fleet_step_res = self.fleet_manager.step_fleet(safety_decision.power_kw, sim_dt)
+            # 8. Step Entire Fleet strictly with Commanded Validated Powers
+            fleet_commanded_powers = {
+                eid: d["validated_power_kw"]
+                for eid, d in self.fleet_persisted_decisions.items()
+            }
+            fleet_step_res = self.fleet_manager.step_fleet(fleet_commanded_powers, sim_dt)
             actual_primary_pwr_kw = primary_ev.power_kw if primary_ev else 0.0
 
-            # 10. Real Conservation-of-Energy Power Flow (PRD Section 17 & 18)
+            # 9. Real Conservation-of-Energy Power Flow (PRD Section 17 & 18)
             ev_chg_kw = fleet_step_res["total_charging_power_kw"]
             ev_dis_kw = fleet_step_res["total_v2g_power_kw"]
             power_flow = self.power_flow_engine.compute_power_flow(
@@ -1687,7 +1961,7 @@ class UnifiedSimulationEngine:
                 charger_efficiency=primary_ev.charge_efficiency if primary_ev else 0.95
             )
 
-            # 9. Update Circuit Topology & Ports based strictly on actual physical flow
+            # 10. Update Circuit Topology & Ports based strictly on actual physical flow
             self.circuit.update_power_flow(
                 actual_primary_pwr_kw,
                 primary_ev.connected if primary_ev else False,
@@ -1697,7 +1971,7 @@ class UnifiedSimulationEngine:
                 building_load_kw=self.building_base_load_kw
             )
 
-            # 8. Reward Function Calculation (PRD Section 19, 20, 21)
+            # 11. Reward Function Calculation (PRD Section 19, 20, 21)
             dt_h = sim_dt / 3600.0
             current_price_val = price_telemetry.get("electricity_price", price_telemetry.get("mcp_inr_per_kwh", 6.80))
             reward_breakdown = self.reward_fn.calculate_reward_breakdown(
@@ -1727,7 +2001,7 @@ class UnifiedSimulationEngine:
             self.total_v2g_revenue_inr += ev_dis_kw * dt_h * current_price_val
             self.peak_grid_load_kw = max(self.peak_grid_load_kw, power_flow["net_grid_load_kw"])
 
-            # 9. Assemble Authoritative Single SimulationState
+            # 12. Assemble Authoritative Single SimulationState
             state = self._build_simulation_state(
                 sim_time_str=sim_time_str,
                 grid_data=grid_telemetry,
@@ -1742,19 +2016,22 @@ class UnifiedSimulationEngine:
                 rt_snapshot=rt_snapshot,
                 obs_19d=obs_19d,
                 obs_raw=obs_raw,
-                action_idx=action_idx,
-                action_probs=action_probs,
-                confidence=confidence,
-                state_val=state_val,
+                action_idx=self.persisted_action_idx,
+                action_probs=self.persisted_action_probs,
+                confidence=self.persisted_confidence,
+                state_val=self.persisted_state_val,
                 reward_breakdown=reward_breakdown
             )
 
-            # 9. Append to in-memory history buffer (max 1000 items)
+            # 13. State Consistency Validation
+            self.validate_simulation_state(state)
+
+            # 14. Append to in-memory history buffer (max 1000 items)
             self.telemetry_history.append(state)
             if len(self.telemetry_history) > 1000:
                 self.telemetry_history.pop(0)
 
-        # 10. Broadcast outside the lock to all registered observers (WebSocket, DB writer)
+        # 15. Broadcast outside the lock to all registered observers (WebSocket, DB writer)
         for cb in list(self._callbacks):
             try:
                 cb(state)
@@ -1792,40 +2069,33 @@ class UnifiedSimulationEngine:
         mode_str = "CHARGING" if is_chg else ("V2G" if is_v2g else "IDLE")
         step_reward_val = round(reward_breakdown.get("total_reward", 0.0) if reward_breakdown else 0.0, 3)
 
+        cur_h = self.clock.get_hour_decimal()
         decisions_list = []
-        for v in self.fleet_manager.fleet.values():
-            if primary_ev and v.ev_id == primary_ev.ev_id:
-                sd_dict = safety_decision.to_dict() if safety_decision else {}
-                sd_dict["ev_id"] = v.ev_id
-                sd_dict["id"] = v.ev_id
-                sd_dict["name"] = v.name
-                sd_dict["ev_name"] = v.name
-                sd_dict["action_name"] = getattr(safety_decision, "final_action", "IDLE") if safety_decision else "IDLE"
-                sd_dict["proposed_action"] = getattr(safety_decision, "raw_action", "IDLE") if safety_decision else "IDLE"
-                sd_dict["power_kw"] = getattr(safety_decision, "power_kw", v.power_kw) if safety_decision else v.power_kw
-                sd_dict["safety_overrides"] = [safety_decision.reason] if (safety_decision and not safety_decision.approved) else []
-                sd_dict["reward"] = step_reward_val
-                sd_dict["reward_breakdown"] = reward_breakdown or {}
-                decisions_list.append(sd_dict)
-            else:
-                decisions_list.append({
-                    "ev_id": v.ev_id,
-                    "id": v.ev_id,
-                    "name": v.name,
-                    "ev_name": v.name,
-                    "approved": True,
-                    "raw_action": "IDLE",
-                    "final_action": "IDLE",
-                    "action_name": "IDLE",
-                    "proposed_action": "IDLE",
-                    "power_kw": 0.0,
-                    "reason_code": "NORMAL_OPERATION",
-                    "reason": "Vehicle idle",
-                    "corrective_action": "None",
-                    "safety_overrides": [],
-                    "reward": 0.0,
-                    "timestamp": now_utc
-                })
+        for eid, v in self.fleet_manager.fleet.items():
+            dec_entry = self.fleet_persisted_decisions.get(eid)
+            sd = dec_entry["safety_decision"] if dec_entry else None
+            sd_dict = sd.to_dict() if sd else {}
+            sd_dict["ev_id"] = v.ev_id
+            sd_dict["id"] = v.ev_id
+            sd_dict["name"] = v.name
+            sd_dict["ev_name"] = v.name
+            sd_dict["action_name"] = sd.final_action if sd else "IDLE"
+            sd_dict["proposed_action"] = dec_entry["proposed_action"] if dec_entry else "IDLE"
+            sd_dict["raw_action"] = dec_entry["proposed_action"] if dec_entry else "IDLE"
+            sd_dict["final_action"] = sd.final_action if sd else "IDLE"
+            sd_dict["power_kw"] = v.power_kw
+            sd_dict["command_kw"] = sd.power_kw if sd else 0.0
+            sd_dict["approved"] = sd.approved if sd else True
+            sd_dict["reason_code"] = sd.reason_code if sd else "NORMAL"
+            sd_dict["reason"] = sd.reason if sd else "Normal operation"
+            sd_dict["corrective_action"] = sd.corrective_action if sd else "None"
+            sd_dict["safety_overrides"] = [sd.reason] if (sd and not sd.approved) else []
+            sd_dict["reward"] = step_reward_val if eid == "EV-001" else 0.0
+            sd_dict["reward_breakdown"] = reward_breakdown if eid == "EV-001" else {}
+            sd_dict["probabilities"] = dec_entry.get("probabilities", {"IDLE": 1.0, "CHARGE": 0.0, "DISCHARGE": 0.0}) if dec_entry else {"IDLE": 1.0, "CHARGE": 0.0, "DISCHARGE": 0.0}
+            sd_dict["confidence"] = dec_entry.get("confidence", 1.0) if dec_entry else 1.0
+            sd_dict["timestamp"] = now_utc
+            decisions_list.append(sd_dict)
 
         # Structured AI Card (PRD Section 10 & 25)
         ai_card = {
@@ -1870,6 +2140,24 @@ class UnifiedSimulationEngine:
         actual_power = round(primary_ev.power_kw, 2) if primary_ev else 0.0
         pflow_direction = "SOURCE_TO_BATTERY" if is_chg else ("BATTERY_TO_GRID" if is_v2g else "IDLE")
 
+        # Dynamic countdown calculations
+        if primary_ev:
+            eff_chg_kw = abs(primary_ev.power_kw) * primary_ev.charge_efficiency if primary_ev.power_kw > 0.05 else (primary_ev.max_charge_kw * primary_ev.charge_efficiency)
+            eff_chg_kw = max(0.5, eff_chg_kw)
+            
+            rem_target_kwh = max(0.0, ((primary_ev.target_soc - primary_ev.soc) / 100.0) * primary_ev.capacity_kwh)
+            rem_target_hours = (rem_target_kwh / eff_chg_kw) if (primary_ev.soc < primary_ev.target_soc) else 0.0
+            total_sec = int(rem_target_hours * 3600)
+            time_to_target_str = f"{total_sec // 3600:02d}:{(total_sec % 3600) // 60:02d}:{total_sec % 60:02d}"
+
+            rem_full_kwh = max(0.0, ((primary_ev.max_soc - primary_ev.soc) / 100.0) * primary_ev.capacity_kwh)
+            rem_full_hours = (rem_full_kwh / eff_chg_kw) if (primary_ev.soc < primary_ev.max_soc) else 0.0
+            total_sec_full = int(rem_full_hours * 3600)
+            time_to_full_str = f"{total_sec_full // 3600:02d}:{(total_sec_full % 3600) // 60:02d}:{total_sec_full % 60:02d}"
+        else:
+            time_to_target_str = "00:00:00"
+            time_to_full_str = "00:00:00"
+
         # Diagnostics Panel Card (PRD Section 30)
         time_until_next_eval = max(0.0, self.control_interval_sec - self.time_since_last_control_eval_sec)
         diagnostics_card = {
@@ -1896,12 +2184,16 @@ class UnifiedSimulationEngine:
             "power_flow_direction": pflow_direction,
             "energy_balance_valid": power_flow.get("energy_balance_valid", True),
             "balance_error_kw": power_flow.get("balance_error_kw", 0.0),
-            "stress_score": 40.0,
-            "v2g_entry_stress": 75.0,
-            "v2g_exit_stress": 60.0,
-            "is_high_load_confirmed": False,
-            "high_load_candidate_timer": 0.0
+            "stress_score": getattr(self, "grid_stress_engine", None).stress_score if hasattr(self, "grid_stress_engine") else 40.0,
+            "v2g_entry_stress": getattr(self, "grid_stress_engine", None).v2g_entry_stress if hasattr(self, "grid_stress_engine") else 75.0,
+            "v2g_exit_stress": getattr(self, "grid_stress_engine", None).v2g_exit_stress if hasattr(self, "grid_stress_engine") else 60.0,
+            "is_high_load_confirmed": getattr(self, "grid_stress_engine", None).is_high_load_confirmed if hasattr(self, "grid_stress_engine") else False,
+            "high_load_candidate_timer": getattr(self, "grid_stress_engine", None).high_load_candidate_timer if hasattr(self, "grid_stress_engine") else 0.0,
+            "recovery_timer": getattr(self, "grid_stress_engine", None).recovery_timer if hasattr(self, "grid_stress_engine") else 0.0,
+            "sync_errors": []
         }
+
+        fleet_summary_list = self.fleet_manager.get_fleet_summary(current_hour=cur_h)
 
         state = {
             "type": "SIMULATION_UPDATE",
@@ -1934,8 +2226,8 @@ class UnifiedSimulationEngine:
             "total_charging_power_kw": power_flow["ev_charging_kw"],
             "total_v2g_power_kw": power_flow["ev_discharge_kw"],
             "net_grid_load_kw": power_flow["net_grid_load_kw"],
-            "evs": self.fleet_manager.get_fleet_summary(),
-            "ev_fleet_status": self.fleet_manager.get_fleet_summary(),
+            "evs": fleet_summary_list,
+            "ev_fleet_status": fleet_summary_list,
             "ai_decisions": decisions_list,
             "ai_decision": ai_card,
             "ai_action": {**(safety_decision.to_dict() if safety_decision else {}), **ai_card},
@@ -1976,7 +2268,8 @@ class UnifiedSimulationEngine:
                 "feeder_capacity_kw": self.power_flow_engine.feeder_capacity_kw,
                 "feeder_utilization_pct": power_flow["feeder_utilization_pct"],
                 "feeder_overload": power_flow["feeder_overload"],
-                "grid_stress": "NORMAL",
+                "grid_stress": getattr(self, "grid_stress_engine", None).grid_condition if hasattr(self, "grid_stress_engine") else "NORMAL",
+                "grid_stress_score": getattr(self, "grid_stress_engine", None).stress_score if hasattr(self, "grid_stress_engine") else 40.0,
                 "data_status": grid_status
             },
 
@@ -1996,11 +2289,11 @@ class UnifiedSimulationEngine:
             },
 
             # 4. EV Fleet
-            "ev_fleet": self.fleet_manager.get_fleet_summary(),
+            "ev_fleet": fleet_summary_list,
             "active_ev_count": fleet_res["active_ev_count"],
 
             # 5. Primary EV & Battery Twin
-            "ev": primary_ev.to_dict() if primary_ev else {},
+            "ev": primary_ev.to_dict(current_hour=cur_h) if primary_ev else {},
             "battery": {
                 "soc": primary_ev.soc,
                 "energy_kwh": primary_ev.energy_kwh,
@@ -2010,8 +2303,8 @@ class UnifiedSimulationEngine:
                 "power_kw": primary_ev.power_kw,
                 "temperature_c": primary_ev.temperature_c,
                 "state": primary_ev.charging_state,
-                "time_to_target_str": "00:45:00" if primary_ev.soc < primary_ev.target_soc else "00:00:00",
-                "time_to_full_str": "01:15:00" if primary_ev.soc < primary_ev.max_soc else "00:00:00"
+                "time_to_target_str": time_to_target_str,
+                "time_to_full_str": time_to_full_str
             } if primary_ev else {},
 
             # 6. Charger Twin
@@ -2107,6 +2400,100 @@ class UnifiedSimulationEngine:
         }
         return state
 
+    def validate_simulation_state(self, state: Dict[str, Any]) -> List[str]:
+        """
+        Comprehensive state validation function that runs on every state before it is returned or broadcast.
+        Verifies 11 strict physical and logical invariants.
+        Returns list of sync error descriptions.
+        """
+        sync_errors: List[str] = []
+
+        # 1. PPO proposed CHARGE vs safety vs final action
+        ai_card = state.get("ai_decision", {})
+        raw_action = ai_card.get("proposed_action", "IDLE")
+        final_action = ai_card.get("final_action", "IDLE")
+        safety_status = state.get("safety_status", {})
+        approved = safety_status.get("approved", True)
+        reason = safety_status.get("reason", "")
+        is_manual = "Manual override" in reason
+
+        if not is_manual and raw_action == "CHARGE" and approved and final_action != "CHARGE":
+            sync_errors.append(f"PPO proposed CHARGE and safety approved, but final_action is '{final_action}'")
+
+        # 2. Command power consistency with final action
+        command_kw = ai_card.get("command_kw", 0.0)
+        if final_action == "IDLE" and abs(command_kw) > 0.01:
+            sync_errors.append(f"final_action is IDLE but command_kw is {command_kw:.2f} kW")
+        elif final_action == "CHARGE" and command_kw <= 0.01:
+            sync_errors.append(f"final_action is CHARGE but command_kw is {command_kw:.2f} kW")
+        elif final_action in ("DISCHARGE", "V2G") and command_kw >= -0.01:
+            sync_errors.append(f"final_action is DISCHARGE/V2G but command_kw is {command_kw:.2f} kW")
+
+        # 3. Disconnected / departed vehicle check across fleet
+        evs = state.get("evs", [])
+        for ev_data in evs:
+            eid = ev_data.get("ev_id", "Unknown")
+            is_conn = ev_data.get("connected", True)
+            ev_status = ev_data.get("status", "")
+            pwr = ev_data.get("power_kw", 0.0)
+            curr = ev_data.get("current_a", 0.0)
+            if not is_conn or ev_status in ("DEPARTED", "NOT_CONNECTED"):
+                if abs(pwr) > 0.01:
+                    sync_errors.append(f"EV {eid} is {ev_status} (connected={is_conn}) but draws {pwr:.2f} kW")
+                if abs(curr) > 0.01:
+                    sync_errors.append(f"EV {eid} is {ev_status} (connected={is_conn}) but has {curr:.2f} A current")
+
+        # 4. Total fleet power equals sum of individual EV powers
+        sum_charging_kw = round(sum(max(0.0, e.get("power_kw", 0.0)) for e in evs), 2)
+        sum_v2g_kw = round(sum(max(0.0, -e.get("power_kw", 0.0)) for e in evs), 2)
+        rep_charging_kw = round(state.get("total_charging_power_kw", 0.0), 2)
+        rep_v2g_kw = round(state.get("total_v2g_power_kw", 0.0), 2)
+
+        if abs(sum_charging_kw - rep_charging_kw) > 0.1:
+            sync_errors.append(f"Total charging power mismatch: sum={sum_charging_kw} kW vs reported={rep_charging_kw} kW")
+        if abs(sum_v2g_kw - rep_v2g_kw) > 0.1:
+            sync_errors.append(f"Total V2G power mismatch: sum={sum_v2g_kw} kW vs reported={rep_v2g_kw} kW")
+
+        # 5. Energy conservation on net grid load
+        pflow = state.get("power_flow", {})
+        if not pflow.get("energy_balance_valid", True):
+            sync_errors.append(f"PowerFlowEngine energy balance violation (error={pflow.get('balance_error_kw', 0.0)} kW)")
+
+        # 6. Wires: bus_ev power == primary_ev power
+        primary_ev_pwr = abs(round(state.get("ev", {}).get("power_kw", 0.0), 2))
+        bus_ev_pwr = abs(round(state.get("circuit_wires", {}).get("bus_ev", {}).get("power_kw", 0.0), 2))
+        if abs(primary_ev_pwr - bus_ev_pwr) > 0.1:
+            sync_errors.append(f"Wire bus_ev power ({bus_ev_pwr} kW) != primary EV power ({primary_ev_pwr} kW)")
+
+        # 7. Wires: bus_to_aux direction
+        connections = state.get("circuit", {}).get("connections", {})
+        if "bus_to_aux" in connections:
+            aux_dir = connections["bus_to_aux"].get("power_flow_direction")
+            if aux_dir not in ("SOURCE_TO_LOAD", "IDLE"):
+                sync_errors.append(f"bus_to_aux wire power_flow_direction is '{aux_dir}', expected SOURCE_TO_LOAD or IDLE")
+
+        # 8. PPO probabilities sum to 1.0 +/- 0.01
+        probs = ai_card.get("probabilities", {})
+        if probs:
+            prob_sum = round(sum(probs.values()), 4)
+            if abs(prob_sum - 1.0) > 0.01:
+                sync_errors.append(f"PPO probabilities sum to {prob_sum}, expected 1.0")
+
+            # 9. Deterministic action == argmax(probs)
+            max_act = max(probs.items(), key=lambda x: x[1])[0]
+            if raw_action not in ("FAULT",) and raw_action != max_act:
+                sync_errors.append(f"Deterministic action mismatch: raw_action={raw_action} != argmax(probs)={max_act}")
+
+        # Attach to diagnostics
+        if "diagnostics" in state:
+            state["diagnostics"]["sync_errors"] = sync_errors
+
+        if sync_errors:
+            for err in sync_errors:
+                logger.error(f"[STATE SYNC ERROR] {err}")
+
+        return sync_errors
+
     def run(self):
         """Aliases self.start() for DigitalTwinEngine interface."""
         self.start()
@@ -2125,6 +2512,7 @@ class UnifiedSimulationEngine:
     def apply_manual_override(self, ev_id: str, action: str):
         with self._lock:
             self.manual_overrides[ev_id] = action
+            self.time_since_last_control_eval_sec = self.control_interval_sec
             ev = self.fleet_manager.fleet.get(ev_id)
             if ev:
                 if action == "CHARGE":
@@ -2136,6 +2524,52 @@ class UnifiedSimulationEngine:
                 else:
                     ev.charging_state = "IDLE"
                     ev.power_kw = 0.0
+
+            if ev_id in self.fleet_persisted_decisions:
+                dec_entry = self.fleet_persisted_decisions[ev_id]
+                s_dec = dec_entry["safety_decision"]
+                if action == "CHARGE":
+                    s_dec.approved = True
+                    s_dec.raw_action = "CHARGE"
+                    s_dec.final_action = "CHARGE"
+                    s_dec.power_kw = ev.max_charge_kw if ev else 11.0
+                    s_dec.reason = "Manual override: CHARGE"
+                    dec_entry["proposed_action"] = "CHARGE"
+                    dec_entry["proposed_kw"] = s_dec.power_kw
+                    dec_entry["validated_power_kw"] = s_dec.power_kw
+                    dec_entry["action_index"] = 1
+                    dec_entry["probabilities"] = {"CHARGE": 1.0, "IDLE": 0.0, "DISCHARGE": 0.0}
+                elif action == "DISCHARGE":
+                    s_dec.approved = True
+                    s_dec.raw_action = "DISCHARGE"
+                    s_dec.final_action = "DISCHARGE"
+                    s_dec.power_kw = -ev.max_discharge_kw if ev else -11.0
+                    s_dec.reason = "Manual override: DISCHARGE"
+                    dec_entry["proposed_action"] = "DISCHARGE"
+                    dec_entry["proposed_kw"] = s_dec.power_kw
+                    dec_entry["validated_power_kw"] = s_dec.power_kw
+                    dec_entry["action_index"] = 2
+                    dec_entry["probabilities"] = {"DISCHARGE": 1.0, "CHARGE": 0.0, "IDLE": 0.0}
+                else:
+                    s_dec.approved = True
+                    s_dec.raw_action = "IDLE"
+                    s_dec.final_action = "IDLE"
+                    s_dec.power_kw = 0.0
+                    s_dec.reason = "Manual override: IDLE"
+                    dec_entry["proposed_action"] = "IDLE"
+                    dec_entry["proposed_kw"] = 0.0
+                    dec_entry["validated_power_kw"] = 0.0
+                    dec_entry["action_index"] = 0
+                    dec_entry["probabilities"] = {"IDLE": 1.0, "CHARGE": 0.0, "DISCHARGE": 0.0}
+
+                if ev_id == "EV-001":
+                    self.persisted_proposed_action = dec_entry["proposed_action"]
+                    self.persisted_proposed_kw = dec_entry["proposed_kw"]
+                    self.persisted_action_idx = dec_entry["action_index"]
+                    self.persisted_action_probs = dec_entry["probabilities"]
+                    self.latest_ai_decision = s_dec
+                    target_st = "CHARGING" if s_dec.power_kw > 0.05 else ("DISCHARGING" if s_dec.power_kw < -0.05 else "IDLE")
+                    self.action_state_machine.update(target_st, 0.0, reason=s_dec.reason)
 
     def configure(
         self,
@@ -2387,14 +2821,11 @@ class UnifiedSimulationEngine:
 
     @property
     def grid_stress_engine(self):
-        class StressAdapter:
-            def __init__(self):
-                self.stress_score = 40.0
-                self.grid_condition = "NORMAL"
-                self.is_high_load_confirmed = False
-                self.high_load_candidate_timer = 0.0
-                self.recovery_timer = 0.0
-        return StressAdapter()
+        return getattr(self, "_grid_stress_engine", None)
+
+    @grid_stress_engine.setter
+    def grid_stress_engine(self, val):
+        self._grid_stress_engine = val
 
     @property
     def energy_provider(self):

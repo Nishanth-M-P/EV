@@ -93,23 +93,35 @@ class PPOActorCritic:
 
     def predict(self, obs: np.ndarray, deterministic: bool = True) -> Tuple[int, Dict[str, float], float, float]:
         """
-        Generates an action decision from the neural policy.
+        Generates an action decision from the neural policy atomically.
+        Enforces strict probability normalization and action-probability consistency.
         Returns: (action_index, action_probabilities_dict, state_value, confidence)
         """
         probs, value = self.forward(obs)
+        probs = np.clip(probs, 1e-6, 1.0)
+        probs = probs / np.sum(probs)
+
         if deterministic:
             action = int(np.argmax(probs))
         else:
             action = int(np.random.choice(self.act_dim, p=probs))
 
-        probs_dict = {
-            "IDLE": round(float(probs[0]), 3),
-            "CHARGE": round(float(probs[1]), 3),
-            "DISCHARGE": round(float(probs[2]), 3)
-        }
-        confidence = float(np.max(probs))
+        assert probs[action] > 0.0, f"Selected action probability must be > 0, got {probs[action]}"
+        if deterministic:
+            assert action == int(np.argmax(probs)), "Deterministic action must correspond to highest-probability action"
 
-        return action, probs_dict, round(value, 2), round(confidence, 3)
+        p_charge = round(float(probs[1]), 4)
+        p_discharge = round(float(probs[2]), 4)
+        p_idle = round(1.0 - (p_charge + p_discharge), 4)
+
+        probs_dict = {
+            "IDLE": p_idle,
+            "CHARGE": p_charge,
+            "DISCHARGE": p_discharge
+        }
+        confidence = round(float(probs[action]), 4)
+
+        return action, probs_dict, round(value, 2), confidence
 
     def predict_decision(
         self,
@@ -119,11 +131,15 @@ class PPOActorCritic:
         deterministic: bool = True
     ) -> Dict[str, Any]:
         """
-        Generates full structured decision per PRD Section 10:
+        Generates full structured decision atomically:
         Returns mode ('CHARGE', 'DISCHARGE', 'IDLE'), power_kw proposal, probabilities, confidence, state_value.
         """
         action_idx, probs_dict, value, confidence = self.predict(obs, deterministic=deterministic)
         mode = {0: "IDLE", 1: "CHARGE", 2: "DISCHARGE"}.get(action_idx, "IDLE")
+
+        # Validate action matches represented policy output
+        assert mode in ["IDLE", "CHARGE", "DISCHARGE"], f"Invalid mode {mode}"
+        assert probs_dict[mode] > 0.0, f"Selected mode probability must be > 0, got {probs_dict[mode]}"
 
         if action_idx == 1:
             power_kw = round(float(probs_dict["CHARGE"]) * max_charge_kw, 2)

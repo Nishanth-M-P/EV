@@ -39,27 +39,18 @@ def on_twin_step(twin_state: dict):
     global main_event_loop
     try:
         if main_event_loop and main_event_loop.is_running():
-            payload = {
-                **twin_state,
-                "type": "SIMULATION_UPDATE",
-                "state": twin_state,
-                "data": twin_state
-            }
-            asyncio.run_coroutine_threadsafe(broadcast_websocket_event(payload), main_event_loop)
-            asyncio.run_coroutine_threadsafe(broadcast_websocket_event({
+            unified_payload = {
                 **twin_state,
                 "type": "digital_twin_update",
                 "state": twin_state,
-                "data": twin_state
-            }), main_event_loop)
-            asyncio.run_coroutine_threadsafe(broadcast_websocket_event({
-                "type": "REALTIME_UPDATE",
                 "data": {
+                    **twin_state,
                     "telemetry": twin_state.get("telemetry", {}),
                     "step_data": twin_state,
                     "status": realtime_service.get_telemetry_status()
                 }
-            }), main_event_loop)
+            }
+            asyncio.run_coroutine_threadsafe(broadcast_websocket_event(unified_payload), main_event_loop)
     except Exception:
         pass
 

@@ -34,6 +34,93 @@ let tariffSolarChart = null;
 let benchmarkGridChart = null;
 
 // ===================================================
+// GLOBAL THEME SYSTEM (Single Source of Truth)
+// ===================================================
+
+function updateChartsTheme(isDark) {
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const legendColor = isDark ? '#f8fafc' : '#334155';
+
+    const charts = [
+        gridLoadChart,
+        tariffSolarChart,
+        benchmarkGridChart,
+        typeof ppoRewardChart !== 'undefined' ? ppoRewardChart : null,
+        typeof ppoLossChart !== 'undefined' ? ppoLossChart : null,
+        typeof ppoSolarChart !== 'undefined' ? ppoSolarChart : null,
+        typeof ppoPeakChart !== 'undefined' ? ppoPeakChart : null,
+        typeof predictiveForecastChart !== 'undefined' ? predictiveForecastChart : null
+    ];
+
+    charts.forEach(chart => {
+        if (!chart) return;
+        if (chart.options && chart.options.scales) {
+            Object.values(chart.options.scales).forEach(scale => {
+                if (scale.grid) scale.grid.color = gridColor;
+                if (scale.ticks) scale.ticks.color = textColor;
+            });
+        }
+        if (chart.options && chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+            chart.options.plugins.legend.labels.color = legendColor;
+        }
+        chart.update('none');
+    });
+}
+
+function setGlobalTheme(theme, save = true) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    html.classList.remove('light', 'dark');
+    html.classList.add(isDark ? 'dark' : 'light');
+
+    if (save) {
+        try {
+            localStorage.setItem('gridwise_theme', isDark ? 'dark' : 'light');
+        } catch (e) {}
+    }
+
+    const toggleBtn = document.getElementById('global-theme-toggle');
+    const toggleIcon = document.getElementById('theme-toggle-icon');
+    const toggleLabel = document.getElementById('theme-toggle-label');
+
+    if (toggleIcon) toggleIcon.textContent = isDark ? '☀' : '🌙';
+    if (toggleLabel) toggleLabel.textContent = isDark ? 'LIGHT' : 'DARK';
+    if (toggleBtn) {
+        toggleBtn.title = isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+        if (isDark) {
+            toggleBtn.classList.add('text-amber-400');
+        } else {
+            toggleBtn.classList.remove('text-amber-400');
+        }
+    }
+
+    const radioLight = document.getElementById('theme-radio-light');
+    const radioDark = document.getElementById('theme-radio-dark');
+    if (radioLight && radioDark) {
+        radioLight.checked = !isDark;
+        radioDark.checked = isDark;
+    }
+
+    updateChartsTheme(isDark);
+}
+
+function toggleGlobalTheme() {
+    const isDark = document.documentElement.classList.contains('dark');
+    setGlobalTheme(isDark ? 'light' : 'dark', true);
+}
+
+function initGlobalTheme() {
+    let saved = null;
+    try {
+        saved = localStorage.getItem('gridwise_theme');
+    } catch (e) {}
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = saved ? saved : (prefersDark ? 'dark' : 'light');
+    setGlobalTheme(initialTheme, false);
+}
+
+// ===================================================
 // UTILITY & NORMALIZATION HELPERS
 // ===================================================
 
@@ -145,6 +232,7 @@ function handleAuthenticationExpired() {
 
 // Initialize Application on DOM Ready
 document.addEventListener("DOMContentLoaded", async () => {
+    initGlobalTheme();
     initCharts();
     startWallClockTicker();
     
@@ -225,21 +313,25 @@ function showView(viewId) {
         if (targetView) targetView.classList.remove("hidden");
 
         // Update nav buttons
-        document.querySelectorAll(".plat-nav-btn").forEach(btn => {
-            btn.classList.remove("bg-white", "text-emerald-700", "border", "border-slate-200", "shadow-sm");
-            btn.classList.add("text-slate-600");
-        });
+        const setActivePlatNav = (btnId) => {
+            document.querySelectorAll(".plat-nav-btn").forEach(btn => {
+                btn.classList.remove("active", "bg-white", "dark:bg-slate-800", "text-emerald-700", "dark:text-emerald-400", "border", "border-slate-200", "dark:border-slate-700", "shadow-sm", "font-bold");
+                btn.classList.add("text-slate-600", "dark:text-slate-400");
+            });
+            const b = document.getElementById(btnId);
+            if (b) {
+                b.classList.remove("text-slate-600", "dark:text-slate-400");
+                b.classList.add("active", "bg-white", "dark:bg-slate-800", "text-emerald-700", "dark:text-emerald-400", "border", "border-slate-200", "dark:border-slate-700", "shadow-sm", "font-bold");
+            }
+        };
 
         if (viewId === "view-platform-home") {
-            const b = document.getElementById("nav-btn-home");
-            if (b) { b.classList.add("bg-white", "text-emerald-700", "border", "border-slate-200", "shadow-sm"); b.classList.remove("text-slate-600"); }
+            setActivePlatNav("nav-btn-home");
             fetchPlatformHealth();
         } else if (viewId === "view-main-software") {
-            const b = document.getElementById("nav-btn-main");
-            if (b) { b.classList.add("bg-white", "text-emerald-700", "border", "border-slate-200", "shadow-sm"); b.classList.remove("text-slate-600"); }
+            setActivePlatNav("nav-btn-main");
         } else if (viewId === "view-simulator-lab") {
-            const b = document.getElementById("nav-btn-sim");
-            if (b) { b.classList.add("bg-white", "text-emerald-700", "border", "border-slate-200", "shadow-sm"); b.classList.remove("text-slate-600"); }
+            setActivePlatNav("nav-btn-sim");
             renderSimulatorEvTwins();
             fetchSimulationHistoryApi();
             refreshForecastHorizon();
@@ -248,12 +340,10 @@ function showView(viewId) {
                 constraintEventsTimer = setInterval(fetchConstraintEvents, 5000);
             }
         } else if (viewId === "view-ai-training") {
-            const b = document.getElementById("nav-btn-training");
-            if (b) { b.classList.add("bg-white", "text-emerald-700", "border", "border-slate-200", "shadow-sm"); b.classList.remove("text-slate-600"); }
+            setActivePlatNav("nav-btn-training");
             loadAiTrainingCenter();
         } else if (viewId === "view-settings") {
-            const b = document.getElementById("nav-btn-settings");
-            if (b) { b.classList.add("bg-white", "text-emerald-700", "border", "border-slate-200", "shadow-sm"); b.classList.remove("text-slate-600"); }
+            setActivePlatNav("nav-btn-settings");
             loadSettings();
         }
     }
@@ -436,8 +526,8 @@ async function fetchPlatformHealth() {
 function switchTab(tabId) {
     document.querySelectorAll(".tab-page").forEach(page => page.classList.add("hidden"));
     document.querySelectorAll(".nav-tab").forEach(tab => {
-        tab.classList.remove("bg-white", "text-emerald-700", "border", "border-slate-200", "shadow-sm");
-        tab.classList.add("text-slate-600");
+        tab.classList.remove("active", "bg-white", "dark:bg-slate-800", "text-emerald-800", "dark:text-emerald-400", "border", "border-slate-200/80", "dark:border-slate-700", "shadow-sm", "font-bold");
+        tab.classList.add("text-slate-600", "dark:text-slate-400");
     });
 
     const selectedPage = document.getElementById(`page-${tabId}`);
@@ -445,8 +535,8 @@ function switchTab(tabId) {
 
     const selectedTab = document.getElementById(`tab-${tabId}`);
     if (selectedTab) {
-        selectedTab.classList.add("bg-white", "text-emerald-700", "border", "border-slate-200", "shadow-sm");
-        selectedTab.classList.remove("text-slate-600");
+        selectedTab.classList.remove("text-slate-600", "dark:text-slate-400");
+        selectedTab.classList.add("active", "bg-white", "dark:bg-slate-800", "text-emerald-800", "dark:text-emerald-400", "border", "border-slate-200/80", "dark:border-slate-700", "shadow-sm", "font-bold");
     }
 
     if (tabId === 'ai-control') loadAiScheduleMatrix();
@@ -570,13 +660,13 @@ function handleWebSocketMessage(msg) {
         }
         updateUIFromState(currentSimulationState);
         if (msg.realtime) handleRealtimeTelemetry(msg.realtime);
-    } else if (msg.type === "digital_twin_update") {
-        const twinData = msg.state || msg;
+    } else if (msg.type === "digital_twin_update" || msg.type === "SIMULATION_UPDATE") {
+        const twinData = msg.state || msg.data?.step_data || msg.data || msg;
         if (twinData && typeof twinData === "object") {
             currentSimulationState = { ...currentSimulationState, ...twinData };
             updateUIFromState(currentSimulationState);
         }
-        if (msg.telemetry) handleRealtimeTelemetry(msg.telemetry);
+        if (msg.telemetry || twinData.telemetry) handleRealtimeTelemetry(msg.telemetry || twinData.telemetry);
     } else if (msg.type === "REALTIME_UPDATE") {
         if (msg.data?.step_data) {
             currentSimulationState = { ...currentSimulationState, ...msg.data.step_data };
@@ -1792,6 +1882,14 @@ function downloadReport(format) {
 
 async function loadSettings() {
     try {
+        const currentTheme = localStorage.getItem('gridwise_theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        const radioLight = document.getElementById("theme-radio-light");
+        const radioDark = document.getElementById("theme-radio-dark");
+        if (radioLight && radioDark) {
+            radioLight.checked = currentTheme === 'light';
+            radioDark.checked = currentTheme === 'dark';
+        }
+
         const res = await apiFetch("/api/settings");
         if (!res.ok) return;
         const s = await res.json();
@@ -2070,6 +2168,11 @@ const MAX_TELEMETRY_POINTS = 60;
 let telemetryBuffer = [];
 
 function initCharts() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const chartGridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
+    const chartTickColor = isDark ? '#94a3b8' : '#64748b';
+    const chartLegendColor = isDark ? '#f8fafc' : '#334155';
+
     const ctx1 = document.getElementById("chart-grid-load")?.getContext("2d");
     if (ctx1) {
         gridLoadChart = new Chart(ctx1, {
@@ -2080,8 +2183,8 @@ function initCharts() {
                     {
                         label: 'Net Feeder Load (kW)',
                         data: [],
-                        borderColor: '#059669',
-                        backgroundColor: 'rgba(5, 150, 105, 0.08)',
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.08)',
                         fill: true,
                         borderWidth: 2.5,
                         tension: 0.3
@@ -2089,7 +2192,7 @@ function initCharts() {
                     {
                         label: 'EV Power (+Chg / -V2G) (kW)',
                         data: [],
-                        borderColor: '#8b5cf6',
+                        borderColor: '#10b981',
                         borderWidth: 2,
                         tension: 0.3
                     },
@@ -2107,7 +2210,7 @@ function initCharts() {
                 maintainAspectRatio: false,
                 animation: false,
                 plugins: {
-                    legend: { labels: { color: '#334155', font: { family: 'monospace', size: 10 } } },
+                    legend: { labels: { color: chartLegendColor, font: { family: 'monospace', size: 10 } } },
                     tooltip: {
                         callbacks: {
                             afterBody: function(context) {
@@ -2120,12 +2223,12 @@ function initCharts() {
                 },
                 scales: {
                     x: {
-                        grid: { color: '#f1f5f9' },
-                        ticks: { color: '#64748b', font: { family: 'monospace', size: 9 }, maxTicksLimit: 8 }
+                        grid: { color: chartGridColor },
+                        ticks: { color: chartTickColor, font: { family: 'monospace', size: 9 }, maxTicksLimit: 8 }
                     },
                     y: {
-                        grid: { color: '#f1f5f9' },
-                        ticks: { color: '#64748b', font: { family: 'monospace', size: 10 } }
+                        grid: { color: chartGridColor },
+                        ticks: { color: chartTickColor, font: { family: 'monospace', size: 10 } }
                     }
                 }
             }
@@ -2152,7 +2255,7 @@ function initCharts() {
                     {
                         label: 'Electricity Tariff (₹/kWh)',
                         data: [],
-                        borderColor: '#d97706',
+                        borderColor: '#f59e0b',
                         borderWidth: 2,
                         yAxisID: 'yPrice',
                         tension: 0.3
@@ -2164,24 +2267,24 @@ function initCharts() {
                 maintainAspectRatio: false,
                 animation: false,
                 plugins: {
-                    legend: { labels: { color: '#334155', font: { family: 'monospace', size: 10 } } }
+                    legend: { labels: { color: chartLegendColor, font: { family: 'monospace', size: 10 } } }
                 },
                 scales: {
                     x: {
-                        grid: { color: '#f1f5f9' },
-                        ticks: { color: '#64748b', font: { family: 'monospace', size: 9 }, maxTicksLimit: 8 }
+                        grid: { color: chartGridColor },
+                        ticks: { color: chartTickColor, font: { family: 'monospace', size: 9 }, maxTicksLimit: 8 }
                     },
                     ySOC: {
                         position: 'left',
                         min: 0,
                         max: 100,
-                        grid: { color: '#f1f5f9' },
+                        grid: { color: chartGridColor },
                         ticks: { color: '#10b981', font: { family: 'monospace', size: 10 }, callback: v => `${v}%` }
                     },
                     yPrice: {
                         position: 'right',
                         grid: { drawOnChartArea: false },
-                        ticks: { color: '#d97706', font: { family: 'monospace', size: 10 }, callback: v => `₹${v}` }
+                        ticks: { color: '#f59e0b', font: { family: 'monospace', size: 10 }, callback: v => `₹${v}` }
                     }
                 }
             }
@@ -2257,6 +2360,11 @@ function renderBenchmarkChart(tradHistory, aiHistory) {
     const ctx = document.getElementById("chart-benchmark-grid")?.getContext("2d");
     if (!ctx) return;
 
+    const isDark = document.documentElement.classList.contains('dark');
+    const chartGridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
+    const chartTickColor = isDark ? '#94a3b8' : '#64748b';
+    const chartLegendColor = isDark ? '#f8fafc' : '#334155';
+
     const labels = tradHistory.map(h => `${h.hour}h`);
     const tradLoads = tradHistory.map(h => h.net_grid_load_kw);
     const aiLoads = aiHistory.map(h => h.net_grid_load_kw);
@@ -2268,11 +2376,21 @@ function renderBenchmarkChart(tradHistory, aiHistory) {
         data: {
             labels: labels,
             datasets: [
-                { label: 'Traditional Immediate Charging (kW)', data: tradLoads, borderColor: '#d97706', borderWidth: 2, tension: 0.3 },
-                { label: 'GridWise AI Optimized Feeder Load (kW)', data: aiLoads, borderColor: '#059669', borderWidth: 3, tension: 0.3 }
+                { label: 'Traditional Immediate Charging (kW)', data: tradLoads, borderColor: '#f59e0b', borderWidth: 2, tension: 0.3 },
+                { label: 'GridWise AI Optimized Feeder Load (kW)', data: aiLoads, borderColor: '#0284c7', borderWidth: 3, tension: 0.3 }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#334155', font: { family: 'monospace' } } } }, scales: { x: { grid: { color: '#e2e8f0' }, ticks: { color: '#64748b', font: { family: 'monospace' } } }, y: { grid: { color: '#e2e8f0' }, ticks: { color: '#64748b', font: { family: 'monospace' } } } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { labels: { color: chartLegendColor, font: { family: 'monospace' } } } 
+            }, 
+            scales: { 
+                x: { grid: { color: chartGridColor }, ticks: { color: chartTickColor, font: { family: 'monospace' } } }, 
+                y: { grid: { color: chartGridColor }, ticks: { color: chartTickColor, font: { family: 'monospace' } } } 
+            } 
+        }
     });
 }
 
