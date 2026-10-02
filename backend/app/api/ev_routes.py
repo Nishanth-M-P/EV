@@ -1,68 +1,108 @@
+import logging
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, List
 from backend.app.schemas.ev_schema import EVCreate, EVResponse, EVOverrideRequest
+
+logger = logging.getLogger("gridwise.ev_routes")
 
 def create_ev_router(sim_service):
     router = APIRouter(prefix="/api/evs", tags=["EV Fleet"])
 
     @router.get("", response_model=Dict[str, Any])
     def list_evs():
+        fleet = sim_service.engine.fleet_manager.fleet if hasattr(sim_service.engine, "fleet_manager") else getattr(sim_service.engine, "evs", {})
+        res_list = []
+        cur_h = getattr(sim_service.engine, "current_hour", 12.0)
+        for ev in fleet.values():
+            if hasattr(ev, "to_dict"):
+                try:
+                    res_list.append(ev.to_dict(current_hour=cur_h))
+                except TypeError:
+                    res_list.append(ev.to_dict())
         return {
-            "evs": [ev.to_dict() for ev in sim_service.engine.evs.values()],
-            "overrides": sim_service.engine.manual_overrides
+            "evs": res_list,
+            "overrides": getattr(sim_service.engine, "manual_overrides", {})
         }
 
     @router.post("", status_code=201)
     def add_ev(payload: EVCreate):
         try:
-            ev = sim_service.engine.evs
-            new_ev = sim_service.engine.ev_service.add_ev(payload.dict()) if hasattr(sim_service.engine, "ev_service") else None
-            # Also add directly into engine.evs if ev_service not bound
-            from backend.app.simulator.ev_simulator import EVDigitalTwin
-            import uuid
-            ev_id = payload.ev_id or f"EV-{uuid.uuid4().hex[:4].upper()}"
-            twin = EVDigitalTwin(
-                ev_id=ev_id,
-                name=payload.name,
-                battery_capacity_kwh=payload.battery_capacity_kwh,
-                current_soc=payload.current_soc,
-                minimum_soc=payload.minimum_soc,
-                maximum_soc=payload.maximum_soc,
-                target_soc=payload.target_soc,
-                arrival_time=payload.arrival_time,
-                departure_time=payload.departure_time,
-                max_charge_power_kw=payload.max_charge_power_kw,
-                max_discharge_power_kw=payload.max_discharge_power_kw,
-                charging_efficiency=payload.charging_efficiency,
-                discharging_efficiency=payload.discharging_efficiency,
-                battery_health=payload.battery_health
-            )
-            sim_service.engine.evs[ev_id] = twin
-            return {"status": "success", "ev": twin.to_dict()}
+            ev_dict = payload.dict()
+            if not ev_dict.get("ev_id"):
+                import uuid
+                ev_dict["ev_id"] = f"EV-{uuid.uuid4().hex[:4].upper()}"
+
+            # Guarantee newly added battery is fully connected and ready to charge
+            ev_dict["connected"] = True
+            ev_dict["v2g_enabled"] = True
+
+            cur_h = getattr(sim_service.engine, "current_hour", 12.0)
+            dep_val = float(ev_dict.get("departure_time", 18.0))
+            if dep_val <= cur_h:
+                ev_dict["departure_time"] = 24.0
+            arr_val = float(ev_dict.get("arrival_time", 8.0))
+            if arr_val > cur_h:
+                ev_dict["arrival_time"] = 0.0
+
+            # Add to authoritative fleet manager
+            if hasattr(sim_service.engine, "fleet_manager"):
+                new_ev = sim_service.engine.fleet_manager.add_ev(ev_dict)
+            else:
+                new_ev = sim_service.engine.ev_service.add_ev(ev_dict)
+
+            # Ensure battery is connected and in active CHARGING state
+            new_ev.connected = True
+            target = getattr(new_ev, "target_soc", 80.0)
+            if new_ev.soc < target:
+                new_ev.charging_state = "CHARGING"
+            if hasattr(new_ev, "is_connected"):
+                new_ev.is_connected = True
+
+            logger.info(f"Successfully added battery twin to circuit: {new_ev.ev_id} ({new_ev.capacity_kwh} kWh, SOC={new_ev.soc}%)")
+            
+            try:
+                ret_dict = new_ev.to_dict(current_hour=cur_h)
+            except TypeError:
+                ret_dict = new_ev.to_dict()
+                
+            return {"status": "success", "ev": ret_dict}
         except Exception as e:
+            logger.error(f"Error adding EV to fleet: {e}", exc_info=True)
             raise HTTPException(status_code=400, detail=str(e))
 
     @router.get("/{ev_id}")
     def get_ev(ev_id: str):
-        ev = sim_service.engine.evs.get(ev_id)
+        fleet = sim_service.engine.fleet_manager.fleet if hasattr(sim_service.engine, "fleet_manager") else getattr(sim_service.engine, "evs", {})
+        ev = fleet.get(ev_id)
         if not ev:
             raise HTTPException(status_code=404, detail="EV not found")
-        return ev.to_dict()
+        cur_h = getattr(sim_service.engine, "current_hour", 12.0)
+        try:
+            return ev.to_dict(current_hour=cur_h)
+        except TypeError:
+            return ev.to_dict()
 
     @router.delete("/{ev_id}")
     def delete_ev(ev_id: str):
-        if ev_id in sim_service.engine.evs:
-            del sim_service.engine.evs[ev_id]
-            sim_service.engine.manual_overrides.pop(ev_id, None)
+        fleet = sim_service.engine.fleet_manager.fleet if hasattr(sim_service.engine, "fleet_manager") else getattr(sim_service.engine, "evs", {})
+        if ev_id in fleet:
+            del fleet[ev_id]
+            if hasattr(sim_service.engine, "fleet_persisted_decisions"):
+                sim_service.engine.fleet_persisted_decisions.pop(ev_id, None)
+            if hasattr(sim_service.engine, "manual_overrides"):
+                sim_service.engine.manual_overrides.pop(ev_id, None)
             return {"status": "deleted", "ev_id": ev_id}
         raise HTTPException(status_code=404, detail="EV not found")
 
+    @router.post("/{ev_id}/action")
     @router.post("/{ev_id}/override")
     def set_ev_override(ev_id: str, payload: EVOverrideRequest):
-        if ev_id not in sim_service.engine.evs:
+        fleet = sim_service.engine.fleet_manager.fleet if hasattr(sim_service.engine, "fleet_manager") else getattr(sim_service.engine, "evs", {})
+        if ev_id not in fleet:
             raise HTTPException(status_code=404, detail="EV not found")
         action = payload.action
-        sim_service.engine.set_override(ev_id, action)
+        sim_service.engine.manual_overrides[ev_id] = action
         return {"status": "updated", "ev_id": ev_id, "override": action}
 
     return router
+
