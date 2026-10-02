@@ -141,7 +141,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1 font-mono">Email / Username</label>
+                    <label for="login-username" class="block text-xs font-semibold text-slate-700 mb-1 font-mono">Email / Username</label>
                     <div class="relative">
                         <input type="text" id="login-username" required placeholder="admin@gridwise.ai" value="admin@gridwise.ai" class="w-full px-3.5 py-2.5 pl-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
@@ -150,7 +150,7 @@
 
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="block text-xs font-semibold text-slate-700 font-mono">Password</label>
+                        <label for="login-password" class="block text-xs font-semibold text-slate-700 font-mono">Password</label>
                         <button type="button" onclick="openForgotPasswordModal()" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Forgot password?</button>
                     </div>
                     <div class="relative">
@@ -163,7 +163,7 @@
                 </div>
 
                 <div class="flex items-center justify-between text-xs">
-                    <label class="flex items-center gap-2 cursor-pointer text-slate-600">
+                    <label for="login-remember" class="flex items-center gap-2 cursor-pointer text-slate-600">
                         <input type="checkbox" id="login-remember" checked class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
                         <span>Remember me</span>
                     </label>
@@ -201,7 +201,7 @@
                 <!-- Operating Mode Switcher -->
                 <div class="flex items-center gap-1.5 bg-slate-800/90 px-2 py-0.5 rounded border border-slate-700 text-[10px]">
                     <span class="text-slate-400">MODE:</span>
-                    <select id="top-mode-select" onchange="changeOperatingMode(this.value)" class="bg-slate-900 text-emerald-400 font-bold border-0 rounded px-1 py-0.5 focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+                    <select id="top-mode-select" aria-label="Operating Mode" onchange="changeOperatingMode(this.value)" class="bg-slate-900 text-emerald-400 font-bold border-0 rounded px-1 py-0.5 focus:ring-1 focus:ring-emerald-500 cursor-pointer">
                         <option value="digital_twin" selected>Mode A: Digital Twin</option>
                         <option value="hardware">Mode B: Live Hardware</option>
                         <option value="hybrid">Mode C: Hybrid System</option>
@@ -1160,7 +1160,7 @@
                 </div>
 
                 <div class="flex items-center gap-2 font-mono text-xs">
-                    <button onclick="var f=document.getElementById('twin-simulator-iframe'); if(f) f.src='/simulator?v=20261002_07_fixed&t='+Date.now();" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition flex items-center gap-1.5 border border-slate-700">
+                    <button onclick="var f=document.getElementById('twin-simulator-iframe'); if(f) f.src='/simulator?v=20261002_08_css_anim&t='+Date.now();" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition flex items-center gap-1.5 border border-slate-700">
                         <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reload Canvas
                     </button>
                     <a href="/simulator" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
@@ -1171,7 +1171,7 @@
 
             <!-- Embedded Interactive Digital Twin Simulator Frame -->
             <div class="w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-[#080d1a]" style="height: calc(100vh - 170px); min-height: 820px;">
-                <iframe src="/simulator?v=20261002_07_fixed" id="twin-simulator-iframe" class="w-full h-full border-0 rounded-2xl" style="height: 100%; min-height: 820px;" allow="fullscreen"></iframe>
+                <iframe src="/simulator?v=20261002_08_css_anim" id="twin-simulator-iframe" class="w-full h-full border-0 rounded-2xl" style="height: 100%; min-height: 820px;" allow="fullscreen"></iframe>
             </div>
         </main>
 
@@ -1202,7 +1202,7 @@
                 <div class="flex flex-wrap items-center gap-3 pt-2 lg:pt-0 font-mono text-xs">
                     <div class="flex items-center gap-2 bg-slate-100 px-3 py-2 rounded-xl border border-slate-300">
                         <span class="text-slate-500 font-bold">Episodes:</span>
-                        <select id="train-episodes-select" class="bg-transparent font-bold text-slate-800 outline-none cursor-pointer">
+                        <select id="train-episodes-select" aria-label="Training Episodes Count" class="bg-transparent font-bold text-slate-800 outline-none cursor-pointer">
                             <option value="50">50 Episodes (Quick)</option>
                             <option value="100" selected>100 Episodes (Standard)</option>
                             <option value="250">250 Episodes (Refined)</option>
@@ -1351,14 +1351,14 @@
                             <i data-lucide="palette" class="w-4 h-4 text-teal-600 dark:text-teal-400"></i> Appearance & Theme System
                         </h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <label class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-center gap-3 cursor-pointer hover:border-emerald-500 transition shadow-sm">
+                            <label for="theme-radio-light" class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-center gap-3 cursor-pointer hover:border-emerald-500 transition shadow-sm">
                                 <input type="radio" name="theme-preference" value="light" id="theme-radio-light" onchange="setGlobalTheme('light')" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
                                 <div>
                                     <span class="block font-bold text-slate-800 dark:text-slate-100 text-xs">☀ Light Theme</span>
                                     <span class="text-[10px] text-slate-500 dark:text-slate-400">Clean high-contrast daytime engineering surfaces</span>
                                 </div>
                             </label>
-                            <label class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-center gap-3 cursor-pointer hover:border-emerald-500 transition shadow-sm">
+                            <label for="theme-radio-dark" class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-center gap-3 cursor-pointer hover:border-emerald-500 transition shadow-sm">
                                 <input type="radio" name="theme-preference" value="dark" id="theme-radio-dark" onchange="setGlobalTheme('dark')" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
                                 <div>
                                     <span class="block font-bold text-slate-800 dark:text-slate-100 text-xs">🌙 Dark Theme</span>
@@ -1375,17 +1375,17 @@
                         </h3>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                <label class="block text-slate-600 mb-1">Minimum SOC Allowed (%)</label>
+                                <label for="set-min-soc" class="block text-slate-600 mb-1">Minimum SOC Allowed (%)</label>
                                 <input type="number" id="set-min-soc" value="20.0" min="5" max="50" step="1" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
                                 <span class="text-[10px] text-slate-400 mt-1 block">Blocks deep discharging</span>
                             </div>
                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                <label class="block text-slate-600 mb-1">Maximum SOC Allowed (%)</label>
+                                <label for="set-max-soc" class="block text-slate-600 mb-1">Maximum SOC Allowed (%)</label>
                                 <input type="number" id="set-max-soc" value="95.0" min="80" max="100" step="1" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
                                 <span class="text-[10px] text-slate-400 mt-1 block">Prevents overcharging stress</span>
                             </div>
                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                <label class="block text-slate-600 mb-1">Departure Urgency Buffer (Hours)</label>
+                                <label for="set-urgency-buffer" class="block text-slate-600 mb-1">Departure Urgency Buffer (Hours)</label>
                                 <input type="number" id="set-urgency-buffer" value="2.0" min="0.5" max="6.0" step="0.5" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
                                 <span class="text-[10px] text-slate-400 mt-1 block">Guarantees user trip SLA</span>
                             </div>
@@ -1399,15 +1399,15 @@
                         </h3>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                <label class="block text-slate-600 mb-1">Default Feeder Capacity (kW)</label>
+                                <label for="set-feeder-cap" class="block text-slate-600 mb-1">Default Feeder Capacity (kW)</label>
                                 <input type="number" id="set-feeder-cap" value="100.0" min="20" max="5000" step="10" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
                             </div>
                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                <label class="block text-slate-600 mb-1">High Stress Threshold (%)</label>
+                                <label for="set-stress-high" class="block text-slate-600 mb-1">High Stress Threshold (%)</label>
                                 <input type="number" id="set-stress-high" value="85.0" min="50" max="95" step="5" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
                             </div>
                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                <label class="block text-slate-600 mb-1">Min SOC for V2G Discharge (%)</label>
+                                <label for="set-v2g-min-soc" class="block text-slate-600 mb-1">Min SOC for V2G Discharge (%)</label>
                                 <input type="number" id="set-v2g-min-soc" value="35.0" min="20" max="70" step="5" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 font-bold">
                             </div>
                         </div>
@@ -1441,7 +1441,7 @@
             <form onsubmit="handleForgotPasswordSubmit(event)" class="space-y-3 text-xs font-mono">
                 <p class="text-slate-600">Enter your registered operator email to receive password reset credentials.</p>
                 <div>
-                    <label class="block text-slate-700 font-semibold mb-1">Email Address</label>
+                    <label for="forgot-email" class="block text-slate-700 font-semibold mb-1">Email Address</label>
                     <input type="email" id="forgot-email" required value="admin@gridwise.ai" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
                 </div>
                 <div class="pt-2 flex justify-end gap-2">
@@ -1461,36 +1461,36 @@
             </div>
             <form id="add-ev-form" onsubmit="submitAddEvForm(event)" class="space-y-3 text-xs font-mono">
                 <div>
-                    <label class="block text-slate-700 font-semibold mb-1">EV Model Name</label>
+                    <label for="input-ev-name" class="block text-slate-700 font-semibold mb-1">EV Model Name</label>
                     <input type="text" id="input-ev-name" required value="Hyundai Ioniq 6" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-slate-700 font-semibold mb-1">Battery (kWh)</label>
+                        <label for="input-ev-capacity" class="block text-slate-700 font-semibold mb-1">Battery (kWh)</label>
                         <input type="number" id="input-ev-capacity" required value="77.4" step="0.1" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
                     </div>
                     <div>
-                        <label class="block text-slate-700 font-semibold mb-1">Current SOC %</label>
+                        <label for="input-ev-soc" class="block text-slate-700 font-semibold mb-1">Current SOC %</label>
                         <input type="number" id="input-ev-soc" required value="40" min="0" max="100" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-slate-700 font-semibold mb-1">Required SOC %</label>
+                        <label for="input-ev-req-soc" class="block text-slate-700 font-semibold mb-1">Required SOC %</label>
                         <input type="number" id="input-ev-req-soc" required value="85" min="0" max="100" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
                     </div>
                     <div>
-                        <label class="block text-slate-700 font-semibold mb-1">Min SOC %</label>
+                        <label for="input-ev-min-soc" class="block text-slate-700 font-semibold mb-1">Min SOC %</label>
                         <input type="number" id="input-ev-min-soc" required value="20" min="0" max="100" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-slate-700 font-semibold mb-1">Arrival Hour</label>
+                        <label for="input-ev-arrival" class="block text-slate-700 font-semibold mb-1">Arrival Hour</label>
                         <input type="number" id="input-ev-arrival" required value="8" min="0" max="23" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
                     </div>
                     <div>
-                        <label class="block text-slate-700 font-semibold mb-1">Departure Hour</label>
+                        <label for="input-ev-departure" class="block text-slate-700 font-semibold mb-1">Departure Hour</label>
                         <input type="number" id="input-ev-departure" required value="18" min="0" max="23" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900">
                     </div>
                 </div>

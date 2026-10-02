@@ -333,8 +333,8 @@ function showView(viewId) {
         } else if (viewId === "view-simulator-lab") {
             setActivePlatNav("nav-btn-sim");
             const iframe = document.getElementById('twin-simulator-iframe');
-            if (iframe && (!iframe.src || iframe.src.indexOf('20261002_07_fixed') === -1)) {
-                iframe.src = '/simulator?v=20261002_07_fixed&t=' + Date.now();
+            if (iframe && (!iframe.src || iframe.src.indexOf('20261002_08_css_anim') === -1)) {
+                iframe.src = '/simulator?v=20261002_08_css_anim&t=' + Date.now();
             }
             renderSimulatorEvTwins();
             fetchSimulationHistoryApi();

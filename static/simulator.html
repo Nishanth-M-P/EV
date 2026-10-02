@@ -150,7 +150,7 @@
     <div class="flex items-center gap-2.5">
       <div class="flex items-center gap-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 shadow-inner">
         <span class="material-symbols-outlined text-purple-500 text-[16px]">neurology</span>
-        <select id="tb-strategy-select" class="bg-transparent text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer font-medium">
+        <select id="tb-strategy-select" aria-label="Simulation Strategy" class="bg-transparent text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer font-medium">
           <option value="drl" selected>Strategy: DRL V2G (PPO Policy)</option>
           <option value="rule_based">Strategy: Rule-Based (S2)</option>
           <option value="uncontrolled">Strategy: Uncontrolled (S1 Baseline)</option>
@@ -938,35 +938,35 @@
         </button>
       </div>
       <div class="p-5 space-y-4 text-xs">
-        <label class="flex items-start gap-3 cursor-pointer">
+        <label for="cfg-auto-create-sub" class="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" id="cfg-auto-create-sub" class="mt-0.5 w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-700 focus:ring-0 cursor-pointer" checked/>
           <div>
             <div class="font-semibold text-slate-200">Integrated EV Battery Pack & BMS</div>
             <div class="text-[11px] text-slate-400">Electric Vehicle intrinsically embeds its 400V LFP battery pack and CCS Combo 2 inlet.</div>
           </div>
         </label>
-        <label class="flex items-start gap-3 cursor-pointer">
+        <label for="cfg-auto-connect" class="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" id="cfg-auto-connect" class="mt-0.5 w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-700 focus:ring-0 cursor-pointer" checked/>
           <div>
             <div class="font-semibold text-slate-200">Auto-connect compatible components</div>
             <div class="text-[11px] text-slate-400">Automatically wires compatible ports when adding Grid, Charger, and EV into standard loop.</div>
           </div>
         </label>
-        <label class="flex items-start gap-3 cursor-pointer">
+        <label for="cfg-show-ports" class="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" id="cfg-show-ports" class="mt-0.5 w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-700 focus:ring-0 cursor-pointer" checked/>
           <div>
             <div class="font-semibold text-slate-200">Show connection ports</div>
             <div class="text-[11px] text-slate-400">Renders port pin circles (●) on components for manual wiring.</div>
           </div>
         </label>
-        <label class="flex items-start gap-3 cursor-pointer">
+        <label for="cfg-snap-grid" class="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" id="cfg-snap-grid" class="mt-0.5 w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-700 focus:ring-0 cursor-pointer" checked/>
           <div>
             <div class="font-semibold text-slate-200">Snap components to grid (20px)</div>
             <div class="text-[11px] text-slate-400">Aligns components and orthogonal wires to engineering grid coordinates.</div>
           </div>
         </label>
-        <label class="flex items-start gap-3 cursor-pointer">
+        <label for="cfg-prevent-invalid" class="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" id="cfg-prevent-invalid" class="mt-0.5 w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-700 focus:ring-0 cursor-pointer" checked/>
           <div>
             <div class="font-semibold text-slate-200">Prevent invalid connections</div>
@@ -990,7 +990,7 @@
   </div>
 
   <!-- Master Interactive Workspace Script -->
-  <script src="assets/js/lab-workspace.js?v=20261002_07_fixed"></script>
+  <script src="assets/js/lab-workspace.js?v=20261002_08_css_anim"></script>
 
   <!-- Failsafe: Eradicate any obsolete green feed wire elements -->
   <script>

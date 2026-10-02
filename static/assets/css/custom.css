@@ -566,6 +566,21 @@ html.dark .cable-insulator {
   animation: wire-flow-forward 1.8s linear infinite;
 }
 
+/* GPU-accelerated CSS Motion Path particle animations replacing SMIL <animateMotion> */
+@keyframes css-particle-flow-fwd {
+  0% { offset-distance: 0%; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+@keyframes css-particle-flow-rev {
+  0% { offset-distance: 100%; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { offset-distance: 0%; opacity: 0; }
+}
+
 /* Circuit Component Nodes */
 .sim-node {
   position: absolute;

@@ -315,34 +315,18 @@ const LabWorkspace = (function() {
             <!-- Layer 4: Forward Particles (Charge: Grid -> Charger -> Battery) -->
             <g id="cable-fwd-${conn.id}" class="pointer-events-none" style="display: none;">
               <path d="${pathD}" stroke="#34d399" stroke-width="5" stroke-dasharray="8 6" fill="none" class="cable-pulse-charge" />
-              <circle r="4.5" fill="#34d399" filter="url(#glow-green)">
-                <animateMotion path="${pathD}" dur="1.0s" repeatCount="indefinite" />
-              </circle>
-              <circle r="3" fill="#ffffff">
-                <animateMotion path="${pathD}" dur="1.0s" repeatCount="indefinite" />
-              </circle>
-              <circle r="4.5" fill="#34d399" filter="url(#glow-green)">
-                <animateMotion path="${pathD}" dur="1.0s" begin="0.5s" repeatCount="indefinite" />
-              </circle>
-              <circle r="2.5" fill="#ffffff">
-                <animateMotion path="${pathD}" dur="1.0s" begin="0.5s" repeatCount="indefinite" />
-              </circle>
+              <circle r="4.5" fill="#34d399" filter="url(#glow-green)" style="offset-path: path('${pathD}'); animation: css-particle-flow-fwd 1.0s linear infinite;" />
+              <circle r="3" fill="#ffffff" style="offset-path: path('${pathD}'); animation: css-particle-flow-fwd 1.0s linear infinite;" />
+              <circle r="4.5" fill="#34d399" filter="url(#glow-green)" style="offset-path: path('${pathD}'); animation: css-particle-flow-fwd 1.0s linear infinite -0.5s;" />
+              <circle r="2.5" fill="#ffffff" style="offset-path: path('${pathD}'); animation: css-particle-flow-fwd 1.0s linear infinite -0.5s;" />
             </g>
             <!-- Layer 5: Reverse Particles (V2G Discharge: Battery -> Charger -> Grid) -->
             <g id="cable-rev-${conn.id}" class="pointer-events-none" style="display: none;">
               <path d="${pathD}" stroke="#38bdf8" stroke-width="5" stroke-dasharray="8 6" fill="none" class="cable-pulse-v2g" />
-              <circle r="4.5" fill="#38bdf8" filter="url(#glow-cyan)">
-                <animateMotion path="${reversePathD}" dur="1.0s" repeatCount="indefinite" />
-              </circle>
-              <circle r="3" fill="#ffffff">
-                <animateMotion path="${reversePathD}" dur="1.0s" repeatCount="indefinite" />
-              </circle>
-              <circle r="4.5" fill="#38bdf8" filter="url(#glow-cyan)">
-                <animateMotion path="${reversePathD}" dur="1.0s" begin="0.5s" repeatCount="indefinite" />
-              </circle>
-              <circle r="2.5" fill="#ffffff">
-                <animateMotion path="${reversePathD}" dur="1.0s" begin="0.5s" repeatCount="indefinite" />
-              </circle>
+              <circle r="4.5" fill="#38bdf8" filter="url(#glow-cyan)" style="offset-path: path('${reversePathD}'); animation: css-particle-flow-fwd 1.0s linear infinite;" />
+              <circle r="3" fill="#ffffff" style="offset-path: path('${reversePathD}'); animation: css-particle-flow-fwd 1.0s linear infinite;" />
+              <circle r="4.5" fill="#38bdf8" filter="url(#glow-cyan)" style="offset-path: path('${reversePathD}'); animation: css-particle-flow-fwd 1.0s linear infinite -0.5s;" />
+              <circle r="2.5" fill="#ffffff" style="offset-path: path('${reversePathD}'); animation: css-particle-flow-fwd 1.0s linear infinite -0.5s;" />
             </g>
             <!-- Heavy-Duty Metallic Cable Glands / Compression Terminals -->
             <circle cx="${p1.x}" cy="${p1.y}" r="6.5" fill="#1e293b" stroke="#f59e0b" stroke-width="2" class="pointer-events-none" />
@@ -357,9 +341,7 @@ const LabWorkspace = (function() {
         svgHtml += `
           <g class="control-cable-group" id="conn-${conn.id}" data-conn-id="${conn.id}">
             <path d="${pathD}" fill="none" stroke="#a855f7" stroke-width="3" stroke-linecap="round" filter="url(#glow-purple)" class="pointer-events-none control-flow-pulse" stroke-dasharray="6 4" />
-            <circle r="3" fill="#e9d5ff">
-              <animateMotion path="${pathD}" dur="1.2s" repeatCount="indefinite" />
-            </circle>
+            <circle r="3" fill="#e9d5ff" style="offset-path: path('${pathD}'); animation: css-particle-flow-fwd 1.2s linear infinite;" />
             <circle cx="${p1.x}" cy="${p1.y}" r="4" fill="#a855f7" class="pointer-events-none" />
             <circle cx="${p2.x}" cy="${p2.y}" r="4" fill="#a855f7" class="pointer-events-none" />
             <text x="${midX + (conn.connectionType === 'control_bus' ? 0 : 45)}" y="${midY + 3}" fill="#c084fc" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="middle" class="pointer-events-none select-none">${conn.label || ''}</text>
@@ -371,9 +353,7 @@ const LabWorkspace = (function() {
             <!-- Sensor Tap Wire -->
             <path d="${pathD}" fill="none" stroke="#ec4899" stroke-width="2.5" stroke-dasharray="4 3" class="pointer-events-none meter-flow-pulse" />
             <!-- Measurement Flow Particles down to Meter -->
-            <circle r="3" fill="#f472b6" filter="url(#glow-purple)">
-              <animateMotion path="${pathD}" dur="0.9s" repeatCount="indefinite" />
-            </circle>
+            <circle r="3" fill="#f472b6" filter="url(#glow-purple)" style="offset-path: path('${pathD}'); animation: css-particle-flow-fwd 0.9s linear infinite;" />
             <!-- CT Clamp on the 11kV AC Bus Cable at (355, 322) -->
             <circle cx="355" cy="322" r="7.5" fill="#1e293b" stroke="#ec4899" stroke-width="2.5" class="pointer-events-none" />
             <circle cx="355" cy="322" r="3" fill="#f472b6" class="pointer-events-none" />
@@ -395,9 +375,7 @@ const LabWorkspace = (function() {
         svgHtml += `
           <g class="data-cable-group" id="conn-${conn.id}" data-conn-id="${conn.id}">
             <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-dasharray="4 4" opacity="0.85" class="pointer-events-none data-flow-pulse" />
-            <circle r="2.5" fill="${strokeColor}">
-              <animateMotion path="${pathD}" dur="1.8s" repeatCount="indefinite" />
-            </circle>
+            <circle r="2.5" fill="${strokeColor}" style="offset-path: path('${pathD}'); animation: css-particle-flow-fwd 1.8s linear infinite;" />
             <circle cx="${p1.x}" cy="${p1.y}" r="3" fill="${strokeColor}" class="pointer-events-none" />
             <circle cx="${p2.x}" cy="${p2.y}" r="3" fill="${strokeColor}" class="pointer-events-none" />
             ${conn.label ? `<text x="${midX}" y="${midY - 8}" fill="${strokeColor}" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle" class="pointer-events-none select-none">${conn.label}</text>` : ''}
