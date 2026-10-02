@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>GridWise AI - AI-Powered Digital Twin & Energy Management Platform</title>
     <!-- Tailwind CSS -->
     <script>
@@ -1157,7 +1160,7 @@
                 </div>
 
                 <div class="flex items-center gap-2 font-mono text-xs">
-                    <button onclick="document.getElementById('twin-simulator-iframe').src = '/simulator'" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition flex items-center gap-1.5 border border-slate-700">
+                    <button onclick="var f=document.getElementById('twin-simulator-iframe'); if(f) f.src='/simulator?v=20261002_07_fixed&t='+Date.now();" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition flex items-center gap-1.5 border border-slate-700">
                         <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reload Canvas
                     </button>
                     <a href="/simulator" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
@@ -1168,7 +1171,7 @@
 
             <!-- Embedded Interactive Digital Twin Simulator Frame -->
             <div class="w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-[#080d1a]" style="height: calc(100vh - 170px); min-height: 820px;">
-                <iframe src="/simulator" id="twin-simulator-iframe" class="w-full h-full border-0 rounded-2xl" style="height: 100%; min-height: 820px;" allow="fullscreen"></iframe>
+                <iframe src="/simulator?v=20261002_07_fixed" id="twin-simulator-iframe" class="w-full h-full border-0 rounded-2xl" style="height: 100%; min-height: 820px;" allow="fullscreen"></iframe>
             </div>
         </main>
 
@@ -1729,7 +1732,7 @@
     </div>
 
     <!-- Application JavaScript Engine -->
-    <script src="/static/app.js?v=2.7.0"></script>
+    <script src="/static/app.js?v=2.7.1"></script>
     <script>
         lucide.createIcons();
     </script>
