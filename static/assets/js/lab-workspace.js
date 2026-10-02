@@ -2417,15 +2417,7 @@ const LabWorkspace = (function() {
     const meter = addBlock('meter', 250, 415, 'meter_01');
 
     // ================= REALISTIC ENGINEERING CONNECTIONS (PRD Sections 1-6) =================
-    // 1. Renewable Generation Feed: Renewables (110, 113) -> Grid Substation (110, 260)
-    ConnectionManager.create(renewInfo, renewInfo.ports[1], grid, grid.ports[2], {
-      id: 'renew_to_grid',
-      label: 'GREEN FEED (5.02 GW)',
-      type: 'power_renew',
-      customPath: () => 'M 110 113 L 110 260'
-    });
-
-    // 2. High-Voltage Heavy Power Cable: Grid (310, 322) -> Charger (400, 322)
+    // 1. High-Voltage Heavy Power Cable: Grid (310, 322) -> Charger (400, 322)
     ConnectionManager.create(grid, grid.ports[0], charger, charger.ports[0], {
       id: 'grid_to_charger',
       label: '11 kV AC BUS',
