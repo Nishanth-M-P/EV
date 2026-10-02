@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>GridWise AI -- V2G Simulation Lab</title>
 
   <!-- Prevent Theme FOUC -->
@@ -952,6 +955,44 @@
   </div>
 
   <!-- Master Interactive Workspace Script -->
-  <script src="assets/js/lab-workspace.js?v=20261002_03"></script>
+  <script src="assets/js/lab-workspace.js?v=20261002_05_nogreenfeed"></script>
+
+  <!-- Failsafe: Eradicate any obsolete green feed wire elements -->
+  <script>
+    (function() {
+      function purgeGreenFeedElements() {
+        const ids = [
+          'conn-renew_to_grid',
+          'cable-lbl-renew_to_grid',
+          'cable-core-renew_to_grid',
+          'cable-sheath-renew_to_grid',
+          'cable-insulator-renew_to_grid',
+          'cable-fwd-renew_to_grid'
+        ];
+        ids.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.remove();
+        });
+        var conns = document.querySelectorAll('[data-conn-id="renew_to_grid"]');
+        conns.forEach(function(el) { el.remove(); });
+        var textNodes = document.querySelectorAll('text');
+        textNodes.forEach(function(t) {
+          if (t.textContent && t.textContent.includes('GREEN FEED')) {
+            var g = t.closest('g') || t;
+            g.remove();
+          }
+        });
+      }
+      purgeGreenFeedElements();
+      document.addEventListener('DOMContentLoaded', purgeGreenFeedElements);
+      window.addEventListener('load', purgeGreenFeedElements);
+      var count = 0;
+      var timer = setInterval(function() {
+        purgeGreenFeedElements();
+        count++;
+        if (count > 25) clearInterval(timer);
+      }, 200);
+    })();
+  </script>
 </body>
 </html>

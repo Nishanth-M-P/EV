@@ -4,7 +4,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -141,6 +141,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+@app.middleware("http")
+async def add_no_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path.endswith((".html", ".js", ".css")) or path in ["/", "/simulator"]:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 # Register Routers
 app.include_router(create_auth_router())
@@ -297,14 +307,14 @@ if os.path.exists(results_dir):
 async def serve_dashboard():
     index_path = os.path.join(static_dir, "index.html")
     if os.path.exists(index_path):
-        return FileResponse(index_path)
+        return FileResponse(index_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
     return HTMLResponse("<h1>GridWise AI Backend Active</h1>")
 
 @app.get("/simulator", response_class=HTMLResponse)
 async def serve_simulator():
     sim_path = os.path.join(static_dir, "simulator.html")
     if os.path.exists(sim_path):
-        return FileResponse(sim_path)
+        return FileResponse(sim_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
     return HTMLResponse("<h1>Digital Twin Simulator Lab not found</h1>")
 
 # WebSocket Real-Time Telemetry Endpoints

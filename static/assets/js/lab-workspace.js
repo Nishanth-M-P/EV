@@ -353,39 +353,6 @@ const LabWorkspace = (function() {
             <text id="cable-lbl-${conn.id}" x="${midX}" y="${midY - 12}" fill="#94a3b8" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle" class="pointer-events-none select-none">${conn.label || ''}</text>
           </g>
         `;
-      } else if (conn.connectionType === 'power_renew') {
-        svgHtml += `
-          <g class="power-cable-group" id="conn-${conn.id}" data-conn-id="${conn.id}">
-            <!-- Layer 1: Outer Heavy Shield Conduit (12px) -->
-            <path id="cable-sheath-${conn.id}" d="${pathD}" stroke="#064e3b" stroke-width="12" stroke-linecap="round" fill="none" class="cable-outer-sheath pointer-events-none" />
-            <!-- Layer 2: Rubber/XLPE Insulator Jacket (8px) -->
-            <path id="cable-insulator-${conn.id}" d="${pathD}" stroke="#065f46" stroke-width="8" stroke-linecap="round" fill="none" class="cable-insulator pointer-events-none" />
-            <!-- Layer 3: Solid Conductor Core (3.5px) -->
-            <path id="cable-core-${conn.id}" d="${pathD}" stroke="#10b981" stroke-width="3.5" stroke-linecap="round" fill="none" filter="url(#glow-green)" class="pointer-events-none" />
-            <!-- Layer 4: Continuous Generation Flow Particles (Renewables -> Grid Substation) -->
-            <g id="cable-fwd-${conn.id}" class="pointer-events-none">
-              <circle r="4" fill="#34d399" filter="url(#glow-green)">
-                <animateMotion path="${pathD}" dur="1.2s" repeatCount="indefinite" />
-              </circle>
-              <circle r="2.5" fill="#ffffff">
-                <animateMotion path="${pathD}" dur="1.2s" repeatCount="indefinite" />
-              </circle>
-              <circle r="4" fill="#34d399" filter="url(#glow-green)">
-                <animateMotion path="${pathD}" dur="1.2s" begin="0.6s" repeatCount="indefinite" />
-              </circle>
-              <circle r="2" fill="#ffffff">
-                <animateMotion path="${pathD}" dur="1.2s" begin="0.6s" repeatCount="indefinite" />
-              </circle>
-            </g>
-            <!-- Heavy-Duty Metallic Cable Glands -->
-            <circle cx="${p1.x}" cy="${p1.y}" r="6" fill="#1e293b" stroke="#10b981" stroke-width="2" class="pointer-events-none" />
-            <circle cx="${p1.x}" cy="${p1.y}" r="2.5" fill="#a7f3d0" class="pointer-events-none" />
-            <circle cx="${p2.x}" cy="${p2.y}" r="6" fill="#1e293b" stroke="#10b981" stroke-width="2" class="pointer-events-none" />
-            <circle cx="${p2.x}" cy="${p2.y}" r="2.5" fill="#a7f3d0" class="pointer-events-none" />
-            <!-- Technical Generation Label -->
-            <text id="cable-lbl-${conn.id}" x="${midX + 8}" y="${midY}" fill="#34d399" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="start" class="pointer-events-none select-none">${conn.label || ''}</text>
-          </g>
-        `;
       } else if (conn.connectionType === 'control' || conn.connectionType === 'control_bus') {
         svgHtml += `
           <g class="control-cable-group" id="conn-${conn.id}" data-conn-id="${conn.id}">
@@ -2495,6 +2462,9 @@ const LabWorkspace = (function() {
       type: 'measurement',
       customPath: () => 'M 355 322 L 355 415'
     });
+
+    // Explicitly guarantee no stale or cached green feed wire can ever exist
+    connections = connections.filter(c => c && c.id !== 'renew_to_grid' && c.connectionType !== 'power_renew' && (!c.label || !c.label.includes('GREEN FEED')));
 
     selectedNodeId = 'drl_01';
     renderAllNodes();
