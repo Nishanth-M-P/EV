@@ -268,17 +268,11 @@
                         <span id="header-clock" class="text-xs sm:text-sm font-extrabold text-emerald-700 dark:text-emerald-400">14:00 / 24:00</span>
                     </div>
 
-                    <button onclick="launchSmartDemoApi()" class="hidden md:flex px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition items-center gap-1.5 shadow-md shadow-amber-500/20">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> <span>Peak-Shaving Demo</span>
-                    </button>
-
-                    <button onclick="toggleSimulationRun()" id="header-sim-btn" class="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
-                        <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> <span id="header-sim-btn-text">Start</span>
-                    </button>
-
-                    <button onclick="stopSimulationApi()" id="header-stop-btn" class="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-300 dark:border-slate-700 transition flex items-center gap-1">
-                        <i data-lucide="square" class="w-3 h-3 fill-current"></i> <span>Stop</span>
-                    </button>
+                    <!-- Dynamic Real-Time Simulator Status Badge (LIVE / OFFLINE) -->
+                    <div id="header-sim-status" class="px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-mono text-xs font-bold flex items-center gap-2 shadow-sm transition-all" title="Simulator Live Stream">
+                        <span id="header-sim-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="header-sim-status-text">LIVE</span>
+                    </div>
 
                     <!-- Global Theme Toggle Button -->
                     <button id="global-theme-toggle" onclick="toggleGlobalTheme()" class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-xs transition flex items-center gap-1.5 shadow-sm" title="Toggle Light / Dark Mode">
@@ -288,9 +282,6 @@
 
                     <!-- User & Logout -->
                     <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
-                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 font-bold text-xs" id="nav-user-avatar" title="Logged in as Admin">
-                            AD
-                        </div>
                         <button onclick="handleLogout()" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 transition" title="Sign Out">
                             <i data-lucide="log-out" class="w-4 h-4"></i> <span class="hidden sm:inline">Logout</span>
                         </button>
@@ -1732,7 +1723,7 @@
     </div>
 
     <!-- Application JavaScript Engine -->
-    <script src="/static/app.js?v=2.7.1"></script>
+    <script src="/static/app.js?v=2.7.2"></script>
     <script>
         lucide.createIcons();
     </script>

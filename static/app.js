@@ -142,6 +142,38 @@ function normalizeConstraintEvents(payload) {
 
 function setWsConnectionState(state, detail = "") {
     wsConnectionState = state;
+
+    // Real-Time Header Status Badge (LIVE / OFFLINE / CONNECTING)
+    const headerStatus = document.getElementById("header-sim-status");
+    const headerStatusText = document.getElementById("header-sim-status-text");
+    const headerStatusDot = document.getElementById("header-sim-status-dot");
+
+    if (headerStatus && headerStatusText) {
+        if (state === "CONNECTED") {
+            headerStatus.className = "px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-mono text-xs font-bold flex items-center gap-2 shadow-sm transition-all";
+            headerStatusText.textContent = "LIVE";
+            headerStatus.title = `Simulator Online & Streaming ${detail ? `(${detail})` : ''}`;
+            if (headerStatusDot) {
+                headerStatusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+            }
+        } else if (state === "CONNECTING" || state === "RECONNECTING") {
+            headerStatus.className = "px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-mono text-xs font-bold flex items-center gap-2 shadow-sm transition-all animate-pulse";
+            headerStatusText.textContent = "CONNECTING...";
+            headerStatus.title = `Simulator Reconnecting ${detail ? `(${detail})` : ''}`;
+            if (headerStatusDot) {
+                headerStatusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
+            }
+        } else {
+            // BACKEND_OFFLINE, DISCONNECTED, AUTH_REQUIRED
+            headerStatus.className = "px-3 py-1.5 rounded-xl bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 font-mono text-xs font-bold flex items-center gap-2 shadow-sm transition-all";
+            headerStatusText.textContent = "OFFLINE";
+            headerStatus.title = "Simulator Offline";
+            if (headerStatusDot) {
+                headerStatusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+            }
+        }
+    }
+
     const wsStatus = document.getElementById("top-ws-status");
     const wsBadge = document.getElementById("top-ws-badge");
     if (!wsStatus) return;
