@@ -136,8 +136,7 @@ const LabWorkspace = (function() {
       type: 'renewable_info', title: 'Renewable Generation', category: 'Generation Input',
       width: 280, height: 95,
       ports: [
-        { id: 'renew_out', name: 'PV/Wind Data Out', type: 'data', direction: 'output', side: 'right', x: 280, y: 47 },
-        { id: 'power_out', name: 'Generation Power Feed', type: 'power', direction: 'output', side: 'bottom', x: 80, y: 95 }
+        { id: 'renew_out', name: 'PV/Wind Data Out', type: 'data', direction: 'output', side: 'right', x: 280, y: 47 }
       ],
       defaultProps: { id: 'RENEW-RES', name: 'Renewable Generation', source: 'Live Grid Data', status: 'LIVE', solarGw: 1.99, windGw: 2.41, hydroGw: 0.62, totalGw: 5.02, sharePct: 36.5 }
     },
@@ -183,29 +182,28 @@ const LabWorkspace = (function() {
     },
     grid: {
       type: 'grid', title: 'Electrical Grid (11kV)', category: 'Power Grid',
-      width: 280, height: 125,
+      width: 280, height: 130,
       ports: [
-        { id: 'power_ac_out', name: '11kV AC Bus', type: 'power', direction: 'output', side: 'right', x: 280, y: 62 },
-        { id: 'telemetry_out', name: 'Grid Telemetry Out', type: 'data', direction: 'output', side: 'top', x: 140, y: 0 },
-        { id: 'renew_power_in', name: 'Renewable Feed In', type: 'power', direction: 'input', side: 'top', x: 80, y: 0 }
+        { id: 'power_ac_out', name: '11kV AC Bus', type: 'power', direction: 'output', side: 'right', x: 280, y: 65 },
+        { id: 'telemetry_out', name: 'Grid Telemetry Out', type: 'data', direction: 'output', side: 'top', x: 140, y: 0 }
       ],
       defaultProps: { id: 'GRID-PHYS', name: 'Electrical Grid', baseDemandGw: 13.74, evImpactKw: 8.40, managedDemandGw: 13.7484 }
     },
     charger: {
       type: 'charger', title: 'Bidirectional EV Charger', category: 'Power Electronics',
-      width: 280, height: 125,
+      width: 280, height: 130,
       ports: [
-        { id: 'ac_terminal', name: 'AC Terminal In/Out', type: 'power', direction: 'input', side: 'left', x: 0, y: 62 },
-        { id: 'dc_terminal', name: 'DC Terminal In/Out', type: 'power', direction: 'output', side: 'right', x: 280, y: 62 },
+        { id: 'ac_terminal', name: 'AC Terminal In/Out', type: 'power', direction: 'input', side: 'left', x: 0, y: 65 },
+        { id: 'dc_terminal', name: 'DC Terminal In/Out', type: 'power', direction: 'output', side: 'right', x: 280, y: 65 },
         { id: 'control_in', name: 'Control In', type: 'command', direction: 'input', side: 'top', x: 140, y: 0 }
       ],
       defaultProps: { id: 'CHG-01', name: 'Bidirectional EV Charger', ratedPowerKw: 22.0, powerKw: 8.4, mode: 'CHARGING', direction: 'GRID -> EV', efficiency: 0.95, voltageV: 400.0, currentA: 21.0 }
     },
     battery: {
       type: 'battery', title: 'EV Battery (Integrated Car)', category: 'Energy Storage',
-      width: 280, height: 125,
+      width: 280, height: 130,
       ports: [
-        { id: 'dc_inlet', name: 'DC Fast Charge Inlet', type: 'power', direction: 'input', side: 'left', x: 0, y: 62 },
+        { id: 'dc_inlet', name: 'DC Fast Charge Inlet', type: 'power', direction: 'input', side: 'left', x: 0, y: 65 },
         { id: 'bms_telemetry_out', name: 'BMS Telemetry Out', type: 'data', direction: 'output', side: 'top', x: 140, y: 0 }
       ],
       defaultProps: { id: 'BATT-01', name: 'EV Battery (Tata Nexon EV)', soc: 64.2, capacityKwh: 72.0, energyStoredKwh: 46.22, minSoc: 20.0, maxSoc: 95.0, voltageV: 400.0, currentA: 21.0, powerKw: 8.4, sohPct: 99.4 }
@@ -490,13 +488,6 @@ const LabWorkspace = (function() {
         }
       }
     });
-
-    // Update dynamic Renewable feed label if present
-    const renLbl = document.getElementById('cable-lbl-renew_to_grid');
-    if (renLbl) {
-      const rTot = (telemetryState.renewableTotalGw || 5.02).toFixed(2);
-      renLbl.textContent = `GREEN FEED (${rTot} GW)`;
-    }
   }
 
   // ================= 4. AUTHENTIC 50/50 ENGINEERING COMPONENT CARDS =================
@@ -2930,13 +2921,15 @@ const LabWorkspace = (function() {
     applyZoom(1.0);
   }
 
-  function fitZoom() {
+  function fitZoom(showToastMsg = true) {
     const container = document.getElementById('sim-canvas-container');
     if (container) {
-      const availableWidth = container.clientWidth - 24;
-      const fitRatio = Math.max(0.6, Math.min(1.2, availableWidth / 1100));
+      const availableWidth = container.clientWidth - 20;
+      const fitRatio = Math.max(0.55, Math.min(1.05, Math.round((availableWidth / 1100) * 100) / 100));
       applyZoom(fitRatio);
-      showToast(`Canvas fitted to ${Math.round(fitRatio * 100)}%`);
+      if (showToastMsg) {
+        showToast(`Canvas fitted to ${Math.round(fitRatio * 100)}%`);
+      }
     }
   }
 
@@ -2960,7 +2953,6 @@ const LabWorkspace = (function() {
     if (btnHist) btnHist.onclick = () => setDataMode('HISTORICAL');
 
     // Viewport Zoom & Fit Controls
-    applyZoom(1.0);
     document.querySelectorAll('#canvas-zoom-in, [onclick*="zoomIn"]').forEach(btn => {
       btn.onclick = () => zoomIn();
     });
@@ -2971,7 +2963,16 @@ const LabWorkspace = (function() {
       btn.onclick = () => resetZoom();
     });
     document.querySelectorAll('#canvas-zoom-fit, [onclick*="fitZoom"]').forEach(btn => {
-      btn.onclick = () => fitZoom();
+      btn.onclick = () => fitZoom(true);
+    });
+
+    // Auto-fit circuit to viewport width so all 8 blocks and wires are 100% visible
+    setTimeout(() => {
+      fitZoom(false);
+    }, 60);
+
+    window.addEventListener('resize', () => {
+      fitZoom(false);
     });
 
     // Analytics Drawer Collapsible Toggle

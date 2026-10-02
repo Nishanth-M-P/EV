@@ -332,6 +332,22 @@
       
       <!-- FIXED SIMULATION WORKBENCH (PRD Section 3) -->
       <div class="relative w-full shrink-0 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#080d1a]">
+        <!-- Docked Status & Flow Legend Strip (Docked above canvas so it NEVER overlaps circuit components) -->
+        <div class="px-4 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur flex flex-wrap items-center justify-between gap-2 shrink-0 z-20 text-xs shadow-sm">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-mono text-[11px] font-bold flex items-center gap-1 shadow-sm">
+              <span class="material-symbols-outlined text-sm">lock</span>
+              <span>FIXED TOPOLOGY</span>
+            </span>
+            <span class="text-slate-500 dark:text-slate-400 font-mono text-[11px] hidden sm:inline">8-Block Digital Twin Architecture</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[10px] font-mono text-slate-700 dark:text-slate-300 shadow-sm">
+              FLOW: <span class="text-amber-500 dark:text-amber-400 font-bold">11kV AC</span> | <span class="text-emerald-600 dark:text-emerald-400 font-bold">G2V CHARGE</span> | <span class="text-cyan-600 dark:text-cyan-400 font-bold">V2G DISCHARGE</span> | <span class="text-purple-600 dark:text-purple-400 font-bold">DRL CONTROL</span> | <span class="text-pink-600 dark:text-pink-400 font-bold">METER MONITOR</span>
+            </span>
+          </div>
+        </div>
+
         <div id="sim-canvas-container" class="sim-canvas-grid relative h-[530px] w-full overflow-auto cursor-default">
           <div id="sim-canvas-scaler" class="relative" style="width: 1100px; height: 530px; min-width: 1100px;">
             <div id="sim-canvas-viewport" class="absolute top-0 left-0 w-[1100px] h-[530px]" style="transform-origin: 0 0; transition: transform 0.15s ease-out;">
@@ -341,33 +357,6 @@
               <!-- HTML Layer for Architecture Nodes -->
               <div id="sim-nodes-layer" class="w-full h-full absolute inset-0 pointer-events-none z-10 [&>*]:pointer-events-auto"></div>
             </div>
-          </div>
-
-          <!-- Canvas Floating Controls Bar (PRD Section 4 & 73) -->
-          <div class="absolute top-3 left-3 flex items-center gap-2 z-20">
-            <div class="flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-slate-200 dark:border-slate-800 rounded-lg p-1 text-xs shadow-md">
-              <span class="px-2 py-1 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-mono text-[11px] font-bold flex items-center gap-1">
-                <span class="material-symbols-outlined text-sm">lock</span>
-                <span>FIXED TOPOLOGY</span>
-              </span>
-              <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-              <button onclick="LabWorkspace.zoomIn()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom In">
-                <span class="material-symbols-outlined text-base">zoom_in</span>
-              </button>
-              <button onclick="LabWorkspace.zoomOut()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom Out">
-                <span class="material-symbols-outlined text-base">zoom_out</span>
-              </button>
-              <button onclick="LabWorkspace.resetZoom()" class="zoom-display-val px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-mono text-[11px] font-bold" title="Reset Zoom">
-                100%
-              </button>
-            </div>
-          </div>
-
-          <!-- Canvas Floating Flow Legend -->
-          <div class="absolute top-3 right-3 flex items-center gap-2 pointer-events-none z-20">
-            <span class="px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-700 dark:text-slate-300 shadow-md">
-              FLOW: <span class="text-amber-500 dark:text-amber-400 font-bold">11kV AC</span> | <span class="text-emerald-600 dark:text-emerald-400 font-bold">G2V CHARGE</span> | <span class="text-cyan-600 dark:text-cyan-400 font-bold">V2G DISCHARGE</span> | <span class="text-purple-600 dark:text-purple-400 font-bold">DRL CONTROL</span> | <span class="text-pink-600 dark:text-pink-400 font-bold">METER MONITOR</span>
-            </span>
           </div>
         </div>
 
@@ -963,6 +952,6 @@
   </div>
 
   <!-- Master Interactive Workspace Script -->
-  <script src="assets/js/lab-workspace.js"></script>
+  <script src="assets/js/lab-workspace.js?v=20261002_03"></script>
 </body>
 </html>
