@@ -2937,7 +2937,6 @@ const LabWorkspace = (function() {
     });
 
     // Mouse wheel zoom with Ctrl key
-    const canvasContainer = document.getElementById('sim-canvas-container');
     if (canvasContainer) {
       canvasContainer.addEventListener('wheel', (e) => {
         if (e.ctrlKey) {
