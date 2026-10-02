@@ -337,12 +337,30 @@
       <div class="relative w-full shrink-0 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#080d1a]">
         <!-- Docked Status & Flow Legend Strip (Docked above canvas so it NEVER overlaps circuit components) -->
         <div class="px-4 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur flex flex-wrap items-center justify-between gap-2 shrink-0 z-20 text-xs shadow-sm">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-3">
             <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-mono text-[11px] font-bold flex items-center gap-1 shadow-sm">
               <span class="material-symbols-outlined text-sm">lock</span>
               <span>FIXED TOPOLOGY</span>
             </span>
-            <span class="text-slate-500 dark:text-slate-400 font-mono text-[11px] hidden sm:inline">8-Block Digital Twin Architecture</span>
+            <span class="text-slate-500 dark:text-slate-400 font-mono text-[11px] hidden lg:inline">8-Block Digital Twin Architecture</span>
+
+            <!-- Docked Viewport Zoom Controls -->
+            <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+              <button id="canvas-zoom-out" onclick="LabWorkspace.zoomOut()" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors" title="Zoom Out (Ctrl -)">
+                <span class="material-symbols-outlined text-sm">zoom_out</span>
+              </button>
+              <button id="canvas-zoom-reset" onclick="LabWorkspace.resetZoom()" class="zoom-display-val px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-mono text-[11px] font-bold transition-colors" title="Reset Zoom to 100%">
+                100%
+              </button>
+              <button id="canvas-zoom-in" onclick="LabWorkspace.zoomIn()" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors" title="Zoom In (Ctrl +)">
+                <span class="material-symbols-outlined text-sm">zoom_in</span>
+              </button>
+              <div class="h-3.5 w-px bg-slate-300 dark:bg-slate-600 mx-0.5"></div>
+              <button id="canvas-zoom-fit" onclick="LabWorkspace.fitZoom()" class="px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 text-[11px] font-semibold transition-colors" title="Fit Circuit to Viewport">
+                <span class="material-symbols-outlined text-sm">fit_screen</span>
+                <span>Fit</span>
+              </button>
+            </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="px-2.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[10px] font-mono text-slate-700 dark:text-slate-300 shadow-sm">
@@ -360,6 +378,23 @@
               <!-- HTML Layer for Architecture Nodes -->
               <div id="sim-nodes-layer" class="w-full h-full absolute inset-0 pointer-events-none z-10 [&>*]:pointer-events-auto"></div>
             </div>
+          </div>
+
+          <!-- Floating Bottom-Right Quick Zoom Controls -->
+          <div class="absolute bottom-3 right-3 flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-slate-200 dark:border-slate-800 rounded-lg p-1 text-xs shadow-md z-20">
+            <button onclick="LabWorkspace.zoomOut()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom Out">
+              <span class="material-symbols-outlined text-base">zoom_out</span>
+            </button>
+            <button onclick="LabWorkspace.resetZoom()" class="zoom-display-val px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-mono text-[11px] font-bold" title="Reset Zoom to 100%">
+              100%
+            </button>
+            <button onclick="LabWorkspace.zoomIn()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Zoom In">
+              <span class="material-symbols-outlined text-base">zoom_in</span>
+            </button>
+            <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5"></div>
+            <button onclick="LabWorkspace.fitZoom()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 text-[11px] font-semibold" title="Fit to Viewport">
+              <span class="material-symbols-outlined text-base">fit_screen</span>
+            </button>
           </div>
         </div>
 
@@ -955,7 +990,7 @@
   </div>
 
   <!-- Master Interactive Workspace Script -->
-  <script src="assets/js/lab-workspace.js?v=20261002_05_nogreenfeed"></script>
+  <script src="assets/js/lab-workspace.js?v=20261002_06_zoom"></script>
 
   <!-- Failsafe: Eradicate any obsolete green feed wire elements -->
   <script>

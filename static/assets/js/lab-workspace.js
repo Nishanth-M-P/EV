@@ -2936,6 +2936,18 @@ const LabWorkspace = (function() {
       btn.onclick = () => fitZoom(true);
     });
 
+    // Mouse wheel zoom with Ctrl key
+    const canvasContainer = document.getElementById('sim-canvas-container');
+    if (canvasContainer) {
+      canvasContainer.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          if (e.deltaY < 0) zoomIn();
+          else zoomOut();
+        }
+      }, { passive: false });
+    }
+
     // Auto-fit circuit to viewport width so all 8 blocks and wires are 100% visible
     setTimeout(() => {
       fitZoom(false);
