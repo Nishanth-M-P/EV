@@ -281,11 +281,14 @@
               </span>
               <span id="st-controller-status" class="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/15 text-purple-700 dark:text-purple-300 font-bold border border-purple-500/30">ACTIVE (PPO)</span>
             </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>EV Battery
-              </span>
-              <span id="st-battery-status" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30">CONNECTED (64.2%)</span>
+            <div class="space-y-1">
+              <div class="flex justify-between items-center">
+                <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>EV Battery Fleet
+                </span>
+                <span id="st-battery-status" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30">ALL CHARGING</span>
+              </div>
+              <div id="st-battery-fleet-chips" class="flex flex-wrap gap-1 pt-1"></div>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
@@ -705,14 +708,22 @@
           <div>
             <div class="flex items-center gap-2">
               <h3 class="font-bold text-slate-100 text-base">High-Voltage Battery Pack -- Internal CAD Inspection</h3>
-              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">400V LFP ARCHITECTURE</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">400V ARCHITECTURE</span>
             </div>
             <p class="text-xs text-slate-400 font-mono mt-0.5">Physical Cell Modules, Contactor Relays & Integrated Battery Management System (BMS)</p>
           </div>
         </div>
-        <button onclick="LabWorkspace.closeBatteryModal()" class="text-slate-400 hover:text-slate-200 p-2 rounded-lg hover:bg-slate-800 transition-all">
-          <span class="material-symbols-outlined text-2xl">close</span>
-        </button>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 bg-slate-900 border border-emerald-500/40 rounded-xl px-3 py-1.5 shadow-inner">
+            <label for="cad-battery-selector" class="text-xs text-slate-400 font-mono font-semibold">Inspecting Pack:</label>
+            <select id="cad-battery-selector" onchange="LabWorkspace.switchCadBattery(this.value)" class="bg-slate-950 text-emerald-400 font-mono text-xs font-bold rounded px-2 py-1 outline-none border border-slate-800 cursor-pointer focus:border-emerald-500">
+              <option value="EV-001">EV-001 (Tata Nexon 72 kWh)</option>
+            </select>
+          </div>
+          <button onclick="LabWorkspace.closeBatteryModal()" class="text-slate-400 hover:text-slate-200 p-2 rounded-lg hover:bg-slate-800 transition-all">
+            <span class="material-symbols-outlined text-2xl">close</span>
+          </button>
+        </div>
       </div>
 
       <!-- Modal Body -->
@@ -876,6 +887,60 @@
     </div>
   </div>
 
+  <!-- ================= ADD BATTERY TWIN MODAL ================= -->
+  <div id="lab-add-battery-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            <span class="material-symbols-outlined text-xl">add_circle</span>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-100 text-sm">Add Battery Twin to Simulation</h3>
+            <p class="text-[10px] text-slate-400 font-mono">Connects an EV battery pack to the live circuit</p>
+          </div>
+        </div>
+        <button onclick="LabWorkspace.closeAddBatteryModal()" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <form id="lab-add-battery-form" onsubmit="LabWorkspace.submitLabAddBattery(event)" class="p-5 space-y-3.5 text-xs font-mono">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Battery / EV Name</label>
+          <input type="text" id="lab-input-ev-name" required value="Tata Punch.ev" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Capacity (kWh)</label>
+            <input type="number" id="lab-input-ev-capacity" required value="35.0" step="0.1" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Current SOC (%)</label>
+            <input type="number" id="lab-input-ev-soc" required value="40" min="0" max="100" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Target SOC (%)</label>
+            <input type="number" id="lab-input-ev-req-soc" required value="85" min="20" max="100" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Charge Power (kW)</label>
+            <input type="number" id="lab-input-ev-pwr" required value="7.4" step="0.1" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 outline-none">
+          </div>
+        </div>
+        <div class="pt-2 flex justify-end gap-2 font-sans">
+          <button type="button" onclick="LabWorkspace.closeAddBatteryModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs hover:bg-slate-700">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">battery_charging_full</span>
+            <span>Connect & Start Charging</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= BENCHMARK COMPARISON MODAL ================= -->
   <div id="comparison-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -990,7 +1055,7 @@
   </div>
 
   <!-- Master Interactive Workspace Script -->
-  <script src="assets/js/lab-workspace.js?v=20261002_08_css_anim"></script>
+  <script src="assets/js/lab-workspace.js?v=20261003_fleet_batteries"></script>
 
   <!-- Failsafe: Eradicate any obsolete green feed wire elements -->
   <script>

@@ -58,6 +58,31 @@ def create_ev_router(sim_service):
             if hasattr(new_ev, "is_connected"):
                 new_ev.is_connected = True
 
+            if hasattr(sim_service.engine, "fleet_persisted_decisions"):
+                from backend.simulation.unified_engine import SafetyDecision
+                import numpy as np
+                chg_power = getattr(new_ev, "max_charge_kw", 7.4)
+                sim_service.engine.fleet_persisted_decisions[new_ev.ev_id] = {
+                    "proposed_action": "CHARGE",
+                    "proposed_kw": chg_power,
+                    "action_index": 1,
+                    "probabilities": {"CHARGE": 1.0, "IDLE": 0.0, "DISCHARGE": 0.0},
+                    "confidence": 1.0,
+                    "state_value": 0.0,
+                    "safety_decision": SafetyDecision(
+                        approved=True,
+                        raw_action="CHARGE",
+                        final_action="CHARGE",
+                        power_kw=chg_power,
+                        reason_code="ACTIVE_CHARGE",
+                        reason=f"Newly added battery twin {new_ev.ev_id} active charging",
+                        corrective_action="None"
+                    ),
+                    "validated_power_kw": chg_power,
+                    "obs_19d": np.zeros(19, dtype=np.float32),
+                    "obs_raw": {}
+                }
+
             logger.info(f"Successfully added battery twin to circuit: {new_ev.ev_id} ({new_ev.capacity_kwh} kWh, SOC={new_ev.soc}%)")
             
             try:

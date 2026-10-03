@@ -2001,12 +2001,12 @@ function renderFleetTable() {
     }
 
     tbody.innerHTML = evs.map(ev => {
-        const soc = ev.current_soc !== undefined ? ev.current_soc : 50.0;
+        const soc = ev.current_soc !== undefined ? ev.current_soc : (ev.soc !== undefined ? ev.soc : 50.0);
         const targetSoc = ev.target_soc !== undefined ? ev.target_soc : (ev.required_soc || 85.0);
-        const pwr = ev.current_power_kw || 0.0;
-        const maxChg = ev.max_charge_power_kw || 11.0;
-        const maxDischg = ev.max_discharge_power_kw || 11.0;
-        const cap = ev.battery_capacity_kwh || 75.0;
+        const pwr = ev.current_power_kw !== undefined ? ev.current_power_kw : (ev.power_kw || 0.0);
+        const maxChg = ev.max_charge_power_kw || ev.max_charge_kw || 11.0;
+        const maxDischg = ev.max_discharge_power_kw || ev.max_discharge_kw || 11.0;
+        const cap = ev.battery_capacity_kwh || ev.capacity_kwh || 75.0;
 
         let socColor = "bg-emerald-500";
         let socTextColor = "text-emerald-700";
@@ -2018,15 +2018,19 @@ function renderFleetTable() {
             socTextColor = "text-amber-700";
         }
 
+        const evStatus = ev.status || ev.charging_state || (pwr > 0.05 ? 'CHARGING' : (pwr < -0.05 ? 'DISCHARGING' : 'IDLE'));
         let statusClass = "bg-slate-100 text-slate-700 border-slate-300";
         let statusDot = "bg-slate-400";
-        if (ev.status === "CHARGING") {
+        if (evStatus === "CHARGING" || pwr > 0.05) {
             statusClass = "bg-emerald-50 text-emerald-800 border-emerald-300";
             statusDot = "bg-emerald-500 animate-pulse";
-        } else if (ev.status === "DISCHARGING") {
+        } else if (evStatus === "DISCHARGING" || pwr < -0.05) {
             statusClass = "bg-purple-50 text-purple-800 border-purple-300";
             statusDot = "bg-purple-500 animate-pulse";
         }
+
+        const arrStr = String(ev.arrival_time || '08:00').includes(':') ? ev.arrival_time : `${ev.arrival_time}:00`;
+        const depStr = String(ev.departure_time || '18:00').includes(':') ? ev.departure_time : `${ev.departure_time}:00`;
 
         return `
             <tr class="hover:bg-slate-50/80 transition-colors">
@@ -2063,13 +2067,13 @@ function renderFleetTable() {
                 <td class="p-3.5 sm:p-4">
                     <span class="inline-flex items-center gap-1 text-[11px] font-mono text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
                         <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i>
-                        ${ev.arrival_time}:00 ➔ ${ev.departure_time}:00
+                        ${arrStr} ➔ ${depStr}
                     </span>
                 </td>
                 <td class="p-3.5 sm:p-4">
                     <div class="flex flex-col gap-0.5 text-[10px] font-mono">
-                        <span class="text-emerald-700 font-bold">+${maxChg} kW (Chg)</span>
-                        <span class="text-purple-700 font-bold">-${maxDischg} kW (V2G)</span>
+                        <span class="text-emerald-700 font-bold">${pwr > 0.05 ? `+${pwr.toFixed(1)} kW (Live)` : `+${maxChg} kW (Max)`}</span>
+                        <span class="text-purple-700 font-bold">${pwr < -0.05 ? `-${Math.abs(pwr).toFixed(1)} kW (Live)` : `-${maxDischg} kW (V2G)`}</span>
                     </div>
                 </td>
                 <td class="p-3.5 sm:p-4">

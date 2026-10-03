@@ -772,6 +772,11 @@ class EVBatteryModel:
             return "CONNECTED"
 
         if current_hour < arr_h:
+            # If battery has not completed charging, keep it connected and active
+            if self.soc < min(self.target_soc, self.max_soc):
+                self.connected = True
+                self.charging_state = "CHARGING"
+                return "CONNECTED"
             self.connected = False
             self.charging_state = "NOT_CONNECTED"
             self.power_kw = 0.0
@@ -780,9 +785,14 @@ class EVBatteryModel:
         elif arr_h <= current_hour < dep_h:
             self.connected = True
             if self.charging_state in ["NOT_CONNECTED", "DISCONNECTED", "DEPARTED"]:
-                self.charging_state = "IDLE"
+                self.charging_state = "CHARGING" if self.soc < min(self.target_soc, self.max_soc) else "IDLE"
             return "CONNECTED"
         else:
+            # If battery is not yet charged to target, keep connected and active charging
+            if self.soc < min(self.target_soc, self.max_soc):
+                self.connected = True
+                self.charging_state = "CHARGING"
+                return "CONNECTED"
             self.connected = False
             self.charging_state = "DISCONNECTED"
             self.power_kw = 0.0
@@ -1971,6 +1981,31 @@ class UnifiedSimulationEngine:
                     safety_decision.final_action = target_state
                     safety_decision.power_kw = 0.0
                     primary_entry["validated_power_kw"] = 0.0
+
+            # Ensure all fleet vehicles are registered in fleet_persisted_decisions
+            for eid, ev_obj in self.fleet_manager.fleet.items():
+                if eid not in self.fleet_persisted_decisions:
+                    allocated_pwr = min(ev_obj.max_charge_kw, 7.4)
+                    self.fleet_persisted_decisions[eid] = {
+                        "proposed_action": "CHARGE",
+                        "proposed_kw": allocated_pwr,
+                        "action_index": 1,
+                        "probabilities": {"CHARGE": 1.0, "IDLE": 0.0, "DISCHARGE": 0.0},
+                        "confidence": 1.0,
+                        "state_value": 0.0,
+                        "safety_decision": SafetyDecision(
+                            approved=True,
+                            raw_action="CHARGE",
+                            final_action="CHARGE",
+                            power_kw=allocated_pwr,
+                            reason_code="ACTIVE_CHARGE",
+                            reason=f"Fleet battery {eid} active charging",
+                            corrective_action="None"
+                        ),
+                        "validated_power_kw": allocated_pwr,
+                        "obs_19d": np.zeros(19, dtype=np.float32),
+                        "obs_raw": {}
+                    }
 
             # Active Charging Guarantee for all connected fleet batteries
             for eid, entry in self.fleet_persisted_decisions.items():

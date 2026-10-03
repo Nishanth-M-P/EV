@@ -73,6 +73,15 @@ const LabWorkspace = (function() {
     evV2gEnabled: true,
     evV2gReserve: 30.0,
 
+    fleetEvs: [],
+    selectedBatteryEvId: 'EV-001',
+    selectedBatteryPowerKw: 22.0,
+    selectedBatteryVoltageV: 400.0,
+    selectedBatteryCurrentA: 55.0,
+    selectedBatteryTempC: 27.5,
+    selectedBatteryState: 'CHARGING',
+    totalFleetChargingKw: 0.0,
+
     chargerRatedKw: 22.0,
     chargerPowerKw: 8.4,
     chargerMode: 'CHARGING', // CHARGING, V2G, IDLE
@@ -626,24 +635,46 @@ const LabWorkspace = (function() {
 
     // 8. EV Integrated Battery (Right Center - Power Row)
     else if (node.type === 'battery') {
+      const activeId = telemetryState.selectedBatteryEvId || 'EV-001';
       const soc = telemetryState.evSoc !== undefined ? telemetryState.evSoc : 64.2;
       const cap = telemetryState.evCapacityKwh || 72.0;
       const energyStored = ((soc / 100) * cap).toFixed(1);
-      const pwr = telemetryState.chargerPowerKw !== undefined ? telemetryState.chargerPowerKw : 0.0;
-      const pwrStr = `${pwr >= 0 ? '+' : ''}${pwr.toFixed(1)} kW`;
+      const selPwr = telemetryState.selectedBatteryPowerKw !== undefined ? telemetryState.selectedBatteryPowerKw : (telemetryState.chargerPowerKw || 0.0);
+      const pwrStr = `${selPwr >= 0 ? '+' : ''}${selPwr.toFixed(1)} kW`;
       const timeTarget = telemetryState.batteryTimeToTargetStr || '00:00:00';
-      const stateColor = pwr > 0.05 ? 'text-emerald-400' : (pwr < -0.05 ? 'text-cyan-400' : 'text-slate-400');
-      const battState = telemetryState.batteryState || (pwr > 0.05 ? 'CHARGING' : (pwr < -0.05 ? 'V2G' : 'IDLE'));
+      const stateColor = selPwr > 0.05 ? 'text-emerald-400' : (selPwr < -0.05 ? 'text-cyan-400' : 'text-slate-400');
+      const battState = telemetryState.selectedBatteryState || (selPwr > 0.05 ? 'CHARGING' : (selPwr < -0.05 ? 'V2G' : 'IDLE'));
+      const fleet = telemetryState.fleetEvs || [];
+      const fleetCount = fleet.length || 1;
+      const chargingCount = fleet.filter(e => (e.power_kw > 0.05 || e.charging_state === 'CHARGING' || e.status === 'CHARGING')).length || fleetCount;
+
+      let selectOptions = '';
+      if (fleet.length > 0) {
+        selectOptions = fleet.map(e => {
+          const eid = e.ev_id || e.id;
+          const isSel = eid === activeId ? 'selected' : '';
+          const p = (e.power_kw !== undefined ? e.power_kw : (e.current_power_kw || 0)).toFixed(1);
+          return `<option value="${eid}" ${isSel}>${eid} (${(e.name || 'EV').slice(0, 10)}) +${p}kW</option>`;
+        }).join('');
+      } else {
+        selectOptions = `<option value="EV-001" selected>EV-001 (Nexon EV)</option>`;
+      }
+
       bodyHtml = `
         <div class="arch-card-50-50 p-2.5 h-full border-2 border-emerald-500/60 flex flex-row items-stretch gap-3 overflow-hidden select-none ${isSelected ? 'ring-2 ring-emerald-400' : ''}">
           <div class="w-[105px] shrink-0 rounded-lg overflow-hidden bg-slate-950 border border-slate-700/80 flex items-center justify-center p-1 relative shadow-inner">
             <img src="assets/components/battery/ev-battery.svg" class="w-full h-full object-cover pointer-events-none" alt="EV Battery Pack" />
-            <button onclick="event.stopPropagation(); LabWorkspace.openBatteryModal('${node.id}');" class="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded bg-emerald-500/30 text-emerald-300 font-bold border border-emerald-500/40 hover:bg-emerald-500/50">CAD</button>
+            <button onclick="event.stopPropagation(); LabWorkspace.openBatteryModal('${node.id}', '${activeId}');" class="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded bg-emerald-500/30 text-emerald-300 font-bold border border-emerald-500/40 hover:bg-emerald-500/50">CAD</button>
           </div>
           <div class="flex-1 flex flex-col justify-between py-0.5 font-mono text-[10px] leading-tight min-w-0">
-            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-1">
-              <span class="font-bold text-xs text-emerald-200">EV BATTERY</span>
-              <span id="card-val-battery-state" class="text-[9px] font-bold ${stateColor}">${battState}</span>
+            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-1 gap-1">
+              <div class="flex items-center gap-1 min-w-0">
+                <span class="font-bold text-xs text-emerald-200 shrink-0">BATT:</span>
+                <select id="card-val-battery-selector" onclick="event.stopPropagation()" onchange="event.stopPropagation(); LabWorkspace.selectBattery(this.value);" class="bg-slate-900 border border-emerald-500/40 text-emerald-300 font-mono text-[9px] font-bold rounded px-1 py-0 outline-none max-w-[95px] truncate cursor-pointer">
+                  ${selectOptions}
+                </select>
+              </div>
+              <span id="card-val-battery-state" class="text-[9px] font-bold shrink-0 ${stateColor}">${battState}</span>
             </div>
             <div class="space-y-1 py-1">
               <div class="flex justify-between items-baseline">
@@ -655,7 +686,7 @@ const LabWorkspace = (function() {
               </div>
               <div class="flex justify-between text-[9px] text-slate-300 pt-0.5 border-t border-slate-800">
                 <span>Power: <strong id="card-val-battery-pwr" class="${stateColor}">${pwrStr}</strong></span>
-                <span>To Target: <strong id="card-val-battery-target" class="text-cyan-300">${timeTarget}</strong></span>
+                <span id="card-val-battery-fleet-count" class="text-emerald-400 font-bold">${chargingCount}/${fleetCount} Charging</span>
               </div>
             </div>
           </div>
@@ -782,23 +813,26 @@ const LabWorkspace = (function() {
     }
 
     // 8. Battery
+    const activeId = telemetryState.selectedBatteryEvId || 'EV-001';
     const soc = telemetryState.evSoc !== undefined ? telemetryState.evSoc : 64.2;
     const cap = telemetryState.evCapacityKwh || 72.0;
     const energyStored = ((soc / 100) * cap).toFixed(1);
-    const pwrStr = `${act >= 0 ? '+' : ''}${act.toFixed(1)} kW`;
-    const timeTarget = telemetryState.batteryTimeToTargetStr || '00:00:00';
-    const stateColor = act > 0.05 ? 'text-emerald-400' : (act < -0.05 ? 'text-cyan-400' : 'text-slate-400');
-    const battState = telemetryState.batteryState || (act > 0.05 ? 'CHARGING' : (act < -0.05 ? 'V2G' : 'IDLE'));
+    const selPwr = telemetryState.selectedBatteryPowerKw !== undefined ? telemetryState.selectedBatteryPowerKw : (telemetryState.chargerPowerKw || 0.0);
+    const pwrStr = `${selPwr >= 0 ? '+' : ''}${selPwr.toFixed(1)} kW`;
+    const stateColor = selPwr > 0.05 ? 'text-emerald-400' : (selPwr < -0.05 ? 'text-cyan-400' : 'text-slate-400');
+    const battState = telemetryState.selectedBatteryState || (selPwr > 0.05 ? 'CHARGING' : (selPwr < -0.05 ? 'V2G' : 'IDLE'));
 
     const bState = document.getElementById('card-val-battery-state');
     const bSoc = document.getElementById('card-val-battery-soc');
     const bEnergy = document.getElementById('card-val-battery-energy');
     const bBar = document.getElementById('card-val-battery-bar');
     const bPwr = document.getElementById('card-val-battery-pwr');
-    const bTgt = document.getElementById('card-val-battery-target');
+    const bFleetCount = document.getElementById('card-val-battery-fleet-count');
+    const bSel = document.getElementById('card-val-battery-selector');
+
     if (bState) {
       bState.textContent = battState;
-      bState.className = `text-[9px] font-bold ${stateColor}`;
+      bState.className = `text-[9px] font-bold shrink-0 ${stateColor}`;
     }
     if (bSoc) bSoc.textContent = `${soc.toFixed(1)}%`;
     if (bEnergy) bEnergy.textContent = `${energyStored} / ${cap} kWh`;
@@ -807,7 +841,24 @@ const LabWorkspace = (function() {
       bPwr.textContent = pwrStr;
       bPwr.className = stateColor;
     }
-    if (bTgt) bTgt.textContent = timeTarget;
+
+    const fleet = telemetryState.fleetEvs || [];
+    const fleetCount = fleet.length || 1;
+    const chargingCount = fleet.filter(e => (e.power_kw > 0.05 || e.charging_state === 'CHARGING' || e.status === 'CHARGING')).length || fleetCount;
+    if (bFleetCount) bFleetCount.textContent = `${chargingCount}/${fleetCount} Charging`;
+
+    if (bSel && fleet.length > 0) {
+      if (bSel.children.length !== fleet.length) {
+        bSel.innerHTML = fleet.map(e => {
+          const eid = e.ev_id || e.id;
+          const isSel = eid === activeId ? 'selected' : '';
+          const p = (e.power_kw !== undefined ? e.power_kw : (e.current_power_kw || 0)).toFixed(1);
+          return `<option value="${eid}" ${isSel}>${eid} (${(e.name || 'EV').slice(0, 10)}) +${p}kW</option>`;
+        }).join('');
+      } else if (bSel.value !== activeId) {
+        bSel.value = activeId;
+      }
+    }
 
     // 9. Meter
     const impKw = telemetryState.meterImportKw !== undefined ? telemetryState.meterImportKw : 0.0;
@@ -1020,19 +1071,98 @@ const LabWorkspace = (function() {
         </div>
       `;
     } else if (node.type === 'battery' || node.type === 'ev_info') {
+      const activeId = telemetryState.selectedBatteryEvId || 'EV-001';
+      const fleet = telemetryState.fleetEvs || [];
+      const activeEv = fleet.find(e => (e.ev_id === activeId || e.id === activeId)) || {
+        name: 'Primary Bench V2G EV',
+        ev_id: 'EV-001',
+        capacity_kwh: telemetryState.evCapacityKwh || 72.0,
+        soc: telemetryState.evSoc || 64.2,
+        power_kw: telemetryState.selectedBatteryPowerKw || 22.0,
+        charging_state: 'CHARGING',
+        target_soc: telemetryState.evRequiredSoc || 85.0
+      };
+
+      const fleetItemsHtml = (fleet.length > 0 ? fleet : [activeEv]).map(e => {
+        const eid = e.ev_id || e.id || 'EV-001';
+        const isCurrent = eid === activeId;
+        const eSoc = (e.soc !== undefined ? e.soc : (e.current_soc !== undefined ? e.current_soc : 50.0)).toFixed(1);
+        const eCap = e.capacity_kwh || e.battery_capacity_kwh || 72.0;
+        const ePwr = (e.power_kw !== undefined ? e.power_kw : (e.current_power_kw || 0.0)).toFixed(1);
+        const isChg = e.power_kw > 0.05 || e.charging_state === 'CHARGING' || e.status === 'CHARGING';
+        const stBadge = isChg
+          ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>CHARGING</span>'
+          : '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700">STANDBY</span>';
+
+        return `
+          <div class="p-2.5 rounded-xl border ${isCurrent ? 'border-emerald-500/60 bg-emerald-950/20' : 'border-slate-800 bg-slate-950/50'} space-y-1.5">
+            <div class="flex items-center justify-between font-mono">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="font-bold text-xs ${isCurrent ? 'text-emerald-300' : 'text-slate-200'} truncate">${eid}: ${e.name || 'EV Battery'}</span>
+              </div>
+              ${stBadge}
+            </div>
+            <div class="flex justify-between items-baseline text-[11px] font-mono">
+              <span class="text-slate-400">SOC: <strong class="text-emerald-400">${eSoc}%</strong></span>
+              <span class="text-slate-300">Pwr: <strong class="text-emerald-400">+${ePwr} kW</strong></span>
+              <span class="text-slate-400 text-[10px]">${eCap} kWh</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full" style="width: ${Math.min(100, Math.max(0, eSoc))}%"></div>
+            </div>
+            <div class="flex justify-between items-center pt-1 font-mono text-[10px]">
+              <button onclick="event.stopPropagation(); LabWorkspace.selectBattery('${eid}');" class="px-2 py-0.5 rounded ${isCurrent ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} transition-all">
+                ${isCurrent ? '✓ Inspected' : 'Inspect Battery'}
+              </button>
+              <button onclick="event.stopPropagation(); LabWorkspace.openBatteryModal('${node.id}', '${eid}');" class="px-2 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold transition-all flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">battery_charging_full</span>
+                <span>CAD</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
       return `
         <div class="space-y-3 text-xs">
-          <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2">
+          <!-- Active Battery Selected Card -->
+          <div class="p-3 bg-slate-950/70 rounded-xl border border-emerald-500/40 space-y-2">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+              <span class="font-bold text-emerald-300 text-xs">${activeEv.name || activeId}</span>
+              <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                ${activeEv.charging_state || 'CHARGING'}
+              </span>
+            </div>
             <div class="flex justify-between"><span class="text-slate-400">Current SOC:</span><span class="text-emerald-400 font-bold">${telemetryState.evSoc.toFixed(1)}%</span></div>
             <div class="flex justify-between"><span class="text-slate-400">Pack Capacity:</span><span class="text-slate-200">${telemetryState.evCapacityKwh} kWh</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Target SOC:</span><span class="text-amber-300 font-bold">${telemetryState.evRequiredSoc}% by ${telemetryState.evDepartureTime}</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">V2G Reserve Floor:</span><span class="text-slate-200">${telemetryState.evV2gReserve}%</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Health (SOH):</span><span class="text-emerald-400 font-bold">99.4%</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Active Power:</span><span class="text-emerald-400 font-bold">+${(telemetryState.selectedBatteryPowerKw || 0).toFixed(1)} kW</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Target SOC:</span><span class="text-amber-300 font-bold">${telemetryState.evRequiredSoc}%</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Contactor State:</span><span class="text-emerald-400 font-bold">HV (+)/(-) CLOSED</span></div>
           </div>
-          <button onclick="LabWorkspace.openBatteryModal('${node.id}')" class="w-full py-2 px-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold font-mono transition-all flex items-center justify-center gap-1.5">
+
+          <button onclick="LabWorkspace.openBatteryModal('${node.id}', '${activeId}')" class="w-full py-2 px-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold font-mono transition-all flex items-center justify-center gap-1.5">
             <span class="material-symbols-outlined text-base">battery_charging_full</span>
-            <span>Open High-Voltage CAD Inspection</span>
+            <span>Open High-Voltage CAD Inspection (${activeId})</span>
           </button>
+
+          <!-- All Batteries in Simulator Header -->
+          <div class="pt-2 border-t border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Fleet Battery Twins (${fleet.length || 1})
+              </span>
+              <button onclick="LabWorkspace.openAddBatteryModal()" class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-[10px] font-bold flex items-center gap-1 transition-all">
+                <span class="material-symbols-outlined text-xs">add</span>
+                <span>Add Battery</span>
+              </button>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono">All fleet batteries are connected to circuit and actively charging:</div>
+            <div class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+              ${fleetItemsHtml}
+            </div>
+          </div>
         </div>
       `;
     } else if (node.type === 'meter') {
@@ -1513,7 +1643,28 @@ const LabWorkspace = (function() {
     if (stCtrlStatus) stCtrlStatus.textContent = `ACTIVE (${telemetryState.drlAction})`;
 
     const stBattStatus = document.getElementById('st-battery-status');
-    if (stBattStatus) stBattStatus.textContent = `CONNECTED (${telemetryState.evSoc.toFixed(1)}%)`;
+    const fleet = telemetryState.fleetEvs || [];
+    const count = fleet.length || 1;
+    const chgCount = fleet.filter(e => (e.power_kw > 0.05 || e.charging_state === 'CHARGING' || e.status === 'CHARGING')).length || count;
+    const totKw = (telemetryState.totalFleetChargingKw || 0).toFixed(1);
+    if (stBattStatus) {
+      stBattStatus.textContent = `${count} PACKS (${chgCount} CHG, +${totKw} kW)`;
+    }
+
+    const stChips = document.getElementById('st-battery-fleet-chips');
+    if (stChips && fleet.length > 0) {
+      stChips.innerHTML = fleet.map(e => {
+        const eid = e.ev_id || e.id;
+        const soc = (e.soc !== undefined ? e.soc : (e.current_soc !== undefined ? e.current_soc : 50.0)).toFixed(0);
+        const pwr = (e.power_kw !== undefined ? e.power_kw : (e.current_power_kw || 0.0)).toFixed(1);
+        const isSel = eid === (telemetryState.selectedBatteryEvId || 'EV-001');
+        return `
+          <button onclick="event.stopPropagation(); LabWorkspace.selectBattery('${eid}');" title="${e.name || eid}: ${soc}%, +${pwr}kW" class="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold ${isSel ? 'bg-emerald-500 text-slate-950 ring-1 ring-emerald-300' : 'bg-slate-900 text-emerald-400 border border-emerald-500/30'} hover:bg-emerald-500 hover:text-slate-950 transition-all">
+            ${eid} ${soc}%
+          </button>
+        `;
+      }).join('');
+    }
 
     const stChgStatus = document.getElementById('st-charger-status');
     if (stChgStatus) stChgStatus.textContent = `${telemetryState.chargerMode} (${Math.abs(telemetryState.chargerPowerKw).toFixed(1)} kW)`;
@@ -2671,7 +2822,29 @@ const LabWorkspace = (function() {
       telemetryState.renewableTotalGw = data.renewable.total_renewable_gw !== undefined ? data.renewable.total_renewable_gw : (telemetryState.solarGw + telemetryState.windGw + telemetryState.hydroGw);
       telemetryState.renewableSharePct = data.renewable.renewable_share_pct !== undefined ? data.renewable.renewable_share_pct : telemetryState.renewableSharePct;
     }
-    if (data.ev) {
+    const fleetList = data.evs || data.ev_fleet || data.ev_fleet_status || [];
+    if (Array.isArray(fleetList) && fleetList.length > 0) {
+      telemetryState.fleetEvs = fleetList;
+      if (!telemetryState.selectedBatteryEvId || !fleetList.some(e => (e.ev_id === telemetryState.selectedBatteryEvId || e.id === telemetryState.selectedBatteryEvId))) {
+        telemetryState.selectedBatteryEvId = (fleetList[0].ev_id || fleetList[0].id || 'EV-001');
+      }
+      const selEv = fleetList.find(e => (e.ev_id === telemetryState.selectedBatteryEvId || e.id === telemetryState.selectedBatteryEvId)) || fleetList[0];
+      if (selEv) {
+        telemetryState.evSoc = selEv.soc !== undefined ? selEv.soc : (selEv.current_soc !== undefined ? selEv.current_soc : telemetryState.evSoc);
+        telemetryState.evCapacityKwh = selEv.capacity_kwh || selEv.battery_capacity_kwh || telemetryState.evCapacityKwh;
+        telemetryState.evEnergyKwh = selEv.energy_kwh || ((telemetryState.evSoc / 100) * telemetryState.evCapacityKwh);
+        telemetryState.evRequiredSoc = selEv.target_soc || selEv.required_soc || telemetryState.evRequiredSoc;
+        telemetryState.evDepartureTime = selEv.departure_time || telemetryState.evDepartureTime;
+        telemetryState.selectedBatteryPowerKw = selEv.power_kw !== undefined ? selEv.power_kw : (selEv.current_power_kw || 0.0);
+        telemetryState.selectedBatteryVoltageV = selEv.voltage_v || 400.0;
+        telemetryState.selectedBatteryCurrentA = selEv.current_a || 0.0;
+        telemetryState.selectedBatteryTempC = selEv.temperature_c || 25.0;
+        telemetryState.selectedBatteryState = selEv.charging_state || selEv.status || 'CHARGING';
+      }
+      telemetryState.totalFleetChargingKw = data.total_charging_power_kw !== undefined 
+        ? data.total_charging_power_kw 
+        : fleetList.reduce((s, e) => s + (e.power_kw > 0 ? e.power_kw : 0), 0);
+    } else if (data.ev) {
       telemetryState.evSoc = data.ev.soc !== undefined ? data.ev.soc : telemetryState.evSoc;
       telemetryState.evRequiredSoc = data.ev.required_soc || telemetryState.evRequiredSoc;
       telemetryState.evDepartureTime = data.ev.departure_time || telemetryState.evDepartureTime;
@@ -2777,11 +2950,47 @@ const LabWorkspace = (function() {
     updateLiveStatusStrip(data);
     updateDebugInspector(data, authoritativePowerKw);
     appendTelemetryPointToCharts(data);
+    if (openBatteryNodeId) {
+      updateBatteryModalLive();
+    }
   }
 
   // ================= 16. MODAL HANDLERS & NOTIFICATIONS =================
-  function openBatteryModal(nodeId) {
+  function selectBattery(evId) {
+    if (!evId) return;
+    telemetryState.selectedBatteryEvId = evId;
+    const ev = (telemetryState.fleetEvs || []).find(e => (e.ev_id === evId || e.id === evId));
+    if (ev) {
+      telemetryState.evSoc = ev.soc !== undefined ? ev.soc : (ev.current_soc !== undefined ? ev.current_soc : telemetryState.evSoc);
+      telemetryState.evCapacityKwh = ev.capacity_kwh || ev.battery_capacity_kwh || telemetryState.evCapacityKwh;
+      telemetryState.evEnergyKwh = ev.energy_kwh || ((telemetryState.evSoc / 100) * telemetryState.evCapacityKwh);
+      telemetryState.evRequiredSoc = ev.target_soc || ev.required_soc || telemetryState.evRequiredSoc;
+      telemetryState.evDepartureTime = ev.departure_time || telemetryState.evDepartureTime;
+      telemetryState.selectedBatteryPowerKw = ev.power_kw !== undefined ? ev.power_kw : (ev.current_power_kw || 0.0);
+      telemetryState.selectedBatteryVoltageV = ev.voltage_v || 400.0;
+      telemetryState.selectedBatteryCurrentA = ev.current_a || 0.0;
+      telemetryState.selectedBatteryTempC = ev.temperature_c || 25.0;
+      telemetryState.selectedBatteryState = ev.charging_state || ev.status || 'CHARGING';
+    }
+    const sel = document.getElementById('card-val-battery-selector');
+    if (sel && sel.value !== evId) sel.value = evId;
+    const cadSel = document.getElementById('cad-battery-selector');
+    if (cadSel && cadSel.value !== evId) cadSel.value = evId;
+    syncNodesFromState();
+    updateNodesLiveValues({});
+    if (selectedNodeId) renderInspector();
+    updateBatteryModalLive();
+  }
+
+  function switchCadBattery(evId) {
+    selectBattery(evId);
+  }
+
+  function openBatteryModal(nodeId, evId) {
     openBatteryNodeId = nodeId || 'battery_01';
+    if (evId) {
+      selectBattery(evId);
+    }
     const modal = document.getElementById('battery-internal-modal');
     if (modal) modal.classList.remove('hidden');
     updateBatteryModalLive();
@@ -2794,16 +3003,130 @@ const LabWorkspace = (function() {
   }
 
   function updateBatteryModalLive() {
-    const soc = telemetryState.evSoc;
+    const activeId = telemetryState.selectedBatteryEvId || 'EV-001';
+    const fleet = telemetryState.fleetEvs || [];
+    const activeEv = fleet.find(e => (e.ev_id === activeId || e.id === activeId)) || {
+      name: 'Primary Bench V2G EV',
+      ev_id: 'EV-001',
+      capacity_kwh: telemetryState.evCapacityKwh || 72.0,
+      soc: telemetryState.evSoc || 64.2,
+      power_kw: telemetryState.selectedBatteryPowerKw || 22.0,
+      voltage_v: telemetryState.selectedBatteryVoltageV || 400.0,
+      current_a: telemetryState.selectedBatteryCurrentA || 27.5,
+      temperature_c: telemetryState.selectedBatteryTempC || 27.8,
+      charging_state: 'CHARGING'
+    };
+
+    const cadSel = document.getElementById('cad-battery-selector');
+    if (cadSel && fleet.length > 0) {
+      if (cadSel.children.length !== fleet.length) {
+        cadSel.innerHTML = fleet.map(e => {
+          const eid = e.ev_id || e.id;
+          const isSel = eid === activeId ? 'selected' : '';
+          return `<option value="${eid}" ${isSel}>${eid} - ${e.name || 'EV'} (${e.capacity_kwh || 72} kWh)</option>`;
+        }).join('');
+      } else if (cadSel.value !== activeId) {
+        cadSel.value = activeId;
+      }
+    }
+
+    const soc = activeEv.soc !== undefined ? activeEv.soc : (activeEv.current_soc !== undefined ? activeEv.current_soc : 50.0);
+    const cap = activeEv.capacity_kwh || activeEv.battery_capacity_kwh || 72.0;
+    const pwr = activeEv.power_kw !== undefined ? activeEv.power_kw : (activeEv.current_power_kw || 0.0);
+    const volt = activeEv.voltage_v || (350.0 + (soc / 100.0) * 75.0);
+    const curr = activeEv.current_a !== undefined ? activeEv.current_a : ((pwr * 1000.0) / Math.max(300, volt));
+
+    const nameEl = document.getElementById('batt-modal-name');
+    if (nameEl) nameEl.textContent = `${activeEv.name || activeId} (${cap} kWh Pack)`;
+
+    const stateEl = document.getElementById('batt-modal-state');
+    if (stateEl) {
+      if (pwr > 0.05) {
+        stateEl.textContent = `CHARGING (+${pwr.toFixed(1)} kW)`;
+        stateEl.className = 'text-emerald-400 font-semibold';
+      } else if (pwr < -0.05) {
+        stateEl.textContent = `V2G DISCHARGING (-${Math.abs(pwr).toFixed(1)} kW)`;
+        stateEl.className = 'text-cyan-400 font-semibold';
+      } else {
+        stateEl.textContent = 'IDLE (0.0 kW)';
+        stateEl.className = 'text-slate-400 font-semibold';
+      }
+    }
+
     document.querySelectorAll('.batt-modal-soc').forEach(el => {
       el.textContent = `${soc.toFixed(1)}%`;
     });
     document.querySelectorAll('.batt-modal-bar').forEach(el => {
       el.style.width = `${Math.min(100, Math.max(0, soc))}%`;
     });
-    const stateEl = document.getElementById('batt-modal-state');
-    if (stateEl) {
-      stateEl.textContent = telemetryState.chargerMode === 'V2G' ? 'V2G DISCHARGING (-10 kW)' : 'G2V CHARGING (+8.4 kW)';
+
+    const socLg = document.getElementById('batt-modal-soc-large');
+    if (socLg) socLg.textContent = `${soc.toFixed(1)}%`;
+
+    const nrgEl = document.getElementById('batt-modal-energy');
+    if (nrgEl) nrgEl.textContent = `${((soc / 100.0) * cap).toFixed(2)} kWh stored`;
+
+    const vEl = document.getElementById('batt-modal-voltage');
+    if (vEl) vEl.textContent = `${volt.toFixed(1)} V`;
+
+    const pEl = document.getElementById('batt-modal-power');
+    if (pEl) {
+      pEl.textContent = `${pwr >= 0 ? '+' : ''}${pwr.toFixed(1)} kW`;
+      pEl.className = pwr > 0.05 ? 'text-xl font-bold text-emerald-400 mt-1' : (pwr < -0.05 ? 'text-xl font-bold text-cyan-400 mt-1' : 'text-xl font-bold text-slate-400 mt-1');
+    }
+
+    const cEl = document.getElementById('batt-modal-current');
+    if (cEl) cEl.textContent = `${Math.abs(curr).toFixed(1)} A DC`;
+  }
+
+  function openAddBatteryModal() {
+    const modal = document.getElementById('lab-add-battery-modal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function closeAddBatteryModal() {
+    const modal = document.getElementById('lab-add-battery-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  async function submitLabAddBattery(event) {
+    if (event) event.preventDefault();
+    const name = document.getElementById('lab-input-ev-name')?.value || 'Tata Punch.ev';
+    const cap = parseFloat(document.getElementById('lab-input-ev-capacity')?.value || '35.0');
+    const soc = parseFloat(document.getElementById('lab-input-ev-soc')?.value || '40.0');
+    const reqSoc = parseFloat(document.getElementById('lab-input-ev-req-soc')?.value || '85.0');
+    const pwr = parseFloat(document.getElementById('lab-input-ev-pwr')?.value || '7.4');
+
+    try {
+      const res = await fetch('/api/evs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          battery_capacity_kwh: cap,
+          current_soc: soc,
+          target_soc: reqSoc,
+          required_soc: reqSoc,
+          minimum_soc: 20.0,
+          maximum_soc: 100.0,
+          arrival_time: 8.0,
+          departure_time: 24.0,
+          max_charge_power_kw: pwr,
+          max_discharge_power_kw: 5.0
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        closeAddBatteryModal();
+        showToast(`Connected battery ${name} to digital twin!`, 'battery_charging_full');
+        if (data.ev && (data.ev.id || data.ev.ev_id)) {
+          selectBattery(data.ev.id || data.ev.ev_id);
+        }
+      } else {
+        showToast('Failed to add battery', 'error');
+      }
+    } catch (err) {
+      showToast('Network error adding battery', 'error');
     }
   }
 
@@ -3110,6 +3433,11 @@ const LabWorkspace = (function() {
     fetchTelemetryHistory,
     openBatteryModal,
     closeBatteryModal,
+    selectBattery,
+    switchCadBattery,
+    openAddBatteryModal,
+    closeAddBatteryModal,
+    submitLabAddBattery,
     openComparisonModal,
     closeComparisonModal,
     validateAndConnect,
